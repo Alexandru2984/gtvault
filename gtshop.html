@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RewardHub - Generația Tech</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="images/gt-logo.svg" alt="Generația Tech" class="logo-svg">
+                    <p class="subtitle">RewardHub</p>
+                </div>
+                <nav class="nav">
+                    <a href="#" class="nav-link active" data-section="shop">
+                        <span class="nav-icon">🛍️</span>
+                        Shop
+                    </a>
+                    <a href="#" class="nav-link" data-section="cart">
+                        <span class="nav-icon">🛒</span>
+                        Coș (<span id="cart-count">0</span>)
+                    </a>
+                    <a href="#" class="nav-link" data-section="profile">
+                        <span class="nav-icon">👤</span>
+                        Profil
+                    </a>
+                    <a href="#" class="nav-link" data-section="history">
+                        <span class="nav-icon">📋</span>
+                        Istoric
+                    </a>
+                </nav>
+                <div class="user-info">
+                    <div class="user-details">
+                        <span id="user-name">Loading...</span>
+                        <span id="user-points" class="points">0 puncte</span>
+                    </div>
+                    <button id="set-points-btn" class="set-points-btn" onclick="showSetPointsModal()" title="Setează puncte">
+                        ⚙️
+                    </button>
+                    <img id="user-avatar" src="" alt="Avatar" class="avatar">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-content">
+                <button class="how-it-works-btn" onclick="showHowItWorksModal()">
+                    <span class="btn-icon">❓</span>
+                    <div class="btn-text">
+                        <strong>Cum funcționează?</strong>
+                        <small>Află cum poți câștiga puncte</small>
+                    </div>
+                </button>
+                
+                <div class="categories-sidebar">
+                    <h3>Categorii</h3>
+                    <div class="category-list">
+                        <button class="category-btn active" data-category="">Toate</button>
+                        <button class="category-btn" data-category="Premii fizice">� Premii fizice</button>
+                        <button class="category-btn" data-category="Premii exclusive">⭐ Premii exclusive</button>
+                        <button class="category-btn" data-category="Premii digitale">💻 Premii digitale</button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <div class="main-content">
+            <!-- Shop Section -->
+            <section id="shop-section" class="section active">
+                <div class="shop-header">
+                    <div class="welcome-text">
+                        <h2>Alătură-te programului de recompense!</h2>
+                        <p>Transformă punctele în premii valoroase</p>
+                    </div>
+                    <div class="search-filter">
+                        <div class="search">
+                            <input type="text" id="search-input" placeholder="Caută produse...">
+                            <span class="search-icon">🔍</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="products-section physical-section">
+                    <div class="section-title">
+                        <h3>Premii fizice</h3>
+                        <span class="view-all">Vezi toate →</span>
+                    </div>
+                    <div id="products-grid" class="products-grid-4x4">
+                        <!-- Produsele se vor încărca aici -->
+                    </div>
+                </div>
+
+                <div class="products-section courses-section">
+                    <div class="section-title">
+                        <h3>Premii exclusive</h3>
+                        <span class="view-all">Vezi toate →</span>
+                    </div>
+                    <div id="courses-grid" class="products-grid-4x4">
+                        <!-- Premiile exclusive se vor încărca aici -->
+                    </div>
+                </div>
+
+                <div class="products-section digital-section">
+                    <div class="section-title">
+                        <h3>Premii digitale</h3>
+                        <span class="view-all">Vezi toate →</span>
+                    </div>
+                    <div id="digital-grid" class="products-grid-4x4">
+                        <!-- Premiile digitale se vor încărca aici -->
+                    </div>
+                </div>
+
+                <div id="loading" class="loading">Se încarcă produsele...</div>
+            </section>
+
+            <!-- Cart Section -->
+            <section id="cart-section" class="section">
+                <div class="section-header">
+                    <h2>Coșul Meu</h2>
+                </div>
+                <div id="cart-content">
+                    <!-- Conținutul coșului se va încărca aici -->
+                </div>
+                <div class="cart-summary">
+                    <div class="total">
+                        <strong>Total: <span id="cart-total">0</span> puncte</strong>
+                    </div>
+                    <button id="checkout-btn" class="btn btn-primary" disabled>Finalizează Comanda</button>
+                </div>
+            </section>
+
+            <!-- Profile Section -->
+            <section id="profile-section" class="section">
+                <div class="section-header">
+                    <h2>Profilul Meu</h2>
+                </div>
+                <div id="profile-content">
+                    <!-- Profilul se va încărca aici -->
+                </div>
+            </section>
+
+            <!-- History Section -->
+            <section id="history-section" class="section">
+                <div class="section-header">
+                    <h2>Istoric Cumpărături</h2>
+                </div>
+                <div id="history-content">
+                    <!-- Istoricul se va încărca aici -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Despre programul de recompense</h4>
+                    <p>Câștigă puncte prin participarea la activități și transformă-le în premii valoroase. Fii activ în comunitatea noastră și bucură-te de beneficii exclusive!</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Lasă un feedback</h4>
+                    <div class="feedback-form">
+                        <input type="email" placeholder="Email">
+                        <textarea placeholder="Mesaj"></textarea>
+                        <button class="btn btn-secondary">Trimite</button>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Generația Tech. Toate drepturile rezervate.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Product Modal -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modal-body">
+                <!-- Detaliile produsului se vor încărca aici -->
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works Modal -->
+    <div id="how-it-works-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeHowItWorksModal()">&times;</span>
+            <div class="how-it-works-content">
+                <h2>🎯 Cum funcționează GT Shop?</h2>
+                
+                <div class="how-it-works-steps">
+                    <div class="step">
+                        <div class="step-icon">🏆</div>
+                        <div class="step-content">
+                            <h3>1. Câștigă puncte</h3>
+                            <p>Participă la activitățile Generația Tech: cursuri, workshop-uri, competiții și evenimente pentru a acumula puncte de activitate.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-icon">🛒</div>
+                        <div class="step-content">
+                            <h3>2. Explorează magazinul</h3>
+                            <p>Navighează prin categoriile noastre: Premii fizice, Premii exclusive și Premii digitale pentru a găsi ce-ți place.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-icon">💳</div>
+                        <div class="step-content">
+                            <h3>3. Cumpără cu punctele tale</h3>
+                            <p>Folosește punctele acumulate pentru a cumpăra produse. Poți adăuga în coș sau cumpăra direct cu un click.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-icon">📦</div>
+                        <div class="step-content">
+                            <h3>4. Primește recompensele</h3>
+                            <p>După finalizarea comenzii, vei primi produsele comandate. Istoricul cumpărăturilor tale e disponibil în profilul tău.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tips-section">
+                    <h3>💡 Sfaturi utile:</h3>
+                    <ul>
+                        <li><strong>Verifică stocul:</strong> Produsele populare se epuizează rapid!</li>
+                        <li><strong>Coșul se salvează:</strong> Produsele rămân în coș chiar dacă închizi aplicația</li>
+                        <li><strong>Categorii:</strong> Folosește filtrele pentru a găsi mai ușor ce cauți</li>
+                        <li><strong>Căutare:</strong> Tastează în bara de căutare pentru rezultate rapide</li>
+                    </ul>
+                </div>
+                
+                <div class="modal-actions">
+                    <button class="btn btn-primary" onclick="closeHowItWorksModal(); goToShop();">Începe cumpărăturile</button>
+                    <button class="btn btn-secondary" onclick="closeHowItWorksModal()">Închide</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Set Points Modal -->
+    <div id="set-points-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSetPointsModal()">&times;</span>
+            <div class="set-points-content">
+                <h2>⚙️ Setează Puncte</h2>
+                <p>Introduceți numărul de puncte pe care doriți să îl setați pentru utilizator.</p>
+                
+                <div class="set-points-form">
+                    <div class="form-group">
+                        <label for="points-input">Puncte noi:</label>
+                        <input type="number" id="points-input" min="0" max="999999" step="1" placeholder="Ex: 1000">
+                    </div>
+                    
+                    <div class="current-points">
+                        <span class="label">Puncte curente:</span>
+                        <span id="current-points-display" class="value">0 puncte</span>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button class="btn btn-primary" onclick="setUserPoints()">Setează Puncte</button>
+                        <button class="btn btn-secondary" onclick="closeSetPointsModal()">Anulează</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification">
+        <span id="notification-message"></span>
+    </div>
+
+    <!-- Storage Status Indicator -->
+    <div id="storage-status" class="storage-status">
+        💾 Coșul a fost salvat local
+    </div>
+
+    <!-- Clear Storage Button (for debugging) - HIDDEN IN PRODUCTION -->
+    <button id="clear-storage-btn" class="clear-storage-btn" title="Șterge datele locale (debug)" style="display: none;">
+        🗑️ Reset Local
+    </button>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>
