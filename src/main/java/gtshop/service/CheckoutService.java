@@ -5,6 +5,7 @@ import gtshop.model.CheckoutResponse;
 import java.util.List;
 
 public interface CheckoutService {
-    public CheckoutResponse checkout(List<CartItem> var1);
+    CheckoutResponse checkout(List<CartItem> items);
+    CheckoutResponse checkout(List<CartItem> items, String promoCode);
 }
 

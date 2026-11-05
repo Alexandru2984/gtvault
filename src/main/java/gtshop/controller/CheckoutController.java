@@ -23,6 +23,6 @@ public class CheckoutController {
     @PostMapping
     @Operation(summary = "Checkout cart items")
     public CheckoutResponse checkout(@RequestBody CheckoutRequest req) {
-        return this.checkoutService.checkout(req.getItems());
+        return this.checkoutService.checkout(req.getItems(), req.getPromoCode());
     }
 }

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class GamificationController {
     private final UserService userService;
     private final UserRepository userRepository;
+    private final gtshop.service.BadgeService badgeService;
 
     // Daily quiz pool with educational questions
     private static final List<QuizQuestion> QUIZ_BANK = List.of(
@@ -57,9 +58,10 @@ public class GamificationController {
         )
     );
 
-    public GamificationController(UserService userService, UserRepository userRepository) {
+    public GamificationController(UserService userService, UserRepository userRepository, gtshop.service.BadgeService badgeService) {
         this.userService = userService;
         this.userRepository = userRepository;
+        this.badgeService = badgeService;
     }
 
     private String getTodayString() {
@@ -110,6 +112,9 @@ public class GamificationController {
         user.setLastDailyClaimDate(today);
         user.setActivityPoints(user.getActivityPoints() + bonus);
         this.userRepository.save(user);
+
+        // Check and unlock streak badges
+        this.badgeService.checkStreakBadges(user, newStreak);
 
         resp.put("success", true);
         resp.put("message", "Felicitări! Ai primit " + bonus + " AP pentru ziua " + newStreak + " de streak!");
@@ -164,6 +169,9 @@ public class GamificationController {
             int rewardPoints = 100;
             user.setActivityPoints(user.getActivityPoints() + rewardPoints);
             this.userRepository.save(user);
+
+            // Unlock quiz champion badge
+            this.badgeService.checkQuizBadge(user);
 
             resp.put("success", true);
             resp.put("isCorrect", true);
@@ -241,6 +249,9 @@ public class GamificationController {
         user.setActivityPoints(user.getActivityPoints() + wonPoints);
         this.userRepository.save(user);
 
+        // Unlock wheel badge
+        this.badgeService.checkWheelBadge(user);
+
         resp.put("success", true);
         resp.put("prizeIndex", randomIndex);
         resp.put("prizeName", prizeName);
@@ -248,6 +259,13 @@ public class GamificationController {
         resp.put("newBalance", user.getActivityPoints());
         resp.put("message", "Ai câștigat: " + prizeName + "!");
         return ResponseEntity.ok(resp);
+    }
+
+    @GetMapping("/badges")
+    @Operation(summary = "Get user badges and achievements")
+    public List<gtshop.model.UserBadge> getUserBadges() {
+        UserProfile user = this.userService.getCurrentUser();
+        return this.badgeService.getUserBadges(user.getId());
     }
 
     private int getBonusForStreak(int streak) {

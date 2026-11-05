@@ -21,15 +21,25 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final CartService cartService;
     private final UserRepository userRepository;
     private final RewardRepository rewardRepository;
+    private final PromoCodeService promoCodeService;
+    private final BadgeService badgeService;
 
-    public CheckoutServiceImpl(UserService userService, CartService cartService, UserRepository userRepository, RewardRepository rewardRepository) {
+    public CheckoutServiceImpl(UserService userService, CartService cartService, UserRepository userRepository, RewardRepository rewardRepository, PromoCodeService promoCodeService, BadgeService badgeService) {
         this.userService = userService;
         this.cartService = cartService;
         this.userRepository = userRepository;
         this.rewardRepository = rewardRepository;
+        this.promoCodeService = promoCodeService;
+        this.badgeService = badgeService;
     }
 
+    @Override
     public CheckoutResponse checkout(List<CartItem> items) {
+        return checkout(items, null);
+    }
+
+    @Override
+    public CheckoutResponse checkout(List<CartItem> items, String promoCode) {
         CheckoutResponse resp = new CheckoutResponse();
 
         if (items == null || items.isEmpty()) {
@@ -77,17 +87,26 @@ public class CheckoutServiceImpl implements CheckoutService {
             rewardsToUpdate.add(reward);
         }
 
+        // Apply promo code discount if provided
+        int discount = 0;
+        if (promoCode != null && !promoCode.trim().isEmpty()) {
+            discount = this.promoCodeService.applyPromoAtCheckout(promoCode, calculatedTotal);
+            resp.setDiscountApplied(discount);
+        }
+
+        int finalTotal = Math.max(0, calculatedTotal - discount);
+
         // Check if user has sufficient activity points
-        if (user.getActivityPoints() < calculatedTotal) {
+        if (user.getActivityPoints() < finalTotal) {
             resp.setSuccess(false);
-            int missing = calculatedTotal - user.getActivityPoints();
+            int missing = finalTotal - user.getActivityPoints();
             resp.setMissingPoints(missing);
             resp.setMessage("Puncte insuficiente! Mai ai nevoie de " + missing + " AP.");
             return resp;
         }
 
         // Deduct points and save state atomically
-        user.setActivityPoints(user.getActivityPoints() - calculatedTotal);
+        user.setActivityPoints(user.getActivityPoints() - finalTotal);
         this.userRepository.save(user);
         this.rewardRepository.saveAll(rewardsToUpdate);
 
@@ -107,8 +126,13 @@ public class CheckoutServiceImpl implements CheckoutService {
             this.userService.addPurchase(pr);
         }
 
+        // Check and unlock achievements
+        this.badgeService.checkOrderBadges(user, finalTotal);
+
         resp.setSuccess(true);
-        resp.setMessage("Cumpărare reușită!");
+        resp.setMessage(discount > 0 
+            ? "Cumpărare reușită! (Reducere promo: -" + discount + " AP)"
+            : "Cumpărare reușită!");
         resp.setNewBalance(user.getActivityPoints());
         resp.setPurchasedItems(items);
         resp.setTransactionId(transactionId);

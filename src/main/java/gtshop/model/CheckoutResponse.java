@@ -10,6 +10,7 @@ public class CheckoutResponse {
     private Integer missingPoints;
     private List<CartItem> purchasedItems;
     private String transactionId;
+    private int discountApplied;
 
     public boolean isSuccess() {
         return this.success;
@@ -57,6 +58,14 @@ public class CheckoutResponse {
 
     public void setTransactionId(String transactionId) {
         this.transactionId = transactionId;
+    }
+
+    public int getDiscountApplied() {
+        return this.discountApplied;
+    }
+
+    public void setDiscountApplied(int discountApplied) {
+        this.discountApplied = discountApplied;
     }
 }
 

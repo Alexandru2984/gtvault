@@ -39,8 +39,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/rewards/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/*.html", "/*.css", "/*.js", "/images/**", "/static/**", "/favicon.ico").permitAll()
-                // Protected endpoints: checkout and avatar require authentication
+                // Protected endpoints: checkout, review submission, and avatar require authentication
                 .requestMatchers("/api/checkout/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/rewards/*/reviews").authenticated()
                 .requestMatchers("/api/user/avatar").authenticated()
                 // All other endpoints permit request and resolve principal dynamically
                 .anyRequest().permitAll()
