@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autentificare | RewardHub</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #c084fc 100%);
+    }
+    .auth-container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 420px;
+      padding: 2.5rem;
+      animation: slideUp 0.5s ease;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .auth-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .auth-header img {
+      height: 60px;
+      margin-bottom: 1rem;
+    }
+    .auth-header h1 {
+      font-size: 1.75rem;
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+    .auth-header p {
+      color: #6b7280;
+    }
+    .auth-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .auth-tab {
+      flex: 1;
+      padding: 0.875rem;
+      border: none;
+      background: #f3f4f6;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: #6b7280;
+    }
+    .auth-tab.active {
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      color: white;
+    }
+    .auth-form {
+      display: none;
+    }
+    .auth-form.active {
+      display: block;
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: #374151;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      box-sizing: border-box;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(124, 58, 237, 0.4);
+    }
+    .guest-link {
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+    .guest-link a {
+      color: #7c3aed;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .guest-link a:hover {
+      text-decoration: underline;
+    }
+    .error-message {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+    .success-message {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #16a34a;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+  </style>
+    <script defer src="https://analytics.micutu.com/script.js" data-website-id="c770d28f-125b-4229-b6c4-7345fa69559d"></script>
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-header">
+      <img src="images/micus-stuff-logo.png" alt="RewardHub" onerror="this.style.display='none'">
+      <h1>🎁 RewardHub</h1>
+      <p>Platformă de recompense</p>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="showTab('login')">Autentificare</button>
+      <button class="auth-tab" onclick="showTab('register')">Înregistrare</button>
+    </div>
+
+    <div id="error-message" class="error-message"></div>
+    <div id="success-message" class="success-message"></div>
+
+    <form id="login-form" class="auth-form active" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label for="login-email">Email</label>
+        <input type="email" id="login-email" placeholder="email@exemplu.ro" required>
+      </div>
+      <div class="form-group">
+        <label for="login-password">Parolă</label>
+        <input type="password" id="login-password" placeholder="••••••••" required minlength="6">
+      </div>
+      <button type="submit" class="submit-btn">🔑 Autentificare</button>
+    </form>
+
+    <form id="register-form" class="auth-form" onsubmit="handleRegister(event)">
+      <div class="form-group">
+        <label for="register-name">Nume</label>
+        <input type="text" id="register-name" placeholder="Numele tău" required>
+      </div>
+      <div class="form-group">
+        <label for="register-email">Email</label>
+        <input type="email" id="register-email" placeholder="email@exemplu.ro" required>
+      </div>
+      <div class="form-group">
+        <label for="register-password">Parolă</label>
+        <input type="password" id="register-password" placeholder="Minim 6 caractere" required minlength="6">
+      </div>
+      <button type="submit" class="submit-btn">📝 Creează Cont</button>
+    </form>
+
+    <div class="guest-link">
+      <a href="gtshop.html">Continuă ca vizitator →</a>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '/RewardHub/api';
+
+    function showTab(tab) {
+      document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+      
+      if (tab === 'login') {
+        document.querySelectorAll('.auth-tab')[0].classList.add('active');
+        document.getElementById('login-form').classList.add('active');
+      } else {
+        document.querySelectorAll('.auth-tab')[1].classList.add('active');
+        document.getElementById('register-form').classList.add('active');
+      }
+      hideMessages();
+    }
+
+    function showError(message) {
+      const el = document.getElementById('error-message');
+      el.textContent = message;
+      el.style.display = 'block';
+      document.getElementById('success-message').style.display = 'none';
+    }
+
+    function showSuccess(message) {
+      const el = document.getElementById('success-message');
+      el.textContent = message;
+      el.style.display = 'block';
+      document.getElementById('error-message').style.display = 'none';
+    }
+
+    function hideMessages() {
+      document.getElementById('error-message').style.display = 'none';
+      document.getElementById('success-message').style.display = 'none';
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault();
+      hideMessages();
+      
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      
+      try {
+        const response = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          localStorage.setItem('auth_token', data.token);
+          localStorage.setItem('user_id', data.userId);
+          localStorage.setItem('user_name', data.name);
+          showSuccess('Autentificare reușită! Redirectare...');
+          setTimeout(() => window.location.href = 'gtshop.html', 1000);
+        } else {
+          showError(data.message || 'Autentificare eșuată');
+        }
+      } catch (error) {
+        showError('Eroare de conexiune la server');
+      }
+    }
+
+    async function handleRegister(event) {
+      event.preventDefault();
+      hideMessages();
+      
+      const name = document.getElementById('register-name').value;
+      const email = document.getElementById('register-email').value;
+      const password = document.getElementById('register-password').value;
+      
+      try {
+        const response = await fetch(`${API_BASE}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          localStorage.setItem('auth_token', data.token);
+          localStorage.setItem('user_id', data.userId);
+          localStorage.setItem('user_name', data.name);
+          showSuccess('Cont creat cu succes! Redirectare...');
+          setTimeout(() => window.location.href = 'gtshop.html', 1000);
+        } else {
+          showError(data.message || 'Înregistrare eșuată');
+        }
+      } catch (error) {
+        showError('Eroare de conexiune la server');
+      }
+    }
+
+    // Check if already logged in
+    if (localStorage.getItem('auth_token')) {
+      window.location.href = 'gtshop.html';
+    }
+  </script>
+</body>
+</html>
