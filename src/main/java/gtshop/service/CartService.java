@@ -4,7 +4,10 @@ import gtshop.model.CartItem;
 import java.util.List;
 
 public interface CartService {
-    List<CartItem> getCartItems();
-    void addToCart(CartItem item);
-    void clearCart();
+    public List<CartItem> getCartItems();
+
+    public void addToCart(CartItem var1);
+
+    public void clearCart();
 }
+

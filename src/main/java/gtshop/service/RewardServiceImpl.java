@@ -1,44 +1,46 @@
 package gtshop.service;
 
 import gtshop.model.Reward;
-import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
+import gtshop.repository.RewardRepository;
 import java.util.List;
-import java.util.Locale;
-import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional(readOnly = true)
 public class RewardServiceImpl implements RewardService {
-    private final List<Reward> rewards = new ArrayList<>();
+    private final RewardRepository rewardRepository;
 
-    @Override
+    public RewardServiceImpl(RewardRepository rewardRepository) {
+        this.rewardRepository = rewardRepository;
+    }
+
     public List<Reward> getAllRewards() {
-        return new ArrayList<>(rewards);
+        return this.rewardRepository.findAllOrdered();
     }
 
-    @Override
-    public List<Reward> searchRewards(String q, String category) {
-        return rewards.stream().filter(r -> {
-            boolean ok = true;
-
-            if (q != null && !q.trim().isEmpty()) {
-                String qq = q.toLowerCase(Locale.ROOT);
-                ok &= (r.getName() != null && r.getName().toLowerCase(Locale.ROOT).contains(qq))
-                   || (r.getDescription() != null && r.getDescription().toLowerCase(Locale.ROOT).contains(qq))
-                   || (r.getFullDescription() != null && r.getFullDescription().toLowerCase(Locale.ROOT).contains(qq));
-            }
-
-            if (category != null && !category.trim().isEmpty()) {
-                ok &= category.equalsIgnoreCase(r.getCategory());
-            }
-            return ok;
-        }).collect(Collectors.toList());
+    public List<Reward> searchRewards(String query, String category) {
+        boolean hasCategory;
+        boolean hasQuery = query != null && !query.trim().isEmpty();
+        boolean bl = hasCategory = category != null && !category.trim().isEmpty();
+        if (hasQuery && hasCategory) {
+            return this.rewardRepository.searchByQueryAndCategory(query.trim(), category.trim());
+        }
+        if (hasQuery) {
+            return this.rewardRepository.searchByQuery(query.trim());
+        }
+        if (hasCategory) {
+            return this.rewardRepository.findByCategoryIgnoreCaseOrdered(category.trim());
+        }
+        return this.getAllRewards();
     }
 
-    @Override
-    public void saveAll(List<Reward> seed) {
-        this.rewards.clear();
-        this.rewards.addAll(seed);
+    @Transactional
+    public void saveAll(List<Reward> rewards) {
+        this.rewardRepository.saveAll(rewards);
+    }
+
+    public Reward findById(String id) {
+        return this.rewardRepository.findById(id).orElse(null);
     }
 }

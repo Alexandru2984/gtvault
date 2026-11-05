@@ -6,13 +6,24 @@ import gtshop.model.UserProfile;
 import java.util.List;
 
 public interface UserService {
-    UserProfile getUser();
-    void createUser(UserProfile user);
-    List<PurchaseRecord> getHistory();
-    void addPurchase(PurchaseRecord record);
+    public UserProfile getUser();
 
-    HistorySummary getHistorySummary(); // sumar pentru "Istoricul meu"
-    
-    // Metodă nouă pentru actualizarea punctelor
-    boolean updateUserPoints(String userId, int newPoints);
+    public UserProfile getUserById(String var1);
+
+    public void createUser(UserProfile var1);
+
+    public List<PurchaseRecord> getHistory();
+
+    public List<PurchaseRecord> getHistoryByUserId(String var1);
+
+    public void addPurchase(PurchaseRecord var1);
+
+    public HistorySummary getHistorySummary();
+
+    public boolean updateUserPoints(String var1, int var2);
+
+    public void setUserPoints(int var1);
+
+    public int getUserPoints();
 }
+

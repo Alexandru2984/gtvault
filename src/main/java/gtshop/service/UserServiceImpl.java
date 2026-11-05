@@ -3,43 +3,88 @@ package gtshop.service;
 import gtshop.model.HistorySummary;
 import gtshop.model.PurchaseRecord;
 import gtshop.model.UserProfile;
-import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
+import gtshop.repository.PurchaseRecordRepository;
+import gtshop.repository.UserRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 public class UserServiceImpl implements UserService {
-    private UserProfile user;
-    private final List<PurchaseRecord> history = new ArrayList<>();
+    private final UserRepository userRepository;
+    private final PurchaseRecordRepository purchaseRecordRepository;
+    private static final String DEFAULT_USER_ID = "user-123";
 
-    @Override public UserProfile getUser() { return user; }
-    @Override public void createUser(UserProfile user) { this.user = user; }
-    @Override public List<PurchaseRecord> getHistory() { return new ArrayList<>(history); }
-    @Override public void addPurchase(PurchaseRecord record) { history.add(record); }
+    public UserServiceImpl(UserRepository userRepository, PurchaseRecordRepository purchaseRecordRepository) {
+        this.userRepository = userRepository;
+        this.purchaseRecordRepository = purchaseRecordRepository;
+    }
 
-    @Override
+    public UserProfile getUser() {
+        return this.userRepository.findById(DEFAULT_USER_ID).orElseGet(() -> {
+            UserProfile defaultUser = new UserProfile(DEFAULT_USER_ID, "Popescu Ion", "https://example.com/avatar.png", 2056);
+            return this.userRepository.save(defaultUser);
+        });
+    }
+
+    public UserProfile getUserById(String userId) {
+        return this.userRepository.findById(userId).orElse(null);
+    }
+
+    public void createUser(UserProfile user) {
+        this.userRepository.save(user);
+    }
+
+    public List<PurchaseRecord> getHistory() {
+        UserProfile user = this.getUser();
+        return this.purchaseRecordRepository.findByUserOrderByPurchaseDateDesc(user);
+    }
+
+    public List<PurchaseRecord> getHistoryByUserId(String userId) {
+        UserProfile user = this.userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return List.of();
+        }
+        return this.purchaseRecordRepository.findByUserOrderByPurchaseDateDesc(user);
+    }
+
+    public void addPurchase(PurchaseRecord record) {
+        UserProfile user = this.getUser();
+        record.setUser(user);
+        this.purchaseRecordRepository.save(record);
+    }
+
     public HistorySummary getHistorySummary() {
+        List<PurchaseRecord> history = this.getHistory();
         HistorySummary s = new HistorySummary();
-        s.setPurchases(getHistory());
+        s.setPurchases(history);
         int totalPoints = history.stream().mapToInt(PurchaseRecord::getPointsSpent).sum();
         s.setTotalPoints(totalPoints);
-        Map<String, Integer> counts = history.stream()
-                .collect(Collectors.toMap(PurchaseRecord::getRewardName, p -> 1, Integer::sum));
+        Map<String, Integer> counts = history.stream().collect(Collectors.toMap(PurchaseRecord::getRewardName, p -> 1, Integer::sum));
         int totalItems = counts.values().stream().mapToInt(Integer::intValue).sum();
         s.setCountsByReward(counts);
         s.setTotalItems(totalItems);
         return s;
     }
 
-    @Override
     public boolean updateUserPoints(String userId, int newPoints) {
-        if (user != null && user.getId().equals(userId)) {
+        return this.userRepository.findById(userId).map(user -> {
             user.setActivityPoints(newPoints);
+            this.userRepository.save(user);
             return true;
-        }
-        return false;
+        }).orElse(false);
+    }
+
+    public void setUserPoints(int points) {
+        UserProfile user = this.getUser();
+        user.setActivityPoints(points);
+        this.userRepository.save(user);
+    }
+
+    public int getUserPoints() {
+        return this.getUser().getActivityPoints();
     }
 }
