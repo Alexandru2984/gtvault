@@ -30,6 +30,9 @@ class GamificationControllerTest {
     @Mock
     private gtshop.service.BadgeService badgeService;
 
+    @Mock
+    private gtshop.service.TransactionService transactionService;
+
     @InjectMocks
     private GamificationController gamificationController;
 

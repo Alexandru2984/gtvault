@@ -547,6 +547,16 @@
         </div>
         <div id="profile-content"></div>
 
+        <!-- Gamification Tier & Level Card -->
+        <div class="tier-card" id="user-tier-card">
+          <div class="loading">Se calculează rangul și nivelul...</div>
+        </div>
+
+        <!-- Referral & Invite Friends Card -->
+        <div class="referral-card" id="user-referral-card">
+          <div class="loading">Se încarcă programul de recomandare...</div>
+        </div>
+
         <!-- Points Goal Tracker & Simulator -->
         <div class="goal-tracker-card" id="goal-tracker-card">
           <div class="goal-header">
@@ -584,6 +594,23 @@
           </div>
           <div class="badges-grid" id="badges-grid">
             <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <!-- Point Ledger / Audit Transactions Card -->
+        <div class="transactions-card" id="user-transactions-card">
+          <div class="transactions-header">
+            <div class="transactions-title-wrap">
+              <span class="tx-header-icon">📜</span>
+              <div>
+                <h3>Jurnal Tranzacții & Puncte AP</h3>
+                <p>Istoricul complet și transparent al tuturor punctelor câștigate și cheltuite</p>
+              </div>
+            </div>
+            <button class="btn btn-sm btn-secondary" onclick="loadUserTransactions()">🔄 Reîmprospătează</button>
+          </div>
+          <div id="transactions-content" class="transactions-list">
+            <div class="loading">Se încarcă tranzacțiile...</div>
           </div>
         </div>
       </section>
@@ -764,6 +791,10 @@
           <div class="form-group">
             <label for="register-password">Parolă</label>
             <input type="password" id="register-password" placeholder="Minim 6 caractere" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label for="register-referral">Cod Recomandare (Opțional — primești +200 AP extra!)</label>
+            <input type="text" id="register-referral" placeholder="ex: GT-ION123" style="text-transform: uppercase;">
           </div>
           <div class="modal-actions">
             <button type="submit" class="btn btn-primary btn-block">Creează Cont (+1000 AP)</button>

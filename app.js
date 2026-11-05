@@ -883,7 +883,11 @@ function renderProfile() {
         </button>
       </div>
     </div>`;
+  loadUserTier();
+  loadUserReferrals();
+  GoalTracker.init();
   loadUserBadges();
+  loadUserTransactions();
 }
 
 function renderHistory(purchases) {
@@ -1209,6 +1213,18 @@ async function initializeApp() {
   try {
     setLoadingState(true);
     restoreUserPreferences();
+
+    // Check referral query param: ?ref=GT-XYZ
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('ref')) {
+        const refCode = urlParams.get('ref').trim().toUpperCase();
+        if (refCode) {
+          localStorage.setItem('gt_referral', refCode);
+          showNotification(`🎁 Cod recomandare activat: ${refCode} (+200 AP extra la înregistrare)!`, 'info');
+        }
+      }
+    } catch (_) {}
     await Promise.all([loadUserProfile(), loadProducts(), loadCart()]);
     loadCommunityTicker();
     setupApiToggle();
@@ -1486,6 +1502,11 @@ function showRegisterModal() {
   closeUserDropdown();
   document.getElementById('register-modal').style.display = 'block';
   document.body.style.overflow = 'hidden';
+  const savedRef = localStorage.getItem('gt_referral');
+  const refInput = document.getElementById('register-referral');
+  if (savedRef && refInput && !refInput.value) {
+    refInput.value = savedRef;
+  }
 }
 
 function closeRegisterModal() {
@@ -1560,17 +1581,24 @@ async function handleRegister(event) {
   const name = document.getElementById('register-name').value;
   const email = document.getElementById('register-email').value;
   const password = document.getElementById('register-password').value;
+  const refInput = document.getElementById('register-referral');
+  const referralCode = (refInput ? refInput.value.trim() : '') || localStorage.getItem('gt_referral') || '';
   
   try {
+    const payload = { name, email, password };
+    if (referralCode) {
+      payload.referralCode = referralCode;
+    }
     const response = await apiCall('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password })
+      body: JSON.stringify(payload)
     });
     
     if (response.success) {
       AuthState.token = response.token;
       AuthState.isLoggedIn = true;
       Storage.save('auth_token', response.token);
+      localStorage.removeItem('gt_referral');
       
       // Update user state
       AppState.user = {
@@ -1582,7 +1610,8 @@ async function handleRegister(event) {
       
       updateUserInterface();
       closeRegisterModal();
-      showNotification(`Cont creat cu succes! Bine ai venit, ${response.name}!`, 'success');
+      showNotification(`Cont creat cu succes! Bine ai venit, ${response.name}! Sold: ${response.activityPoints} AP`, 'success');
+      SoundFx.playWin();
     } else {
       showNotification(response.message || 'Înregistrare eșuată', 'error');
     }
@@ -2935,6 +2964,235 @@ function closeCompareModal() {
   if (modal) modal.style.display = 'none';
 }
 
+/* ==========================================================
+   GAMIFICATION TIER, REFERRALS & POINT LEDGER
+   ========================================================== */
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+async function loadUserTier() {
+  const container = document.getElementById('user-tier-card');
+  if (!container) return;
+  try {
+    const tier = await apiCall('/user/tier');
+    if (!tier || !tier.tier) return;
+
+    const tierIcons = {
+      BRONZE: '🥉',
+      SILVER: '🥈',
+      GOLD: '🥇',
+      PLATINUM: '💎',
+      DIAMOND: '👑'
+    };
+    const icon = tierIcons[tier.tier] || '⭐';
+    const tierClass = `tier-badge-${(tier.tier || 'bronze').toLowerCase()}`;
+    const nextText = tier.level === 5 ? 'Nivel Maxim Atins!' : `Următorul nivel la ${tier.nextThreshold.toLocaleString('ro-RO')} XP`;
+
+    const perksHtml = (tier.perks || []).map(p => `
+      <span class="tier-perk-pill">✨ ${escapeHtml(p)}</span>
+    `).join('');
+
+    container.innerHTML = `
+      <div class="tier-header">
+        <div class="tier-main-info">
+          <div class="tier-badge-icon">${icon}</div>
+          <div class="tier-title-wrap">
+            <h3>
+              Nivel ${tier.level} &bull; ${escapeHtml(tier.title)}
+              <span class="tier-badge-pill ${tierClass}">${escapeHtml(tier.tier)}</span>
+            </h3>
+            <p style="margin: 0.25rem 0 0; font-size: 0.85rem; color: #64748b;">
+              Total XP Acumulat: <strong>${tier.currentXp.toLocaleString('ro-RO')} AP</strong>
+            </p>
+          </div>
+        </div>
+        ${tier.discountPercent > 0 ? `
+          <div class="tier-discount-chip">
+            🏷️ Reducere Activă: ${tier.discountPercent}%
+          </div>
+        ` : `
+          <div class="tier-discount-chip" style="background: #f1f5f9; color: #64748b; border-color: #e2e8f0;">
+            De la Nivel 2: Reducere la Checkout
+          </div>
+        `}
+      </div>
+
+      <div class="tier-progress-section">
+        <div class="tier-progress-meta">
+          <span>Progres Nivel: ${tier.progressPercent}%</span>
+          <span>${nextText}</span>
+        </div>
+        <div class="tier-progress-bar-bg">
+          <div class="tier-progress-bar-fill" style="width: ${tier.progressPercent}%;"></div>
+        </div>
+      </div>
+
+      <div class="tier-perks-list">
+        ${perksHtml}
+      </div>
+    `;
+  } catch (err) {
+    console.warn('Failed to load user tier:', err);
+    container.style.display = 'none';
+  }
+}
+
+async function loadUserReferrals() {
+  const container = document.getElementById('user-referral-card');
+  if (!container) return;
+  try {
+    const data = await apiCall('/user/referrals');
+    if (!data) return;
+
+    const refCode = data.referralCode || 'GT-REWARD';
+    const refLink = data.referralLink || `${window.location.origin}/?ref=${refCode}`;
+    const invitedCount = data.invitedCount || 0;
+    const earnedPoints = data.earnedPoints || 0;
+
+    container.innerHTML = `
+      <div class="referral-header">
+        <span class="referral-icon">🎁</span>
+        <div>
+          <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700;">Program de Recomandare & Recompense</h3>
+          <p style="margin: 0.2rem 0 0; font-size: 0.85rem; color: #64748b;">
+            Invită prieteni: ei primesc <strong>+200 AP</strong> la înscriere, iar tu primești <strong>+300 AP</strong> pentru fiecare!
+          </p>
+        </div>
+      </div>
+
+      <div class="referral-content">
+        <div>
+          <label style="display: block; font-size: 0.8rem; font-weight: 600; color: #6b21a8; margin-bottom: 0.35rem;">
+            Codul Tău Unic de Recomandare:
+          </label>
+          <div class="referral-code-box">
+            <span class="referral-code-display">${escapeHtml(refCode)}</span>
+            <button class="btn btn-sm btn-primary" onclick="copyReferralCode('${escapeHtml(refCode)}')">📋 Copiază Cod</button>
+            <button class="btn btn-sm btn-secondary" onclick="shareReferralLink('${escapeHtml(refLink)}')">🔗 Distribuie Link</button>
+          </div>
+        </div>
+
+        <div class="referral-stats-wrap">
+          <div class="referral-stat-item">
+            <div class="referral-stat-val">${invitedCount}</div>
+            <div class="referral-stat-lbl">Prieteni Invitați</div>
+          </div>
+          <div class="referral-stat-item">
+            <div class="referral-stat-val">+${earnedPoints}</div>
+            <div class="referral-stat-lbl">AP Câștigate</div>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    console.warn('Failed to load user referrals:', err);
+    container.style.display = 'none';
+  }
+}
+
+function copyReferralCode(code) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(() => {
+      showNotification(`Cod de recomandare ${code} copiat în clipboard!`, 'success');
+      SoundFx.playClick();
+    });
+  } else {
+    showNotification(`Codul tău: ${code}`, 'info');
+  }
+}
+
+function shareReferralLink(link) {
+  if (navigator.share) {
+    navigator.share({
+      title: 'Alătură-te comunității Generația Tech RewardHub!',
+      text: 'Folosește codul meu de recomandare la înscriere și primești +200 AP cadou!',
+      url: link
+    }).catch(() => {});
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(link).then(() => {
+      showNotification('Link-ul de recomandare a fost copiat în clipboard!', 'success');
+      SoundFx.playClick();
+    });
+  } else {
+    showNotification(`Link recomandare: ${link}`, 'info');
+  }
+}
+
+async function loadUserTransactions() {
+  const container = document.getElementById('transactions-content');
+  if (!container) return;
+  container.innerHTML = '<div class="loading">Se încarcă tranzacțiile recente...</div>';
+
+  try {
+    const list = await apiCall('/user/transactions');
+    if (!list || list.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state" style="padding: 2rem 1rem;">
+          <div class="empty-icon" style="font-size: 2.5rem;">📜</div>
+          <h4 style="margin: 0.5rem 0;">Nicio tranzacție încă</h4>
+          <p style="font-size: 0.85rem; color: #64748b;">Tranzacțiile tale (streak zilnic, quiz, comenzi, rotiri roată) vor fi înregistrate aici în timp real.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const typeIcons = {
+      DAILY_STREAK: '🔥',
+      QUIZ_REWARD: '🧠',
+      LUCKY_WHEEL_WIN: '🎰',
+      LUCKY_WHEEL_FEE: '🪙',
+      ORDER_PAYMENT: '🛍️',
+      PROMO_DISCOUNT: '🏷️',
+      WELCOME_BONUS: '🎉',
+      REFERRAL_BONUS: '🎁'
+    };
+
+    container.innerHTML = list.map(tx => {
+      const isCredit = tx.amount >= 0;
+      const icon = typeIcons[tx.type] || (isCredit ? '➕' : '➖');
+      const iconClass = isCredit ? 'tx-type-credit' : 'tx-type-debit';
+      const amountClass = isCredit ? 'positive' : 'negative';
+      const formattedAmount = (isCredit ? '+' : '') + tx.amount.toLocaleString('ro-RO') + ' AP';
+      const formattedDate = tx.createdAt ? new Date(tx.createdAt).toLocaleString('ro-RO', {
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      }) : 'Recent';
+
+      return `
+        <div class="tx-item">
+          <div class="tx-left">
+            <div class="tx-icon-pill ${iconClass}">${icon}</div>
+            <div class="tx-details">
+              <div class="tx-desc" title="${escapeHtml(tx.description || tx.type)}">
+                ${escapeHtml(tx.description || tx.type)}
+              </div>
+              <div class="tx-meta">
+                <span>🕒 ${formattedDate}</span>
+                <span>&bull;</span>
+                <span>Tip: ${escapeHtml(tx.type)}</span>
+              </div>
+            </div>
+          </div>
+          <div class="tx-right">
+            <div class="tx-amount ${amountClass}">${formattedAmount}</div>
+            <div class="tx-balance-after">Sold: ${tx.balanceAfter.toLocaleString('ro-RO')} AP</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('Failed to load user transactions:', err);
+    container.innerHTML = '<div class="alert alert-danger" style="margin: 1rem 0;">Eroare la încărcarea jurnalului de tranzacții.</div>';
+  }
+}
+
 // Global window exports
 window.applyPromoCode = applyPromoCode;
 window.handleSortChange = handleSortChange;
@@ -2959,6 +3217,11 @@ window.showVoucherActivationModal = showVoucherActivationModal;
 window.closeVoucherActivationModal = closeVoucherActivationModal;
 window.openProductCompare = openProductCompare;
 window.closeCompareModal = closeCompareModal;
+window.loadUserTier = loadUserTier;
+window.loadUserReferrals = loadUserReferrals;
+window.copyReferralCode = copyReferralCode;
+window.shareReferralLink = shareReferralLink;
+window.loadUserTransactions = loadUserTransactions;
 
 /* ---------- Basic error boundary ---------- */
 

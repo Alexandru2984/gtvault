@@ -23,14 +23,16 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final RewardRepository rewardRepository;
     private final PromoCodeService promoCodeService;
     private final BadgeService badgeService;
+    private final TransactionService transactionService;
 
-    public CheckoutServiceImpl(UserService userService, CartService cartService, UserRepository userRepository, RewardRepository rewardRepository, PromoCodeService promoCodeService, BadgeService badgeService) {
+    public CheckoutServiceImpl(UserService userService, CartService cartService, UserRepository userRepository, RewardRepository rewardRepository, PromoCodeService promoCodeService, BadgeService badgeService, TransactionService transactionService) {
         this.userService = userService;
         this.cartService = cartService;
         this.userRepository = userRepository;
         this.rewardRepository = rewardRepository;
         this.promoCodeService = promoCodeService;
         this.badgeService = badgeService;
+        this.transactionService = transactionService;
     }
 
     @Override
@@ -128,6 +130,10 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         // Check and unlock achievements
         this.badgeService.checkOrderBadges(user, finalTotal);
+
+        // Record point ledger transaction
+        this.transactionService.recordTransaction(user, "ORDER_PAYMENT", -finalTotal, user.getActivityPoints(),
+            "Comandă #" + transactionId + (discount > 0 ? " (reducere -" + discount + " AP)" : ""));
 
         resp.setSuccess(true);
         resp.setMessage(discount > 0 

@@ -20,6 +20,9 @@ public class UserProfile {
     private int streakDays;
     private String lastDailyClaimDate;
     private String lastQuizDate;
+    private String referralCode;
+    private String referredBy;
+    private int totalPointsEarned;
 
     @JsonIgnore
     private String email;
@@ -130,5 +133,29 @@ public class UserProfile {
 
     public void setPurchases(List<PurchaseRecord> purchases) {
         this.purchases = purchases;
+    }
+
+    public String getReferralCode() {
+        return this.referralCode;
+    }
+
+    public void setReferralCode(String referralCode) {
+        this.referralCode = referralCode;
+    }
+
+    public String getReferredBy() {
+        return this.referredBy;
+    }
+
+    public void setReferredBy(String referredBy) {
+        this.referredBy = referredBy;
+    }
+
+    public int getTotalPointsEarned() {
+        return this.totalPointsEarned;
+    }
+
+    public void setTotalPointsEarned(int totalPointsEarned) {
+        this.totalPointsEarned = totalPointsEarned;
     }
 }

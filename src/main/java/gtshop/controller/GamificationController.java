@@ -18,6 +18,7 @@ public class GamificationController {
     private final UserService userService;
     private final UserRepository userRepository;
     private final gtshop.service.BadgeService badgeService;
+    private final gtshop.service.TransactionService transactionService;
 
     // Daily quiz pool with educational questions
     private static final List<QuizQuestion> QUIZ_BANK = List.of(
@@ -58,10 +59,14 @@ public class GamificationController {
         )
     );
 
-    public GamificationController(UserService userService, UserRepository userRepository, gtshop.service.BadgeService badgeService) {
+    public GamificationController(UserService userService,
+                                  UserRepository userRepository,
+                                  gtshop.service.BadgeService badgeService,
+                                  gtshop.service.TransactionService transactionService) {
         this.userService = userService;
         this.userRepository = userRepository;
         this.badgeService = badgeService;
+        this.transactionService = transactionService;
     }
 
     private String getTodayString() {
@@ -115,6 +120,10 @@ public class GamificationController {
 
         // Check and unlock streak badges
         this.badgeService.checkStreakBadges(user, newStreak);
+
+        // Record point ledger transaction
+        this.transactionService.recordTransaction(user, "DAILY_STREAK", bonus, user.getActivityPoints(),
+            "Bonus Daily Streak: Ziua " + newStreak);
 
         resp.put("success", true);
         resp.put("message", "Felicitări! Ai primit " + bonus + " AP pentru ziua " + newStreak + " de streak!");
@@ -172,6 +181,10 @@ public class GamificationController {
 
             // Unlock quiz champion badge
             this.badgeService.checkQuizBadge(user);
+
+            // Record point ledger transaction
+            this.transactionService.recordTransaction(user, "QUIZ_REWARD", rewardPoints, user.getActivityPoints(),
+                "Recompensă Quiz Tehnic: Întrebarea " + q.id);
 
             resp.put("success", true);
             resp.put("isCorrect", true);
@@ -251,6 +264,12 @@ public class GamificationController {
 
         // Unlock wheel badge
         this.badgeService.checkWheelBadge(user);
+
+        // Record fee and win in point ledger
+        this.transactionService.recordTransaction(user, "LUCKY_WHEEL_FEE", -spinCost, user.getActivityPoints() - wonPoints,
+            "Taxă rotire Roata Norocului");
+        this.transactionService.recordTransaction(user, "LUCKY_WHEEL_WIN", wonPoints, user.getActivityPoints(),
+            "Câștig Roata Norocului: " + prizeName);
 
         resp.put("success", true);
         resp.put("prizeIndex", randomIndex);

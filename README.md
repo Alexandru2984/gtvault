@@ -144,6 +144,25 @@
 ### 22. ⚖️ Modul de Comparație Premii (Side-by-Side)
 - Tabel comparativ interactiv pentru analizarea simultană a 3 produse (preț, categorie, tip digital/fizic, stoc și recenzii).
 
+### 23. 🎖️ Sistem de Niveluri & Ranguri Gamification (Tiers)
+- Sistem progresiv de ranguri bazat pe punctele totale acumulate:
+  - **Nivel 1 — Junior Coder (BRONZE, 0 - 999 XP):** Acces catalog, streak & quiz.
+  - **Nivel 2 — Tech Explorer (SILVER, 1000 - 2499 XP):** **3% reducere automată** la checkout.
+  - **Nivel 3 — Code Artisan (GOLD, 2500 - 4999 XP):** **5% reducere automată** + acces prioritar la mentorat 1:1.
+  - **Nivel 4 — Full-Stack Hacker (PLATINUM, 5000 - 9999 XP):** **7% reducere automată** + acces track-uri GT.
+  - **Nivel 5 — Tech Architect (DIAMOND, 10000+ XP):** **10% reducere maximă** + invitație VIP Meet & Greet.
+- Card dedicat în profil cu bară dinamică de progres, procentaj XP și listă de beneficii.
+
+### 24. 🎁 Program de Recomandare Prieteni (Referrals)
+- Fiecare cursant deține un cod unic de recomandare (ex: `GT-ION123`) și un link dedicat de distribuire (`?ref=GT-ION123`).
+- **Beneficii reciproce:** Prietenul invitat primește **+200 AP extra** la înregistrare, iar utilizatorul primește **+300 AP** la fiecare înscriere.
+- Integrare nativă cu Web Share API pentru distribuire pe WhatsApp, Telegram sau copiere instant în clipboard.
+
+### 25. 📜 Jurnal Tranzacții & Audit Ledger (Puncte AP)
+- Registru contabil complet și transparent (`point_transactions`) stocat în PostgreSQL.
+- Monitorizează fiecare sursă de câștig (`DAILY_STREAK`, `QUIZ_REWARD`, `LUCKY_WHEEL_WIN`, `WELCOME_BONUS`, `REFERRAL_BONUS`) și cheltuială (`ORDER_PAYMENT`, `LUCKY_WHEEL_FEE`).
+- Afișează data, ora, descrierea detaliată, variația (+/- AP) și soldul rezultat după operațiune.
+
 ---
 
 ## 🔒 Audit de Securitate & Măsuri Implementate
@@ -166,10 +185,13 @@ Toate rutele de API sunt prefixate cu `/RewardHub/api`. Documentația interactiv
 `https://shop.micutu.com/RewardHub/swagger-ui.html`
 
 ### Autentificare & Utilizatori
-- `POST /api/auth/register` — Înregistrare cont nou (primește automat 1000 AP bonus de bun venit).
+- `POST /api/auth/register` — Înregistrare cont nou (suportă cod de recomandare `referralCode` pentru +200 AP bonus suplimentar).
 - `POST /api/auth/login` — Autentificare; returnează JWT Token.
 - `GET /api/user/profile` — Profilul utilizatorului curent (nume, avatar, puncte, streak).
 - `POST /api/user/avatar` — Schimbare avatar (URL custom sau SVG predefinit).
+- `GET /api/user/tier` — Calculare rang (Bronze - Diamond), nivel de experiență (1-5), discount activ și progres XP.
+- `GET /api/user/referrals` — Date program de recomandare (cod propriu, număr prieteni invitați, puncte câștigate).
+- `GET /api/user/transactions` — Jurnal tranzacții auditate (decontări comenzi, streak, quiz, rotiri roată).
 - `GET /api/user/history` — Istoric comenzi și coduri de vouchere generate.
 
 ### Catalog, Recenzii & Comenzi

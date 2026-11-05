@@ -12,5 +12,9 @@ public interface UserRepository extends JpaRepository<UserProfile, String> {
 
     boolean existsByEmail(String email);
 
+    Optional<UserProfile> findByReferralCode(String referralCode);
+
+    int countByReferredBy(String referredBy);
+
     List<UserProfile> findTop10ByOrderByActivityPointsDesc();
 }

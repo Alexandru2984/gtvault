@@ -12,6 +12,15 @@ public class AuthRequest {
     @Size(min=6, message="Password must be at least 6 characters")
     private @NotBlank(message="Password is required") @Size(min=6, message="Password must be at least 6 characters") String password;
     private String name;
+    private String referralCode;
+
+    public String getReferralCode() {
+        return this.referralCode;
+    }
+
+    public void setReferralCode(String referralCode) {
+        this.referralCode = referralCode;
+    }
 
     public String getEmail() {
         return this.email;

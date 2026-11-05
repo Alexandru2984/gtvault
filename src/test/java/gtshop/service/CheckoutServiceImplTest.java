@@ -45,6 +45,9 @@ class CheckoutServiceImplTest {
     @Mock
     private BadgeService badgeService;
 
+    @Mock
+    private TransactionService transactionService;
+
     @InjectMocks
     private CheckoutServiceImpl checkoutService;
 

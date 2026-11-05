@@ -5,6 +5,7 @@ import gtshop.dto.AuthResponse;
 import gtshop.model.UserProfile;
 import gtshop.repository.UserRepository;
 import gtshop.security.JwtTokenProvider;
+import gtshop.service.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -28,12 +29,18 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
+    private final TransactionService transactionService;
 
-    public AuthController(AuthenticationManager authenticationManager, UserRepository userRepository, PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider) {
+    public AuthController(AuthenticationManager authenticationManager,
+                          UserRepository userRepository,
+                          PasswordEncoder passwordEncoder,
+                          JwtTokenProvider tokenProvider,
+                          TransactionService transactionService) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
+        this.transactionService = transactionService;
     }
 
     @PostMapping("/register")
@@ -48,8 +55,37 @@ public class AuthController {
         user.setPassword(this.passwordEncoder.encode(request.getPassword()));
         user.setName(request.getName() != null ? request.getName() : "New User");
         user.setAvatar("https://example.com/avatar.png");
-        user.setActivityPoints(1000);
+
+        String userRefCode = "GT-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        user.setReferralCode(userRefCode);
+
+        int startingPoints = 1000;
+        UserProfile referrer = null;
+        if (request.getReferralCode() != null && !request.getReferralCode().trim().isEmpty()) {
+            referrer = this.userRepository.findByReferralCode(request.getReferralCode().trim()).orElse(null);
+            if (referrer != null) {
+                user.setReferredBy(referrer.getReferralCode());
+                startingPoints += 200; // Extra 200 AP for using referral
+            }
+        }
+
+        user.setActivityPoints(startingPoints);
+        user.setTotalPointsEarned(startingPoints);
         this.userRepository.save(user);
+
+        // Record welcome transaction
+        this.transactionService.recordTransaction(user, "WELCOME_BONUS", startingPoints, user.getActivityPoints(),
+            referrer != null ? "Bonus de bun venit (+200 AP recomandare de la " + referrer.getName() + ")" : "Bonus de bun venit RewardHub");
+
+        // Reward referrer if applicable
+        if (referrer != null) {
+            int newReferrerBalance = referrer.getActivityPoints() + 300;
+            referrer.setActivityPoints(newReferrerBalance);
+            this.userRepository.save(referrer);
+            this.transactionService.recordTransaction(referrer, "REFERRAL_BONUS", 300, newReferrerBalance,
+                "Bonus recomandare prieten: " + user.getName());
+        }
+
         String token = this.tokenProvider.generateToken(user.getId());
         return ResponseEntity.ok(AuthResponse.success(token, user.getId(), user.getName(), user.getActivityPoints()));
     }
