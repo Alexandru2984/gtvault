@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /RewardHub/api/
+
+Sitemap: https://shop.micutu.com/sitemap.xml

@@ -67,3 +67,12 @@ gt-shop-exploded/
 *.bak
 *.tmp
 *.swp
+
+# Environment & Secrets
+.env
+.env.*
+*.env
+
+# JaCoCo & Test Coverage
+*.exec
+.coverage

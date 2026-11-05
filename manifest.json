@@ -1,0 +1,29 @@
+{
+  "name": "Generația Tech RewardHub",
+  "short_name": "GT Rewards",
+  "description": "Magazinul oficial de recompense, gamification și premii Generația Tech",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#7c3aed",
+  "categories": [
+    "education",
+    "shopping",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "images/gt-logo.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "images/micus-stuff-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

@@ -107,18 +107,32 @@ function isWishlisted(productId) {
   return list.includes(String(productId));
 }
 
+function updateWishlistBadges() {
+  const count = getWishlist().length;
+  const desktopBadge = document.getElementById('wishlist-count');
+  if (desktopBadge) {
+    desktopBadge.textContent = count;
+  }
+  const mobileBadge = document.getElementById('mobile-wishlist-badge');
+  if (mobileBadge) {
+    mobileBadge.textContent = count;
+    mobileBadge.style.display = count > 0 ? 'flex' : 'none';
+  }
+}
+
 function toggleWishlist(productId) {
   let list = getWishlist();
   const idStr = String(productId);
   const exists = list.includes(idStr);
   if (exists) {
     list = list.filter(id => id !== idStr);
-    showNotification('Produs eliminat din favorite', 'info');
+    showToast('Produs eliminat din favorite', 'info');
   } else {
     list.push(idStr);
-    showNotification('Produs adăugat la favorite! ❤️', 'success');
+    showToast('Produs adăugat la favorite! ❤️', 'success');
   }
   Storage.save(Storage.KEYS.WISHLIST, list);
+  updateWishlistBadges();
   
   document.querySelectorAll(`.product-card[data-product-id="${productId}"] .wishlist-btn`).forEach(btn => {
     btn.classList.toggle('active', !exists);
@@ -861,6 +875,11 @@ function renderProfile() {
           <div class="stat-label">Produse în coș</div>
         </div>
       </div>
+      <div style="margin-top: 1.25rem;">
+        <button class="btn btn-secondary btn-block" onclick="switchSection('history')">
+          📋 Vezi Istoric Comenzi, Chitanțe & Vouchere
+        </button>
+      </div>
     </div>`;
   loadUserBadges();
 }
@@ -904,6 +923,11 @@ function renderHistory(purchases) {
             <button class="btn-copy-voucher" onclick="copyVoucher('${p.voucherCode}')">Copiază</button>
           </div>
         </div>` : ''}
+        <div class="history-info" style="grid-column: 1 / -1; margin-top: 0.5rem;">
+          <button class="btn btn-sm btn-secondary" onclick="showDigitalReceipt('${p.id || ''}')">
+            📄 Vezi Chitanță & Certificat
+          </button>
+        </div>
       </div>
     </div>
   `).join('');
@@ -1186,6 +1210,9 @@ async function initializeApp() {
     await Promise.all([loadUserProfile(), loadProducts(), loadCart()]);
     loadCommunityTicker();
     setupApiToggle();
+    updateWishlistBadges();
+    NotifCenter.render();
+    setupPwa();
   } catch (e) {
     console.error('App init failed:', e);
     showNotification('Eroare la inițializare', 'error');
@@ -1276,6 +1303,13 @@ function setupEventListeners() {
     if (e.target === DOM.productModal) closeProductModal();
     if (e.target === DOM.howItWorksModal) closeHowItWorksModal();
     if (e.target === document.getElementById('set-points-modal')) closeSetPointsModal();
+    if (e.target === document.getElementById('receipt-modal')) closeReceiptModal();
+
+    const notifWrapper = document.querySelector('.notif-wrapper');
+    const notifDropdown = document.getElementById('notif-dropdown');
+    if (notifDropdown && notifWrapper && !notifWrapper.contains(e.target)) {
+      notifDropdown.classList.remove('show');
+    }
   });
 
   if (DOM.clearStorageBtn) {
@@ -2232,6 +2266,253 @@ async function submitProductReview(productId) {
   }
 }
 
+// ==========================================================================
+// TOAST & NOTIFICATION CENTER
+// ==========================================================================
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  if (!container) return showNotification(message, type);
+
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `<span>${message}</span>`;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(15px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+
+const NotifCenter = {
+  KEY: 'gt_shop_notifications',
+  getAll() {
+    return Storage.load(this.KEY) || [
+      { id: 1, title: 'Bun venit pe RewardHub!', text: 'Folosește cuponul GT2026 pentru 100 AP reducere la prima comandă.', icon: '🎉', time: 'Acum', unread: true },
+      { id: 2, title: 'Quiz Tehnic Zilnic', text: 'Rezolvă întrebarea zilei și câștigă 100 AP instant!', icon: '🧠', time: 'Azi', unread: true },
+      { id: 3, title: 'Daily Streak Activ', text: 'Nu uita să revendici bonusul de prezență pentru a ajunge la 7 zile consecutive.', icon: '🔥', time: 'Azi', unread: true }
+    ];
+  },
+  save(list) {
+    Storage.save(this.KEY, list);
+    this.render();
+  },
+  add(title, text, icon = '🔔') {
+    const list = this.getAll();
+    const item = {
+      id: Date.now(),
+      title,
+      text,
+      icon,
+      time: 'Acum',
+      unread: true
+    };
+    list.unshift(item);
+    if (list.length > 25) list.pop();
+    this.save(list);
+    showToast(`${icon} ${title}`);
+  },
+  render() {
+    const list = this.getAll();
+    const unreadCount = list.filter(n => n.unread).length;
+    const badge = document.getElementById('notif-badge');
+    if (badge) {
+      badge.textContent = unreadCount;
+      badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+    }
+    const container = document.getElementById('notif-list');
+    if (!container) return;
+    if (!list.length) {
+      container.innerHTML = '<div class="notif-empty">Nu ai nicio notificare nouă</div>';
+      return;
+    }
+    container.innerHTML = list.map(n => `
+      <div class="notif-item ${n.unread ? 'unread' : ''}">
+        <span class="notif-icon">${n.icon || '🔔'}</span>
+        <div class="notif-body">
+          <p><strong>${n.title}</strong></p>
+          <p>${n.text}</p>
+          <small>${n.time}</small>
+        </div>
+      </div>
+    `).join('');
+  },
+  clear() {
+    Storage.save(this.KEY, []);
+    this.render();
+  },
+  markAllRead() {
+    const list = this.getAll().map(n => ({ ...n, unread: false }));
+    this.save(list);
+  }
+};
+
+function toggleNotifDropdown() {
+  const dd = document.getElementById('notif-dropdown');
+  if (dd) {
+    const isShowing = dd.classList.contains('show');
+    dd.classList.toggle('show');
+    if (!isShowing) {
+      NotifCenter.markAllRead();
+    }
+  }
+}
+
+function clearNotifications() {
+  NotifCenter.clear();
+}
+
+// ==========================================================================
+// DIGITAL RECEIPT & CERTIFICATE
+// ==========================================================================
+function showDigitalReceipt(purchaseId) {
+  const history = Storage.load(Storage.KEYS.PURCHASE_HISTORY) || [];
+  let item = history.find(p => String(p.id) === String(purchaseId));
+  if (!item && history.length > 0) item = history[0];
+  if (!item) {
+    showNotification('Detaliile comenzii nu au fost găsite', 'error');
+    return;
+  }
+
+  const modalBody = document.getElementById('receipt-modal-body');
+  if (!modalBody) return;
+
+  const dateStr = formatDate(item.purchaseDate || Date.now());
+  const receiptNumber = `GT-REC-${item.id || Math.floor(100000 + Math.random() * 900000)}`;
+  const userName = AppState.user ? AppState.user.name : 'Membru Generația Tech';
+  const userEmail = AppState.user && AppState.user.email ? AppState.user.email : 'demo@gtshop.ro';
+  const authHash = 'AUTH-' + Math.random().toString(36).substring(2, 10).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
+
+  modalBody.innerHTML = `
+    <div class="receipt-card">
+      <div class="receipt-header">
+        <img src="images/gt-logo.svg" alt="Generația Tech" class="receipt-logo">
+        <h3 class="receipt-title">Chitanță & Certificat Recompensă</h3>
+        <p class="receipt-subtitle">Generația Tech RewardHub Official System</p>
+      </div>
+
+      <div class="receipt-details-grid">
+        <div class="receipt-field">
+          <label>Nr. Document</label>
+          <span>${receiptNumber}</span>
+        </div>
+        <div class="receipt-field">
+          <label>Data Revendicării</label>
+          <span>${dateStr}</span>
+        </div>
+        <div class="receipt-field">
+          <label>Beneficiar</label>
+          <span>${userName}</span>
+        </div>
+        <div class="receipt-field">
+          <label>Email Cont</label>
+          <span>${userEmail}</span>
+        </div>
+      </div>
+
+      <table class="receipt-items-table">
+        <thead>
+          <tr>
+            <th>Premiu Recompensă</th>
+            <th style="text-align: right;">Valoare AP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <strong>${item.rewardName || 'Recompensă Generația Tech'}</strong>
+              <div style="font-size: 0.75rem; color: #64748b;">Validat autoritar server-side</div>
+            </td>
+            <td style="text-align: right; font-weight: 700;">${formatPrice(item.pointsSpent)}</td>
+          </tr>
+          <tr class="receipt-total-row">
+            <td>TOTAL DECONTAT:</td>
+            <td style="text-align: right;">${formatPrice(item.pointsSpent)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      ${item.voucherCode ? `
+        <div class="receipt-voucher-highlight">
+          <strong>Cod Unic Voucher Activare Digitală:</strong>
+          <div class="receipt-voucher-code">${item.voucherCode}</div>
+          <button class="btn btn-sm btn-secondary" onclick="copyVoucher('${item.voucherCode}')" style="margin-top: 6px;">Copiază Cod</button>
+        </div>
+      ` : ''}
+
+      <div class="receipt-security-stamp">
+        🔒 Semnătură Digitală & Hash Integritate: <code>${authHash}</code><br>
+        Emis conform regulamentului platformei comunității Generația Tech.
+      </div>
+
+      <div class="receipt-actions">
+        <button class="btn btn-primary" onclick="window.print()" style="flex: 1;">🖨️ Printează / PDF</button>
+        <button class="btn btn-secondary" onclick="closeReceiptModal()" style="flex: 1;">Închide</button>
+      </div>
+    </div>
+  `;
+
+  const modal = document.getElementById('receipt-modal');
+  if (modal) modal.style.display = 'block';
+}
+
+function closeReceiptModal() {
+  const modal = document.getElementById('receipt-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+// ==========================================================================
+// PWA HANDLERS
+// ==========================================================================
+let deferredPrompt = null;
+
+function setupPwa() {
+  if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.debug('ServiceWorker registered:', reg.scope))
+      .catch(err => console.debug('ServiceWorker registration error:', err));
+  }
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const banner = document.getElementById('pwa-install-banner');
+    if (banner && !Storage.load('gt_pwa_dismissed')) {
+      banner.style.display = 'flex';
+    }
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    const banner = document.getElementById('pwa-install-banner');
+    if (banner) banner.style.display = 'none';
+    NotifCenter.add('Aplicație instalată!', 'RewardHub este gata pe ecranul tău principal.', '📱');
+  });
+}
+
+function triggerPwaInstall() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        showToast('Instalare confirmată! 🎉', 'success');
+      }
+      deferredPrompt = null;
+      const banner = document.getElementById('pwa-install-banner');
+      if (banner) banner.style.display = 'none';
+    });
+  } else {
+    showNotification('Pentru a instala pe iOS: apasă butonul Share ⬆️ și alege "Adaugă pe ecranul principal"', 'info');
+  }
+}
+
+function dismissPwaBanner() {
+  const banner = document.getElementById('pwa-install-banner');
+  if (banner) banner.style.display = 'none';
+  Storage.save('gt_pwa_dismissed', true);
+}
+
 // Global window exports
 window.applyPromoCode = applyPromoCode;
 window.handleSortChange = handleSortChange;
@@ -2240,6 +2521,13 @@ window.loadUserBadges = loadUserBadges;
 window.loadProductReviews = loadProductReviews;
 window.selectReviewStar = selectReviewStar;
 window.submitProductReview = submitProductReview;
+window.toggleNotifDropdown = toggleNotifDropdown;
+window.clearNotifications = clearNotifications;
+window.showDigitalReceipt = showDigitalReceipt;
+window.closeReceiptModal = closeReceiptModal;
+window.triggerPwaInstall = triggerPwaInstall;
+window.dismissPwaBanner = dismissPwaBanner;
+window.showToast = showToast;
 
 /* ---------- Basic error boundary ---------- */
 

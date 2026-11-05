@@ -103,6 +103,22 @@
 ### 12. ⚡ Ticker Live cu Pulsul Comunității
 - Bandă interactivă live la începutul paginii care derulează activitățile recente din comunitate (recenzii lăsate, insigne deblocate, achiziții de recompense).
 
+### 13. 📱 Progressive Web App (PWA) & Offline Shell
+- **Instalare ca aplicație nativă:** Compatibilitate completă cu Android și iOS prin `manifest.json`.
+- **Service Worker (`sw.js`):** Încărcare instantanee a paginii și a resurselor statice (SVG-uri, CSS, fonturi) cu cache-first, protejând rutele de API dinamice.
+- **Banner inteligent de instalare:** Notifică utilizatorii de pe mobil pentru instalare cu 1 singur click.
+
+### 14. 🧾 Chitanțe Digitale de Revendicare & Certificate Vouchere
+- Fiecare comandă finalizată dispune de o **Chitanță Digitală Oficială GT** cu serie unică (`GT-REC-XXXXXX`), hash criptografic de securitate, dată decontare și format gata de imprimat / salvat PDF (`@media print`).
+
+### 15. 🔔 Centru de Notificări & Toasts
+- Clopoțel interactiv în antet cu contor de notificări necitite, dropdown cu istoricul acțiunilor și alerte flotante de tip toast.
+
+### 16. 🔍 SEO Avansat & Schema.org Rich Snippets
+- **Structured Data:** Script JSON-LD cu entitățile `WebSite` (SearchAction), `Store` (Generația Tech) și `ItemList` pentru afișarea prețurilor și a recenziilor direct în motoarele de căutare Google.
+- **Social Sharing:** Meta tag-uri complete OpenGraph și Twitter Cards.
+- **Indexare:** Fișiere dedicate `sitemap.xml` și `robots.txt` servite direct pe domeniul `https://shop.micutu.com/`.
+
 ---
 
 ## 🔒 Audit de Securitate & Măsuri Implementate

@@ -25,9 +25,21 @@ jobs:
       - name: Build & Run Test Suite
         run: mvn -B clean verify
 
+      - name: Validate Frontend Scripts
+        run: |
+          node -c app.js
+          echo "Frontend syntax validation passed!"
+
       - name: Publish Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: surefire-test-reports
           path: target/surefire-reports/
+
+      - name: Publish JaCoCo Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage-report
+          path: target/site/jacoco/
