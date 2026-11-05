@@ -569,10 +569,19 @@ async function checkout() {
       return;
     }
 
-    const body = { items: AppState.cart };
+    const body = { 
+      items: AppState.cart,
+      promoCode: appliedPromo ? appliedPromo.code : null
+    };
     const r = await apiCall('/checkout', { method: 'POST', body: JSON.stringify(body) });
 
     if (r.success) {
+      appliedPromo = null;
+      const promoInput = document.getElementById('promo-code-input');
+      if (promoInput) promoInput.value = '';
+      const promoStatus = document.getElementById('promo-status');
+      if (promoStatus) promoStatus.style.display = 'none';
+
       if (typeof confetti === 'function') {
         confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
       }
@@ -637,13 +646,37 @@ function updateUserInterface() {
   }
 }
 
+let appliedPromo = null;
+
 function updateCartInterface() {
   const totalItems = AppState.cart.reduce((s, it) => s + it.quantity, 0);
-  const totalPrice = AppState.cart.reduce((s, it) => s + it.price * it.quantity, 0);
+  const subtotal = AppState.cart.reduce((s, it) => s + it.price * it.quantity, 0);
+  let discount = 0;
+
+  if (appliedPromo && appliedPromo.discountPoints) {
+    discount = Math.min(appliedPromo.discountPoints, subtotal);
+  }
+
+  const finalTotal = Math.max(0, subtotal - discount);
+
   if (DOM.cartCount) DOM.cartCount.textContent = totalItems;
   const mobileBadge = document.getElementById('mobile-cart-badge');
   if (mobileBadge) mobileBadge.textContent = totalItems;
-  if (DOM.cartTotal) DOM.cartTotal.textContent = formatPrice(totalPrice);
+
+  const subtotalRow = document.getElementById('cart-subtotal-row');
+  const discountRow = document.getElementById('cart-discount-row');
+  const subtotalEl = document.getElementById('cart-subtotal');
+  const discountEl = document.getElementById('cart-discount');
+
+  if (discount > 0) {
+    if (subtotalRow) { subtotalRow.style.display = 'block'; if (subtotalEl) subtotalEl.textContent = formatPrice(subtotal); }
+    if (discountRow) { discountRow.style.display = 'block'; if (discountEl) discountEl.textContent = formatPrice(discount); }
+  } else {
+    if (subtotalRow) subtotalRow.style.display = 'none';
+    if (discountRow) discountRow.style.display = 'none';
+  }
+
+  if (DOM.cartTotal) DOM.cartTotal.textContent = formatPrice(finalTotal);
   if (DOM.checkoutBtn) DOM.checkoutBtn.disabled = AppState.cart.length === 0;
   Storage.save(Storage.KEYS.CART, AppState.cart);
   if (AppState.cart.length) showStorageStatus('Coșul a fost salvat local', 'success');
@@ -804,7 +837,7 @@ function renderProfile() {
     DOM.profileContent.innerHTML = '<div class="loading">Se încarcă profilul...</div>';
     return;
   }
-  const avatarUrl = 'images/user-avatar.svg';
+  const avatarUrl = AppState.user.avatar || 'images/user-avatar.svg';
   DOM.profileContent.innerHTML = `
     <div class="profile-card">
       <div class="profile-header">
@@ -820,11 +853,16 @@ function renderProfile() {
           <div class="stat-label">Puncte disponibile</div>
         </div>
         <div class="stat-card">
+          <div class="stat-value">🔥 ${AppState.user.streakDays || 0}</div>
+          <div class="stat-label">Zile Streak</div>
+        </div>
+        <div class="stat-card">
           <div class="stat-value">${AppState.cart.length}</div>
           <div class="stat-label">Produse în coș</div>
         </div>
       </div>
     </div>`;
+  loadUserBadges();
 }
 
 function renderHistory(purchases) {
@@ -938,9 +976,37 @@ function showProductModal(product) {
         </button>
         <button class="btn btn-secondary" onclick="closeProductModal()">Închide</button>
       </div>
+
+      <!-- Customer Reviews & Rating Section -->
+      <div class="product-reviews-box">
+        <div class="reviews-header">
+          <div class="reviews-avg-rating">
+            <span class="rating-stars">⭐⭐⭐⭐⭐</span>
+            <span class="rating-number" id="modal-avg-rating">5.0</span>
+            <span style="color: #64748b; font-size: 0.85rem;" id="modal-reviews-count">(Se încarcă...)</span>
+          </div>
+        </div>
+        <div class="reviews-list" id="reviews-list-container">
+          <!-- Rendered via JS -->
+        </div>
+
+        <div class="add-review-form">
+          <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.4rem; color: #1e293b;">Lasă o recenzie:</div>
+          <div class="star-picker">
+            <span class="star-picker-item active" data-value="1" onclick="selectReviewStar(1)">★</span>
+            <span class="star-picker-item active" data-value="2" onclick="selectReviewStar(2)">★</span>
+            <span class="star-picker-item active" data-value="3" onclick="selectReviewStar(3)">★</span>
+            <span class="star-picker-item active" data-value="4" onclick="selectReviewStar(4)">★</span>
+            <span class="star-picker-item active" data-value="5" onclick="selectReviewStar(5)">★</span>
+          </div>
+          <textarea id="review-comment-input" class="review-textarea" placeholder="Ce părere ai despre această recompensă?"></textarea>
+          <button id="btn-submit-review" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="submitProductReview('${product.id}')">Trimite Recenzia</button>
+        </div>
+      </div>
     </div>`;
   DOM.productModal.style.display = 'block';
   document.body.style.overflow = 'hidden';
+  loadProductReviews(product.id);
 }
 
 /* ---------- Nav / filters ---------- */
@@ -962,13 +1028,37 @@ function switchSection(name) {
   }
 }
 
+let currentSortMode = 'default';
+let filterOnlyInStock = false;
+
+function handleSortChange(sortMode) {
+  currentSortMode = sortMode;
+  filterProducts();
+}
+
+function handleStockFilterToggle(onlyInStock) {
+  filterOnlyInStock = onlyInStock;
+  filterProducts();
+}
+
 function filterProducts() {
   const q = (DOM.searchInput.value || '').toLowerCase().trim();
-  AppState.filteredProducts = AppState.products.filter(p => {
+  let list = AppState.products.filter(p => {
     const matchQ = !q || p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
     const matchC = !AppState.currentCategory || p.category === AppState.currentCategory;
-    return matchQ && matchC;
+    const matchStock = !filterOnlyInStock || (p.inStock && p.stockCount > 0);
+    return matchQ && matchC && matchStock;
   });
+
+  if (currentSortMode === 'price-asc') {
+    list.sort((a, b) => a.price - b.price);
+  } else if (currentSortMode === 'price-desc') {
+    list.sort((a, b) => b.price - a.price);
+  } else if (currentSortMode === 'name') {
+    list.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  AppState.filteredProducts = list;
   renderProductsByCategory();
 }
 
@@ -1094,6 +1184,7 @@ async function initializeApp() {
     setLoadingState(true);
     restoreUserPreferences();
     await Promise.all([loadUserProfile(), loadProducts(), loadCart()]);
+    loadCommunityTicker();
     setupApiToggle();
   } catch (e) {
     console.error('App init failed:', e);
@@ -1913,6 +2004,242 @@ async function loadLeaderboard() {
     container.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red; padding: 2rem;">Eroare la încărcarea clasamentului.</td></tr>';
   }
 }
+
+/* ==========================================================
+   PROMO CODES & DISCOUNT SYSTEM
+   ========================================================== */
+
+async function applyPromoCode() {
+  const input = document.getElementById('promo-code-input');
+  const statusEl = document.getElementById('promo-status');
+  if (!input || !statusEl) return;
+
+  const code = input.value.trim().toUpperCase();
+  if (!code) {
+    statusEl.style.display = 'block';
+    statusEl.className = 'promo-status error';
+    statusEl.textContent = 'Introdu un cod promoțional valid.';
+    return;
+  }
+
+  const subtotal = AppState.cart.reduce((s, it) => s + it.price * it.quantity, 0);
+  if (subtotal <= 0) {
+    statusEl.style.display = 'block';
+    statusEl.className = 'promo-status error';
+    statusEl.textContent = 'Adaugă mai întâi produse în coș pentru a aplica reducerea.';
+    return;
+  }
+
+  try {
+    const res = await apiCall('/promo/validate', {
+      method: 'POST',
+      body: JSON.stringify({ code: code, orderTotal: subtotal })
+    });
+
+    if (res && res.valid) {
+      appliedPromo = res;
+      statusEl.style.display = 'block';
+      statusEl.className = 'promo-status success';
+      statusEl.textContent = `🎉 ${res.message}`;
+      updateCartInterface();
+    } else {
+      appliedPromo = null;
+      statusEl.style.display = 'block';
+      statusEl.className = 'promo-status error';
+      statusEl.textContent = res?.message || 'Cod promoțional invalid sau condiții neîndeplinite!';
+      updateCartInterface();
+    }
+  } catch (err) {
+    appliedPromo = null;
+    statusEl.style.display = 'block';
+    statusEl.className = 'promo-status error';
+    statusEl.textContent = err?.message || 'Eroare la validarea codului promo!';
+    updateCartInterface();
+  }
+}
+
+/* ==========================================================
+   BADGES & ACHIEVEMENTS SYSTEM
+   ========================================================== */
+
+const ALL_KNOWN_BADGES = [
+  { code: 'FIRST_ORDER', title: 'Primul Pas', icon: '🛍️', desc: 'Finalizează prima ta comandă din RewardHub' },
+  { code: 'STREAK_3', title: 'Hot Streak', icon: '🔥', desc: 'Menține 3 zile consecutive de prezență activă' },
+  { code: 'STREAK_7', title: 'Generația Legend', icon: '👑', desc: '7 zile consecutive de perseverență și învățare' },
+  { code: 'TECH_BRAIN', title: 'Tech Brain', icon: '🧠', desc: 'Răspunde corect la provocarea tehnică zilnică' },
+  { code: 'LUCKY_SPINNER', title: 'Lucky Spinner', icon: '🎡', desc: 'Învârte Roata Norocului pentru premii instant' },
+  { code: 'BIG_SPENDER', title: 'Tech VIP', icon: '💎', desc: 'Investește peste 1000 AP într-o singură comandă' }
+];
+
+async function loadUserBadges() {
+  const container = document.getElementById('badges-grid');
+  const countLabel = document.getElementById('badges-count-label');
+  if (!container) return;
+
+  try {
+    const unlockedBadges = await apiCall('/gamification/badges');
+    const unlockedMap = new Map();
+    if (Array.isArray(unlockedBadges)) {
+      unlockedBadges.forEach(b => unlockedMap.set(b.badgeCode, b));
+    }
+
+    if (countLabel) {
+      countLabel.textContent = `${unlockedMap.size} din ${ALL_KNOWN_BADGES.length} deblocate`;
+    }
+
+    container.innerHTML = ALL_KNOWN_BADGES.map(badge => {
+      const isUnlocked = unlockedMap.has(badge.code);
+      return `
+        <div class="badge-card ${isUnlocked ? 'unlocked' : 'locked'}">
+          <div class="badge-card-icon">${badge.icon}</div>
+          <div class="badge-card-title">${badge.title}</div>
+          <div class="badge-card-desc">${badge.desc}</div>
+          <div class="badge-card-status">
+            ${isUnlocked ? '✓ Deblocat' : '🔒 Blocat'}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.warn('loadUserBadges failed:', err);
+  }
+}
+
+/* ==========================================================
+   LIVE COMMUNITY ACTIVITY TICKER
+   ========================================================== */
+
+let tickerItems = [];
+let tickerIndex = 0;
+let tickerTimer = null;
+
+async function loadCommunityTicker() {
+  const contentEl = document.getElementById('ticker-content');
+  if (!contentEl) return;
+
+  try {
+    const list = await apiCall('/community/activity');
+    if (Array.isArray(list) && list.length > 0) {
+      tickerItems = list;
+      showNextTickerItem();
+      if (!tickerTimer) {
+        tickerTimer = setInterval(showNextTickerItem, 4500);
+      }
+    }
+  } catch (err) {
+    console.warn('loadCommunityTicker failed:', err);
+  }
+}
+
+function showNextTickerItem() {
+  const contentEl = document.getElementById('ticker-content');
+  if (!contentEl || !tickerItems.length) return;
+
+  const item = tickerItems[tickerIndex % tickerItems.length];
+  tickerIndex++;
+
+  contentEl.style.opacity = '0';
+  setTimeout(() => {
+    contentEl.innerHTML = `
+      <span class="ticker-item">
+        <strong>${item.icon} ${item.title}</strong> — <span style="opacity: 0.9;">${item.detail}</span>
+      </span>
+    `;
+    contentEl.style.opacity = '1';
+  }, 250);
+}
+
+/* ==========================================================
+   PRODUCT REVIEWS & RATINGS SYSTEM
+   ========================================================== */
+
+let selectedStarRating = 5;
+
+function selectReviewStar(stars) {
+  selectedStarRating = stars;
+  document.querySelectorAll('.star-picker-item').forEach(el => {
+    const val = parseInt(el.dataset.value, 10);
+    el.classList.toggle('active', val <= stars);
+  });
+}
+
+async function loadProductReviews(productId) {
+  const container = document.getElementById('reviews-list-container');
+  const avgEl = document.getElementById('modal-avg-rating');
+  const countEl = document.getElementById('modal-reviews-count');
+  if (!container) return;
+
+  container.innerHTML = '<div style="font-size: 0.85rem; color: #64748b; padding: 0.5rem 0;">Se încarcă recenziile...</div>';
+
+  try {
+    const data = await apiCall(`/rewards/${productId}/reviews`);
+    if (data) {
+      const avg = Number(data.averageRating) || 5.0;
+      if (avgEl) avgEl.textContent = avg.toFixed(1);
+      if (countEl) countEl.textContent = `(${data.totalReviews} ${data.totalReviews === 1 ? 'recenzie' : 'recenzii'})`;
+
+      if (Array.isArray(data.reviews) && data.reviews.length > 0) {
+        container.innerHTML = data.reviews.map(r => `
+          <div class="review-item">
+            <div class="review-author">
+              <span>👤 ${r.userName}</span>
+              <span style="color: #f59e0b;">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+            </div>
+            <div class="review-comment">${r.comment}</div>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = '<div style="font-size: 0.85rem; color: #64748b; padding: 0.5rem 0;">Fii primul care lasă o recenzie pentru acest produs!</div>';
+      }
+    }
+  } catch (err) {
+    container.innerHTML = '<div style="font-size: 0.85rem; color: #991b1b;">Nu s-au putut încărca recenziile.</div>';
+  }
+}
+
+async function submitProductReview(productId) {
+  const commentEl = document.getElementById('review-comment-input');
+  const submitBtn = document.getElementById('btn-submit-review');
+  if (!commentEl) return;
+
+  const comment = commentEl.value.trim();
+  if (!comment) {
+    showNotification('Scrie un comentariu pentru recenzie', 'warning');
+    return;
+  }
+
+  if (submitBtn) submitBtn.disabled = true;
+
+  try {
+    const res = await apiCall(`/rewards/${productId}/reviews`, {
+      method: 'POST',
+      body: JSON.stringify({ rating: selectedStarRating, comment: comment })
+    });
+
+    if (res && res.success) {
+      showNotification(res.message || 'Recenzie publicată!', 'success');
+      commentEl.value = '';
+      loadProductReviews(productId);
+      loadCommunityTicker();
+    } else {
+      showNotification(res?.message || 'Eroare la trimiterea recenziei', 'error');
+    }
+  } catch (err) {
+    showNotification(err?.message || 'Trebuie să fii autentificat pentru a lăsa o recenzie', 'warning');
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
+}
+
+// Global window exports
+window.applyPromoCode = applyPromoCode;
+window.handleSortChange = handleSortChange;
+window.handleStockFilterToggle = handleStockFilterToggle;
+window.loadUserBadges = loadUserBadges;
+window.loadProductReviews = loadProductReviews;
+window.selectReviewStar = selectReviewStar;
+window.submitProductReview = submitProductReview;
 
 /* ---------- Basic error boundary ---------- */
 

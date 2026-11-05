@@ -111,6 +111,14 @@
     </aside>
 
     <div class="main-content">
+      <!-- Live Community Pulse Ticker -->
+      <div class="community-ticker-bar" id="community-ticker-bar">
+        <span class="ticker-badge">⚡ LIVE COMUNITATE</span>
+        <div class="ticker-content" id="ticker-content">
+          <span class="ticker-item">Se încarcă pulsul comunității Generația Tech...</span>
+        </div>
+      </div>
+
       <!-- SHOP SECTION -->
       <section id="shop-section" class="section active">
         <!-- Interactive Daily Bonus Banner -->
@@ -132,6 +140,18 @@
             <div class="search">
               <input type="text" id="search-input" placeholder="Caută tricou, curs, mentorat...">
               <span class="search-icon">🔍</span>
+            </div>
+            <div class="filter-controls">
+              <select id="sort-select" class="filter-select" onchange="handleSortChange(this.value)">
+                <option value="default">Sortează: Recomandate</option>
+                <option value="price-asc">Preț: Mic → Mare</option>
+                <option value="price-desc">Preț: Mare → Mic</option>
+                <option value="name">Alfabetic (A-Z)</option>
+              </select>
+              <label class="stock-toggle-label">
+                <input type="checkbox" id="stock-only-toggle" onchange="handleStockFilterToggle(this.checked)">
+                <span>Doar în stoc</span>
+              </label>
             </div>
           </div>
         </div>
@@ -267,16 +287,45 @@
       <section id="cart-section" class="section">
         <div class="section-header"><h2>🛒 Coșul Meu</h2></div>
         <div id="cart-content"></div>
+        
+        <!-- Promo Code Box -->
+        <div class="promo-container">
+          <div class="promo-box">
+            <span class="promo-icon">🏷️</span>
+            <input type="text" id="promo-code-input" placeholder="Cod Promoțional (ex: GT2026, COMMUNITY, MICUTU)" autocomplete="off">
+            <button class="btn btn-secondary" id="apply-promo-btn" onclick="applyPromoCode()">Aplică</button>
+          </div>
+          <div id="promo-status" class="promo-status" style="display: none;"></div>
+        </div>
+
         <div class="cart-summary">
-          <div class="total"><strong>Total: <span id="cart-total">0</span> puncte</strong></div>
+          <div class="total">
+            <div id="cart-subtotal-row" style="display: none; font-size: 0.9rem; color: #64748b;">Subtotal: <span id="cart-subtotal">0</span> AP</div>
+            <div id="cart-discount-row" style="display: none; font-size: 0.95rem; color: #10b981; font-weight: 700;">Reducere Promo: -<span id="cart-discount">0</span> AP</div>
+            <strong>Total de plată: <span id="cart-total">0</span> puncte</strong>
+          </div>
           <button id="checkout-btn" class="btn btn-primary" onclick="checkout()" disabled>Finalizează Comanda</button>
         </div>
       </section>
 
       <!-- PROFILE SECTION -->
       <section id="profile-section" class="section">
-        <div class="section-header"><h2>👤 Profilul Meu</h2></div>
+        <div class="section-header">
+          <h2>👤 Profilul Meu</h2>
+          <p class="section-subtitle">Informații cont, insignele deblocate și statistici de activitate.</p>
+        </div>
         <div id="profile-content"></div>
+
+        <!-- Badges & Achievements Shelf -->
+        <div class="badges-shelf-container">
+          <div class="shelf-header">
+            <h3>🎖️ Insigne & Realizări în Comunitate</h3>
+            <span class="shelf-badge-count" id="badges-count-label">Se încarcă...</span>
+          </div>
+          <div class="badges-grid" id="badges-grid">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
       </section>
 
       <!-- HISTORY SECTION WITH VOUCHERS -->

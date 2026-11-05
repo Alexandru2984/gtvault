@@ -2121,3 +2121,321 @@ body {
         height: 120px !important;
     }
 }
+
+/* Community Live Ticker */
+.community-ticker-bar {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, #1e1b4b, #312e81);
+    color: white;
+    border-radius: 12px;
+    padding: 0.6rem 1rem;
+    margin-bottom: 1.5rem;
+    gap: 0.75rem;
+    box-shadow: 0 4px 15px rgba(49, 46, 129, 0.2);
+    overflow: hidden;
+}
+
+.ticker-badge {
+    background: #ec4899;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+}
+
+.ticker-content {
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 0.85rem;
+    color: #e0e7ff;
+}
+
+.ticker-item {
+    display: inline-block;
+    transition: opacity 0.5s ease;
+}
+
+/* Filter & Sort Controls */
+.filter-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.filter-select {
+    padding: 0.5rem 0.85rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: white;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    outline: none;
+}
+
+.filter-select:focus {
+    border-color: #7c3aed;
+}
+
+.stock-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Promo Code Box */
+.promo-container {
+    background: white;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0;
+}
+
+.promo-box {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.promo-icon {
+    font-size: 1.25rem;
+}
+
+.promo-box input {
+    flex: 1;
+    padding: 0.65rem 0.9rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.promo-status {
+    margin-top: 0.6rem;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    line-height: 1.4;
+}
+
+.promo-status.success {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.promo-status.error {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+/* Badges & Achievements Shelf */
+.badges-shelf-container {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+}
+
+.shelf-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.shelf-header h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    color: #1e293b;
+}
+
+.shelf-badge-count {
+    background: #ede9fe;
+    color: #7c3aed;
+    font-size: 0.8rem;
+    font-weight: 800;
+    padding: 0.25rem 0.65rem;
+    border-radius: 20px;
+}
+
+.badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.badge-card {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: all 0.25s ease;
+    background: #f8fafc;
+}
+
+.badge-card.unlocked {
+    background: #ffffff;
+    border-color: #f59e0b;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+}
+
+.badge-card.locked {
+    opacity: 0.55;
+    filter: grayscale(80%);
+}
+
+.badge-card-icon {
+    font-size: 2.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.badge-card-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #1e293b;
+    margin-bottom: 0.25rem;
+}
+
+.badge-card-desc {
+    font-size: 0.75rem;
+    color: #64748b;
+    line-height: 1.35;
+}
+
+.badge-card-status {
+    margin-top: 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.badge-card.unlocked .badge-card-status {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.badge-card.locked .badge-card-status {
+    background: #e2e8f0;
+    color: #64748b;
+}
+
+/* Reviews Box in Product Modal */
+.product-reviews-box {
+    margin-top: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 1.25rem;
+}
+
+.reviews-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.reviews-avg-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.rating-stars {
+    color: #f59e0b;
+    font-size: 1.1rem;
+}
+
+.rating-number {
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: #1e293b;
+}
+
+.reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 240px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+}
+
+.review-item {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 0.75rem;
+    border: 1px solid #f1f5f9;
+}
+
+.review-author {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 0.25rem;
+}
+
+.review-comment {
+    font-size: 0.85rem;
+    color: #475569;
+    line-height: 1.4;
+}
+
+.add-review-form {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.85rem;
+}
+
+.star-picker {
+    display: flex;
+    gap: 0.25rem;
+    font-size: 1.25rem;
+    cursor: pointer;
+    margin-bottom: 0.5rem;
+}
+
+.star-picker-item {
+    color: #cbd5e1;
+    transition: color 0.15s ease;
+}
+
+.star-picker-item.active {
+    color: #f59e0b;
+}
+
+.review-textarea {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 0.5rem;
+    font-size: 0.85rem;
+    resize: vertical;
+    min-height: 50px;
+    margin-bottom: 0.5rem;
+}

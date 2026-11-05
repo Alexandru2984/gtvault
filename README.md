@@ -82,6 +82,27 @@
 - Bară de navigare inferioară dedicată dispozitivelor mobile (ecrane `< 768px`) cu touch target optimizat.
 - Badge dinamic cu contor de produse în coș.
 
+### 9. 🏷️ Coduri Promoționale & Reduceri la Checkout
+- Motor de validare server-side pentru discount-uri fixe sau procentuale în AP (`GT2026`, `COMMUNITY`, `MICUTU`).
+- Verificare prag minim de comandă, dată de expirare și limită maximă de utilizări.
+
+### 10. 🎖️ Sistem de Insigne & Realizări (Badges)
+- Insigne de merit deblocate automat la atingerea obiectivelor:
+  - `FIRST_ORDER` (🛍️ Primul Pas)
+  - `STREAK_3` (🔥 Hot Streak)
+  - `STREAK_7` (👑 Generația Legend)
+  - `TECH_BRAIN` (🧠 Tech Brain)
+  - `LUCKY_SPINNER` (🎡 Lucky Spinner)
+  - `BIG_SPENDER` (💎 Tech VIP)
+- Vitrină dedicată în profilul utilizatorului afișând progresul și insignele deblocate.
+
+### 11. ⭐ Recenzii Verificate & Rating cu Steluțe
+- Utilizatorii pot evalua produsele achiziționate (rating 1-5 stele și recenzie text).
+- Calculare dinamică a mediei de evaluare în catalog și afișarea părerilor comunității în modalul de produs.
+
+### 12. ⚡ Ticker Live cu Pulsul Comunității
+- Bandă interactivă live la începutul paginii care derulează activitățile recente din comunitate (recenzii lăsate, insigne deblocate, achiziții de recompense).
+
 ---
 
 ## 🔒 Audit de Securitate & Măsuri Implementate
@@ -110,12 +131,15 @@ Toate rutele de API sunt prefixate cu `/RewardHub/api`. Documentația interactiv
 - `POST /api/user/avatar` — Schimbare avatar (URL custom sau SVG predefinit).
 - `GET /api/user/history` — Istoric comenzi și coduri de vouchere generate.
 
-### Catalog & Comenzi
+### Catalog, Recenzii & Comenzi
 - `GET /api/rewards` — Lista completă a recompenselor (suportă parametri `category` și `search`).
 - `GET /api/rewards/{id}` — Detalii despre o recompensă specifică.
+- `GET /api/rewards/{id}/reviews` — Preluare recenzii și media steluțelor pentru o recompensă.
+- `POST /api/rewards/{id}/reviews` — Adăugare recenzie și rating (1-5 ⭐) de către un membru autentificat.
 - `GET /api/cart` — Preluare coș curent salvat pe server.
 - `POST /api/cart/add` — Adăugare produs în coș.
-- `POST /api/checkout` — Finalizare comandă, deducere atomică de AP, scădere stoc și emitere voucher.
+- `POST /api/promo/validate` — Validare cod promoțional și calcul reducere aplicată.
+- `POST /api/checkout` — Finalizare comandă (cu suport pentru `promoCode`), deducere atomică de AP, scădere stoc și emitere voucher.
 
 ### Gamification & Comunitate
 - `GET /api/gamification/status` — Status daily streak, bonus următor și disponibilitate quiz.
@@ -124,6 +148,8 @@ Toate rutele de API sunt prefixate cu `/RewardHub/api`. Documentația interactiv
 - `POST /api/gamification/quiz/submit` — Trimitere răspuns quiz (`{ "answerIndex": 0 }`).
 - `POST /api/gamification/spin-wheel` — Învârtire Roata Norocului (50 AP).
 - `GET /api/gamification/leaderboard` — Top 10 utilizatori ordonați după puncte.
+- `GET /api/gamification/badges` — Insigne și realizări deblocate de utilizatorul curent.
+- `GET /api/community/activity` — Flux de activitate recentă din comunitate (recenzii, realizări).
 
 ---
 
