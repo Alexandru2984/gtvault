@@ -27,6 +27,9 @@ class GamificationControllerTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private gtshop.service.BadgeService badgeService;
+
     @InjectMocks
     private GamificationController gamificationController;
 

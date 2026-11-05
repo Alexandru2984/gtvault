@@ -39,6 +39,12 @@ class CheckoutServiceImplTest {
     @Mock
     private RewardRepository rewardRepository;
 
+    @Mock
+    private PromoCodeService promoCodeService;
+
+    @Mock
+    private BadgeService badgeService;
+
     @InjectMocks
     private CheckoutServiceImpl checkoutService;
 
@@ -129,5 +135,23 @@ class CheckoutServiceImplTest {
         assertNotNull(record.getVoucherCode());
         assertTrue(record.getVoucherCode().startsWith("GT-"));
         assertEquals("GT T-Shirt", record.getRewardName());
+        verify(badgeService).checkOrderBadges(testUser, 200);
+    }
+
+    @Test
+    @DisplayName("Checkout with promo code should apply discount and reduce points spent")
+    void testCheckout_WithPromoDiscount() {
+        when(userService.getCurrentUser()).thenReturn(testUser);
+        when(rewardRepository.findByIdForUpdate("rew-1")).thenReturn(Optional.of(testReward));
+        when(promoCodeService.applyPromoAtCheckout("GT2026", 200)).thenReturn(50); // 50 AP discount
+
+        CartItem item = new CartItem("rew-1", "GT T-Shirt", 200, 1);
+        CheckoutResponse response = checkoutService.checkout(List.of(item), "GT2026");
+
+        assertTrue(response.isSuccess());
+        assertEquals(50, response.getDiscountApplied());
+        // 500 initial - (200 - 50 discount) = 350
+        assertEquals(350, testUser.getActivityPoints());
+        verify(badgeService).checkOrderBadges(testUser, 150);
     }
 }
