@@ -180,7 +180,24 @@
   }
   </script>
 
-  <link rel="stylesheet" href="styles.css">
+  <script>
+    document.documentElement.removeAttribute('data-theme');
+    try {
+      localStorage.removeItem('gt_theme_mode');
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          for (var i = 0; i < regs.length; i++) regs[i].unregister();
+        });
+      }
+      if (window.caches) {
+        caches.keys().then(function(keys) {
+          for (var i = 0; i < keys.length; i++) caches.delete(keys[i]);
+        });
+      }
+    } catch(e) {}
+  </script>
+
+  <link rel="stylesheet" href="styles.css?v=20261105_v4">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- SweetAlert2 for beautiful alerts -->
@@ -779,7 +796,7 @@
         </a>
         <div class="footer-course">Proiect creat în cadrul comunității <a href="https://generatiatech.ro" target="_blank">Generația Tech</a></div>
         <div class="footer-terminal-link" style="margin-top: 0.75rem;">
-          <button class="btn btn-sm btn-outline" onclick="openTerminalModal()" style="font-family: monospace; font-size: 0.75rem; border-color: rgba(255,255,255,0.2); color: #cbd5e1;">
+          <button class="btn btn-sm btn-secondary" onclick="openTerminalModal()" style="font-family: monospace; font-size: 0.8rem;">
             💻 &gt;_ Deschide Consola GT-CLI
           </button>
         </div>
@@ -1073,6 +1090,6 @@ Tastează <span class="term-highlight">help</span> pentru lista comenzilor dispo
   <div id="toast-container" class="toast-container"></div>
   <div id="notification" class="notification"><span id="notification-message"></span></div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=20261105_v4"></script>
 </body>
 </html>

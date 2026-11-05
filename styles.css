@@ -1,9 +1,11 @@
 /* ==========================================================================
    Generația Tech - RewardHub (GT Shop) Official Stylesheet
-   Clean, Elegant, Unified Light Theme Design Language
+   Pure, Elegant, 100% Unified Light Mode
    ========================================================================== */
 
-/* Reset & Base Styles */
+/* --------------------------------------------------------------------------
+   1. RESET & BASE STYLES
+   -------------------------------------------------------------------------- */
 * {
     margin: 0;
     padding: 0;
@@ -26,9 +28,9 @@ body {
     padding: 0 20px;
 }
 
-/* ==========================================================================
-   HEADER & NAVIGATION
-   ========================================================================== */
+/* --------------------------------------------------------------------------
+   2. HEADER & TOP NAVIGATION
+   -------------------------------------------------------------------------- */
 .header {
     background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #c084fc 100%);
     color: white;
@@ -194,6 +196,11 @@ body {
     transform: translateY(0);
 }
 
+.dropdown-section {
+    display: flex;
+    flex-direction: column;
+}
+
 .dropdown-header {
     padding: 1rem;
     background: linear-gradient(135deg, #7c3aed, #a855f7);
@@ -228,9 +235,9 @@ body {
     font-size: 1.1rem;
 }
 
-/* ==========================================================================
-   MAIN LAYOUT & SIDEBAR
-   ========================================================================== */
+/* --------------------------------------------------------------------------
+   3. MAIN LAYOUT & SIDEBAR
+   -------------------------------------------------------------------------- */
 .main {
     display: flex;
     gap: 2rem;
@@ -270,6 +277,33 @@ body {
 .how-it-works-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 28px rgba(124, 58, 237, 0.35);
+}
+
+.btn-icon {
+    font-size: 1.8rem;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.btn-text {
+    text-align: left;
+}
+
+.btn-text strong {
+    display: block;
+    font-size: 1.05rem;
+    margin-bottom: 0.2rem;
+}
+
+.btn-text small {
+    font-size: 0.82rem;
+    opacity: 0.92;
 }
 
 .sidebar-streak-card {
@@ -367,36 +401,9 @@ body {
     box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
 }
 
-.btn-icon {
-    font-size: 1.8rem;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.btn-text {
-    text-align: left;
-}
-
-.btn-text strong {
-    display: block;
-    font-size: 1.05rem;
-    margin-bottom: 0.2rem;
-}
-
-.btn-text small {
-    font-size: 0.82rem;
-    opacity: 0.92;
-}
-
-/* ==========================================================================
-   MAIN CONTENT AREA
-   ========================================================================== */
+/* --------------------------------------------------------------------------
+   4. MAIN CONTENT & SHOP CATALOG
+   -------------------------------------------------------------------------- */
 .main-content {
     flex: 1;
     min-width: 0;
@@ -410,7 +417,7 @@ body {
     display: block;
 }
 
-/* Live Community Ticker */
+/* Community Live Ticker */
 .community-ticker-bar {
     background: #ffffff;
     border: 1px solid #e2e8f0;
@@ -440,6 +447,50 @@ body {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+.ticker-item {
+    display: inline-block;
+}
+
+/* PWA Install Banner */
+.pwa-install-banner {
+    background: #ffffff;
+    border: 1.5px solid #c4b5fd;
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.06);
+}
+
+.pwa-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.pwa-icon {
+    font-size: 1.8rem;
+}
+
+.pwa-text strong {
+    display: block;
+    color: #1e1b4b;
+    font-size: 0.95rem;
+}
+
+.pwa-text small {
+    color: #64748b;
+    font-size: 0.82rem;
+}
+
+.pwa-actions {
+    display: flex;
+    gap: 0.5rem;
 }
 
 /* Daily Hero Bonus Banner */
@@ -953,9 +1004,9 @@ body {
     background: #cbd5e1;
 }
 
-/* ==========================================================================
-   GAMIFICATION SECTION (ACTIVITĂȚI)
-   ========================================================================== */
+/* --------------------------------------------------------------------------
+   5. GAMIFICATION SECTION (ACTIVITĂȚI)
+   -------------------------------------------------------------------------- */
 .section-header {
     text-align: center;
     margin-bottom: 2.25rem;
@@ -1028,7 +1079,11 @@ body {
     line-height: 1.5;
 }
 
-/* Streak Days Track */
+.game-card-actions {
+    margin-top: auto;
+}
+
+/* Daily Streak */
 .streak-days-track {
     display: flex;
     justify-content: space-between;
@@ -1076,7 +1131,7 @@ body {
     color: #10b981;
 }
 
-/* Quiz Styles */
+/* Daily Tech Quiz */
 .quiz-question {
     font-size: 0.98rem;
     font-weight: 600;
@@ -1190,7 +1245,20 @@ body {
 .wheel-slot.slot-4 { transform: rotate(270deg); }
 .wheel-slot.slot-5 { transform: rotate(330deg); }
 
-/* Mystery Loot Crate */
+/* Mystery Loot Crate - 100% PURE LIGHT THEME */
+.crate-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1.75rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.crate-card:hover {
+    border-color: #f59e0b;
+    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.15);
+}
+
 .crate-display-wrap {
     text-align: center;
     margin: 1.5rem 0;
@@ -1364,6 +1432,16 @@ body {
     box-shadow: 0 4px 12px rgba(124, 58, 237, 0.06);
 }
 
+.quest-item.completed {
+    border-color: #86efac;
+    background: #f0fdf4;
+}
+
+.quest-item.claimed {
+    opacity: 0.65;
+    background: #f1f5f9;
+}
+
 .quest-left {
     flex: 1;
     min-width: 250px;
@@ -1398,13 +1476,13 @@ body {
     margin-bottom: 0.75rem;
 }
 
-.quest-progress-wrap {
+.quest-progress-track {
     display: flex;
     align-items: center;
     gap: 0.75rem;
 }
 
-.quest-progress-bg {
+.quest-progress-bar-bg {
     flex: 1;
     height: 8px;
     background: #e2e8f0;
@@ -1412,19 +1490,23 @@ body {
     overflow: hidden;
 }
 
-.quest-progress-fill {
+.quest-progress-bar-fill {
     height: 100%;
     background: linear-gradient(90deg, #10b981, #059669);
     border-radius: 4px;
     transition: width 0.4s ease;
 }
 
-.quest-progress-text {
+.quest-progress-txt {
     font-size: 0.8rem;
     font-weight: 600;
     color: #475569;
     min-width: 45px;
     text-align: right;
+}
+
+.quest-right {
+    flex-shrink: 0;
 }
 
 /* Community Interactive Poll */
@@ -1578,6 +1660,11 @@ body {
     box-shadow: 0 4px 15px rgba(124, 58, 237, 0.08);
 }
 
+.proposal-top {
+    display: flex;
+    flex-direction: column;
+}
+
 .proposal-title {
     font-size: 0.98rem;
     font-weight: 700;
@@ -1627,9 +1714,9 @@ body {
     border-color: #7c3aed;
 }
 
-/* ==========================================================================
-   LEADERBOARD & GUILD WAR
-   ========================================================================== */
+/* --------------------------------------------------------------------------
+   6. LEADERBOARD & GUILD WAR
+   -------------------------------------------------------------------------- */
 .leaderboard-podium {
     display: flex;
     justify-content: center;
@@ -1731,7 +1818,7 @@ body {
     background: #f8fafc;
 }
 
-/* Guild Factions */
+/* Track Guilds */
 .guilds-container-card {
     background: #ffffff;
     border: 1px solid #e2e8f0;
@@ -1840,9 +1927,9 @@ body {
     margin-bottom: 0.75rem;
 }
 
-/* ==========================================================================
-   CART & CHECKOUT
-   ========================================================================== */
+/* --------------------------------------------------------------------------
+   7. CART & CHECKOUT
+   -------------------------------------------------------------------------- */
 .cart-item {
     background: #ffffff;
     padding: 1.5rem;
@@ -1999,9 +2086,9 @@ body {
     color: #1e293b;
 }
 
-/* ==========================================================================
-   PROFILE & HISTORY SECTIONS
-   ========================================================================== */
+/* --------------------------------------------------------------------------
+   8. PROFILE & HISTORY SECTIONS
+   -------------------------------------------------------------------------- */
 .profile-card,
 .history-item {
     background: #ffffff;
@@ -2032,6 +2119,11 @@ body {
     font-weight: 700;
     color: #1e293b;
     margin-bottom: 0.25rem;
+}
+
+.profile-id {
+    font-size: 0.85rem;
+    color: #64748b;
 }
 
 .profile-stats {
@@ -2081,14 +2173,14 @@ body {
     gap: 0.75rem;
 }
 
-.tier-icon {
-    font-size: 2rem;
-    margin-right: 0.75rem;
-}
-
-.tier-title-wrap {
+.tier-main-info {
     display: flex;
     align-items: center;
+    gap: 0.75rem;
+}
+
+.tier-badge-icon {
+    font-size: 2.2rem;
 }
 
 .tier-title-wrap h3 {
@@ -2105,20 +2197,41 @@ body {
     font-weight: 700;
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
+    display: inline-block;
+    margin-left: 0.5rem;
 }
 
-.tier-progress-track {
+.tier-discount-chip {
+    background: #ecfdf5;
+    color: #047857;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    border: 1px solid #a7f3d0;
+}
+
+.tier-progress-section {
     margin: 1.25rem 0;
 }
 
-.tier-progress-bar {
+.tier-progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 0.4rem;
+}
+
+.tier-progress-bar-bg {
     height: 8px;
     background: #e2e8f0;
     border-radius: 4px;
     overflow: hidden;
 }
 
-.tier-progress-fill {
+.tier-progress-bar-fill {
     height: 100%;
     background: linear-gradient(90deg, #7c3aed, #a855f7);
     border-radius: 4px;
@@ -2131,7 +2244,7 @@ body {
     margin-top: 1rem;
 }
 
-.tier-perk-item {
+.tier-perk-pill {
     background: #f5f3ff;
     color: #6d28d9;
     padding: 0.4rem 0.85rem;
@@ -2152,49 +2265,67 @@ body {
 }
 
 .referral-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     margin-bottom: 1.25rem;
 }
 
-.referral-header h3 {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin: 0 0 0.35rem 0;
+.referral-icon {
+    font-size: 2rem;
 }
 
-.referral-box {
+.referral-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.referral-code-box {
     display: flex;
     gap: 0.75rem;
     align-items: center;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
-    padding: 1rem 1.25rem;
-    margin: 1rem 0;
+    padding: 0.85rem 1.25rem;
     flex-wrap: wrap;
 }
 
-.referral-code-pill {
+.referral-code-display {
     font-family: monospace;
     font-size: 1.2rem;
-    font-weight: 700;
+    font-weight: 800;
     color: #7c3aed;
     letter-spacing: 1px;
+    margin-right: 0.5rem;
 }
 
-.referral-stats {
+.referral-stats-wrap {
     display: flex;
     gap: 1.5rem;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
 }
 
 .referral-stat-item {
-    font-size: 0.9rem;
-    color: #475569;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.85rem 1.25rem;
+    flex: 1;
+    text-align: center;
 }
 
-.referral-stat-item strong {
+.referral-stat-val {
+    font-size: 1.5rem;
+    font-weight: 800;
     color: #1e293b;
+}
+
+.referral-stat-lbl {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 500;
 }
 
 /* Goal Tracker Card */
@@ -2279,6 +2410,10 @@ body {
     font-size: 0.85rem;
     font-weight: 700;
     color: #475569;
+}
+
+.goal-percent {
+    color: #7c3aed;
 }
 
 .goal-advice-box {
@@ -2438,31 +2573,71 @@ body {
     border-color: #cbd5e1;
 }
 
-.tx-details {
+.tx-left {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
 }
 
-.tx-title {
+.tx-icon-pill {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.tx-type-credit { background: #dcfce7; color: #15803d; }
+.tx-type-debit { background: #fee2e2; color: #b91c1c; }
+
+.tx-details {
+    min-width: 0;
+}
+
+.tx-desc {
+    font-size: 0.9rem;
     font-weight: 600;
     color: #1e293b;
+    margin-bottom: 0.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.tx-date {
-    font-size: 0.78rem;
-    color: #94a3b8;
+.tx-meta {
+    font-size: 0.75rem;
+    color: #64748b;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
 }
 
-.tx-amount-plus {
+.tx-right {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.tx-amount {
+    font-size: 1rem;
     font-weight: 700;
-    color: #10b981;
-    font-size: 0.95rem;
 }
 
-.tx-amount-minus {
-    font-weight: 700;
+.tx-amount.positive {
+    color: #16a34a;
+}
+
+.tx-amount.negative {
     color: #7c3aed;
-    font-size: 0.95rem;
+}
+
+.tx-balance-after {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.15rem;
 }
 
 /* History Items & Voucher Verifier */
@@ -2476,6 +2651,25 @@ body {
 .history-date {
     color: #64748b;
     font-size: 0.9rem;
+}
+
+.history-details {
+    margin-top: 0.75rem;
+}
+
+.history-info {
+    margin-bottom: 0.5rem;
+}
+
+.detail-label {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-right: 0.5rem;
+}
+
+.detail-value {
+    font-weight: 700;
+    color: #7c3aed;
 }
 
 .history-items {
@@ -2654,9 +2848,9 @@ body {
     cursor: pointer;
 }
 
-/* ==========================================================================
-   BUTTONS
-   ========================================================================== */
+/* --------------------------------------------------------------------------
+   9. BUTTONS
+   -------------------------------------------------------------------------- */
 .btn {
     padding: 0.7rem 1.4rem;
     border: none;
@@ -2691,6 +2885,17 @@ body {
 .btn-secondary:hover:not(:disabled) {
     background: #e2e8f0;
     color: #1e293b;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1.5px solid #cbd5e1;
+    color: #475569;
+}
+
+.btn-outline:hover:not(:disabled) {
+    border-color: #7c3aed;
+    color: #7c3aed;
 }
 
 .btn-accent {
@@ -2738,9 +2943,9 @@ body {
     box-shadow: none !important;
 }
 
-/* ==========================================================================
-   MODALS
-   ========================================================================== */
+/* --------------------------------------------------------------------------
+   10. MODALS (ALL IN CLEAN LIGHT MODE)
+   -------------------------------------------------------------------------- */
 .modal {
     display: none;
     position: fixed;
@@ -2749,7 +2954,7 @@ body {
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(15, 23, 42, 0.6);
+    background-color: rgba(15, 23, 42, 0.5);
     backdrop-filter: blur(4px);
     overflow-y: auto;
 }
@@ -2764,7 +2969,7 @@ body {
     position: relative;
     max-height: 85vh;
     overflow-y: auto;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
     border: 1px solid #e2e8f0;
 }
 
@@ -2788,6 +2993,27 @@ body {
     display: flex;
     gap: 0.75rem;
     margin-top: 1.5rem;
+}
+
+/* Product Detail Modal */
+.modal-product-image {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 12px;
 }
 
 /* Auth Modals */
@@ -2863,6 +3089,271 @@ body {
     text-decoration: underline;
 }
 
+/* Avatar Grid */
+.avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.avatar-option {
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    margin: 0 auto;
+}
+
+.avatar-option:hover,
+.avatar-option.selected {
+    border-color: #7c3aed;
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.25);
+}
+
+.avatar-option img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* How It Works Modal */
+.how-it-works-content h2 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #1e1b4b;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.how-it-works-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.step {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.step-icon {
+    font-size: 1.8rem;
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+.step-content h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.25rem;
+}
+
+.step-content p {
+    font-size: 0.88rem;
+    color: #64748b;
+    line-height: 1.45;
+}
+
+/* Mystery Crate Modal - Clean White */
+.crate-modal-content {
+    max-width: 460px;
+    text-align: center;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.crate-modal-header h2 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1e1b4b;
+}
+
+.crate-modal-header p {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.crate-stage {
+    padding: 2rem 0;
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.crate-box-animated {
+    font-size: 5rem;
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+
+.crate-box-animated.shaking {
+    animation: crateShake 0.4s ease-in-out infinite;
+}
+
+@keyframes crateShake {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    20% { transform: translate(-8px, -4px) rotate(-8deg); }
+    40% { transform: translate(8px, 4px) rotate(8deg); }
+    60% { transform: translate(-6px, 2px) rotate(-6deg); }
+    80% { transform: translate(6px, -2px) rotate(6deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+.crate-reward-reveal {
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    color: #1e293b;
+}
+
+/* Compare Modal */
+.compare-modal-content {
+    max-width: 780px;
+}
+
+.compare-header h2 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1e1b4b;
+}
+
+.compare-header p {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 1.25rem;
+}
+
+.compare-body {
+    overflow-x: auto;
+}
+
+/* Digital Receipt Modal */
+.receipt-modal-content {
+    max-width: 520px;
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+}
+
+/* Developer Console Terminal Modal - Clean Styled */
+.terminal-modal-content {
+    background: #ffffff;
+    color: #1e293b;
+    padding: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    max-width: 700px;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.terminal-window {
+    display: flex;
+    flex-direction: column;
+}
+
+.terminal-bar {
+    background: #f1f5f9;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.terminal-dots {
+    display: flex;
+    gap: 6px;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.dot-red { background: #ef4444; }
+.dot-yellow { background: #f59e0b; }
+.dot-green { background: #10b981; }
+
+.terminal-title {
+    font-family: monospace;
+    font-size: 0.82rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.terminal-screen {
+    padding: 1.25rem;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.88rem;
+    min-height: 220px;
+    max-height: 340px;
+    overflow-y: auto;
+    line-height: 1.6;
+    background: #f8fafc;
+    color: #334155;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.terminal-line {
+    margin-bottom: 0.35rem;
+}
+
+.terminal-output {
+    margin-bottom: 0.75rem;
+    color: #475569;
+}
+
+.terminal-input-row {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    background: #ffffff;
+}
+
+.terminal-prompt {
+    color: #7c3aed;
+    font-family: monospace;
+    font-weight: 700;
+    margin-right: 0.5rem;
+}
+
+.terminal-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #1e293b;
+    font-family: monospace;
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.term-highlight {
+    color: #7c3aed;
+    font-weight: 700;
+}
+
 /* Reviews in Product Modal */
 .product-reviews-box {
     margin-top: 2rem;
@@ -2900,97 +3391,9 @@ body {
     color: #94a3b8;
 }
 
-/* Terminal Console Modal */
-.terminal-modal-content {
-    background: #0f172a;
-    color: #f8fafc;
-    padding: 0;
-    border-radius: 14px;
-    overflow: hidden;
-    max-width: 720px;
-    border: 1px solid #334155;
-}
-
-.terminal-window {
-    display: flex;
-    flex-direction: column;
-}
-
-.terminal-bar {
-    background: #1e293b;
-    padding: 0.75rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    border-bottom: 1px solid #334155;
-}
-
-.terminal-dots {
-    display: flex;
-    gap: 6px;
-}
-
-.dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-}
-
-.dot-red { background: #ef4444; }
-.dot-yellow { background: #f59e0b; }
-.dot-green { background: #10b981; }
-
-.terminal-title {
-    font-family: monospace;
-    font-size: 0.82rem;
-    color: #94a3b8;
-}
-
-.terminal-screen {
-    padding: 1.25rem;
-    font-family: 'Fira Code', monospace;
-    font-size: 0.88rem;
-    min-height: 240px;
-    max-height: 380px;
-    overflow-y: auto;
-    line-height: 1.6;
-    background: #0f172a;
-    color: #e2e8f0;
-}
-
-.terminal-input-row {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem 1.25rem;
-    background: #1e293b;
-    border-top: 1px solid #334155;
-}
-
-.terminal-prompt {
-    color: #10b981;
-    font-family: monospace;
-    font-weight: 700;
-    margin-right: 0.5rem;
-}
-
-.terminal-input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: #ffffff;
-    font-family: monospace;
-    font-size: 0.9rem;
-    outline: none;
-}
-
-.term-highlight {
-    color: #38bdf8;
-    font-weight: 700;
-}
-
-/* ==========================================================================
-   TOASTS & NOTIFICATIONS
-   ========================================================================== */
+/* --------------------------------------------------------------------------
+   11. TOASTS & NOTIFICATIONS (CLEAN LIGHT THEME)
+   -------------------------------------------------------------------------- */
 .toast-container {
     position: fixed;
     bottom: 24px;
@@ -3002,22 +3405,23 @@ body {
 }
 
 .toast {
-    background: #1e293b;
-    color: white;
+    background: #ffffff;
+    color: #1e293b;
     padding: 0.85rem 1.25rem;
     border-radius: 10px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border: 1px solid #e2e8f0;
     display: flex;
     align-items: center;
     gap: 0.75rem;
     font-size: 0.92rem;
-    font-weight: 500;
+    font-weight: 600;
     animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.toast.success { background: #065f46; border-left: 4px solid #10b981; }
-.toast.error { background: #991b1b; border-left: 4px solid #ef4444; }
-.toast.info { background: #1e1b4b; border-left: 4px solid #7c3aed; }
+.toast.success { border-left: 4px solid #10b981; }
+.toast.error { border-left: 4px solid #ef4444; }
+.toast.info { border-left: 4px solid #7c3aed; }
 
 @keyframes toastSlideIn {
     from { transform: translateX(100%); opacity: 0; }
@@ -3048,9 +3452,9 @@ body {
     background: #ef4444;
 }
 
-/* ==========================================================================
-   FOOTER
-   ========================================================================== */
+/* --------------------------------------------------------------------------
+   12. FOOTER
+   -------------------------------------------------------------------------- */
 .footer {
     background: #ffffff;
     margin-top: 4rem;
@@ -3126,6 +3530,10 @@ body {
     text-decoration: underline;
 }
 
+.footer-terminal-link {
+    margin-top: 0.5rem;
+}
+
 /* Loading & Empty State */
 .loading {
     text-align: center;
@@ -3146,9 +3554,9 @@ body {
     color: #1e293b;
 }
 
-/* ==========================================================================
-   MOBILE NAVIGATION & RESPONSIVE MEDIA QUERIES
-   ========================================================================== */
+/* --------------------------------------------------------------------------
+   13. MOBILE BOTTOM NAVIGATION & MEDIA QUERIES
+   -------------------------------------------------------------------------- */
 .mobile-nav {
     display: none;
 }
@@ -3230,6 +3638,10 @@ body {
         margin-bottom: 1px;
     }
 
+    .mobile-nav-label {
+        font-size: 0.72rem;
+    }
+
     .mobile-badge {
         position: absolute;
         top: 0px;
@@ -3289,4 +3701,28 @@ body {
     .cart-item-controls {
         justify-content: space-between;
     }
+}
+.streak-card, .quiz-card, .wheel-card, .fortune-card {
+    background: #ffffff;
+}
+
+.physical-section, .courses-section, .digital-section {
+    margin-bottom: 3rem;
+}
+
+.quiz-body {
+    margin: 1rem 0;
+}
+
+.crate-unboxing-wrap {
+    padding: 1rem;
+}
+
+.crate-particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
 }

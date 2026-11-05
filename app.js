@@ -2543,27 +2543,16 @@ function closeReceiptModal() {
 let deferredPrompt = null;
 
 function setupPwa() {
-  if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.debug('ServiceWorker registered:', reg.scope))
-      .catch(err => console.debug('ServiceWorker registration error:', err));
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      for (const reg of regs) reg.unregister();
+    });
   }
-
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    const banner = document.getElementById('pwa-install-banner');
-    if (banner && !Storage.load('gt_pwa_dismissed')) {
-      banner.style.display = 'flex';
-    }
-  });
-
-  window.addEventListener('appinstalled', () => {
-    deferredPrompt = null;
-    const banner = document.getElementById('pwa-install-banner');
-    if (banner) banner.style.display = 'none';
-    NotifCenter.add('Aplicație instalată!', 'RewardHub este gata pe ecranul tău principal.', '📱');
-  });
+  if (window.caches) {
+    caches.keys().then(keys => {
+      for (const k of keys) caches.delete(k);
+    });
+  }
 }
 
 function triggerPwaInstall() {
@@ -3342,14 +3331,14 @@ async function openMysteryCrate() {
         <div style="display: inline-block; background: ${color}; color: white; font-weight: 800; font-size: 0.8rem; padding: 0.25rem 0.75rem; border-radius: 999px; text-transform: uppercase; margin-bottom: 0.5rem;">
           ${res.tier} DROP
         </div>
-        <h3 style="margin: 0.25rem 0; font-size: 1.3rem; color: #f8fafc;">${escapeHtml(res.prizeName)}</h3>
-        <p style="margin: 0.5rem 0; font-size: 1.1rem; font-weight: 700; color: #34d399;">
+        <h3 style="margin: 0.25rem 0; font-size: 1.3rem; color: #1e293b; font-weight: 700;">${escapeHtml(res.prizeName)}</h3>
+        <p style="margin: 0.5rem 0; font-size: 1.1rem; font-weight: 700; color: #059669;">
           +${res.wonPoints} AP adăugate în cont!
         </p>
         ${res.voucherCode ? `
-          <div style="background: rgba(0,0,0,0.3); border: 1px dashed #f59e0b; padding: 0.75rem; border-radius: 8px; margin-top: 0.75rem;">
-            <div style="font-size: 0.75rem; color: #fde047; font-weight: 700;">COD VOUCHER EXCLUSIV:</div>
-            <div style="font-family: monospace; font-size: 1.1rem; font-weight: 800; color: white;">${res.voucherCode}</div>
+          <div style="background: #f8fafc; border: 1px dashed #f59e0b; padding: 0.75rem; border-radius: 8px; margin-top: 0.75rem;">
+            <div style="font-size: 0.75rem; color: #b45309; font-weight: 700;">COD VOUCHER EXCLUSIV:</div>
+            <div style="font-family: monospace; font-size: 1.1rem; font-weight: 800; color: #7c3aed;">${res.voucherCode}</div>
           </div>
         ` : ''}
       `;
