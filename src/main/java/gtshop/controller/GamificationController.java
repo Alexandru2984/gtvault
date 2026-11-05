@@ -19,6 +19,7 @@ public class GamificationController {
     private final UserRepository userRepository;
     private final gtshop.service.BadgeService badgeService;
     private final gtshop.service.TransactionService transactionService;
+    private final gtshop.service.QuestService questService;
 
     // Daily quiz pool with educational questions
     private static final List<QuizQuestion> QUIZ_BANK = List.of(
@@ -62,11 +63,13 @@ public class GamificationController {
     public GamificationController(UserService userService,
                                   UserRepository userRepository,
                                   gtshop.service.BadgeService badgeService,
-                                  gtshop.service.TransactionService transactionService) {
+                                  gtshop.service.TransactionService transactionService,
+                                  gtshop.service.QuestService questService) {
         this.userService = userService;
         this.userRepository = userRepository;
         this.badgeService = badgeService;
         this.transactionService = transactionService;
+        this.questService = questService;
     }
 
     private String getTodayString() {
@@ -124,6 +127,9 @@ public class GamificationController {
         // Record point ledger transaction
         this.transactionService.recordTransaction(user, "DAILY_STREAK", bonus, user.getActivityPoints(),
             "Bonus Daily Streak: Ziua " + newStreak);
+
+        // Track daily quest
+        this.questService.trackAction(user, "DAILY_LOGIN", 1);
 
         resp.put("success", true);
         resp.put("message", "Felicitări! Ai primit " + bonus + " AP pentru ziua " + newStreak + " de streak!");
@@ -185,6 +191,9 @@ public class GamificationController {
             // Record point ledger transaction
             this.transactionService.recordTransaction(user, "QUIZ_REWARD", rewardPoints, user.getActivityPoints(),
                 "Recompensă Quiz Tehnic: Întrebarea " + q.id);
+
+            // Track daily quest
+            this.questService.trackAction(user, "SOLVE_QUIZ", 1);
 
             resp.put("success", true);
             resp.put("isCorrect", true);
@@ -271,12 +280,93 @@ public class GamificationController {
         this.transactionService.recordTransaction(user, "LUCKY_WHEEL_WIN", wonPoints, user.getActivityPoints(),
             "Câștig Roata Norocului: " + prizeName);
 
+        // Track daily quest
+        this.questService.trackAction(user, "SPIN_WHEEL", 1);
+
         resp.put("success", true);
         resp.put("prizeIndex", randomIndex);
         resp.put("prizeName", prizeName);
         resp.put("wonPoints", wonPoints);
         resp.put("newBalance", user.getActivityPoints());
         resp.put("message", "Ai câștigat: " + prizeName + "!");
+        return ResponseEntity.ok(resp);
+    }
+
+    @PostMapping("/open-crate")
+    @Operation(summary = "Open mystery loot crate for high-value rewards")
+    public ResponseEntity<Map<String, Object>> openCrate() {
+        UserProfile user = this.userService.getCurrentUser();
+        Map<String, Object> resp = new HashMap<>();
+
+        int crateCost = 150;
+        if (user.getActivityPoints() < crateCost) {
+            resp.put("success", false);
+            resp.put("message", "Ai nevoie de cel puțin " + crateCost + " AP pentru a deschide un Cufăr Misterios!");
+            return ResponseEntity.badRequest().body(resp);
+        }
+
+        user.setActivityPoints(user.getActivityPoints() - crateCost);
+
+        // Random roll 0 - 99
+        int roll = new Random().nextInt(100);
+        String tier;
+        String prizeName;
+        int wonPoints;
+        String voucherCode = null;
+
+        if (roll < 40) {
+            // 40% Common
+            tier = "COMMON";
+            wonPoints = 75;
+            prizeName = "Pachet Coder Începător (75 AP)";
+        } else if (roll < 70) {
+            // 30% Uncommon
+            tier = "UNCOMMON";
+            wonPoints = 150;
+            prizeName = "Pachet Echilibrat (150 AP Returnat)";
+        } else if (roll < 88) {
+            // 18% Rare
+            tier = "RARE";
+            wonPoints = 300;
+            prizeName = "Pachet Tehnologic RARE (Dublu: 300 AP!)";
+        } else if (roll < 96) {
+            // 8% Epic
+            tier = "EPIC";
+            wonPoints = 600;
+            prizeName = "SUPER DROP EPIC: 600 AP!";
+        } else if (roll < 99) {
+            // 3% Legendary
+            tier = "LEGENDARY";
+            wonPoints = 1500;
+            prizeName = "🌟 MEGA JACKPOT LEGENDARY: 1500 AP!";
+        } else {
+            // 1% Mythic
+            tier = "MYTHIC";
+            wonPoints = 250;
+            voucherCode = "GT-CRATE-CV-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            prizeName = "👑 MYTHIC DROP: Voucher Template CV VIP + 250 AP!";
+        }
+
+        user.setActivityPoints(user.getActivityPoints() + wonPoints);
+        this.userRepository.save(user);
+
+        // Record fee and win in point ledger
+        this.transactionService.recordTransaction(user, "LOOT_CRATE_FEE", -crateCost, user.getActivityPoints() - wonPoints,
+            "Taxă deschidere Mystery Crate");
+        this.transactionService.recordTransaction(user, "LOOT_CRATE_WIN", wonPoints, user.getActivityPoints(),
+            "Câștig Mystery Crate [" + tier + "]: " + prizeName);
+
+        // Track daily quest
+        this.questService.trackAction(user, "OPEN_CRATE", 1);
+
+        resp.put("success", true);
+        resp.put("tier", tier);
+        resp.put("prizeName", prizeName);
+        resp.put("wonPoints", wonPoints);
+        resp.put("crateCost", crateCost);
+        resp.put("voucherCode", voucherCode);
+        resp.put("newBalance", user.getActivityPoints());
+        resp.put("message", "Ai deblocat: " + prizeName + "!");
         return ResponseEntity.ok(resp);
     }
 

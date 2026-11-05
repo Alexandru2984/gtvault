@@ -160,8 +160,38 @@
 
 ### 25. 📜 Jurnal Tranzacții & Audit Ledger (Puncte AP)
 - Registru contabil complet și transparent (`point_transactions`) stocat în PostgreSQL.
-- Monitorizează fiecare sursă de câștig (`DAILY_STREAK`, `QUIZ_REWARD`, `LUCKY_WHEEL_WIN`, `WELCOME_BONUS`, `REFERRAL_BONUS`) și cheltuială (`ORDER_PAYMENT`, `LUCKY_WHEEL_FEE`).
+- Monitorizează fiecare sursă de câștig (`DAILY_STREAK`, `QUIZ_REWARD`, `LUCKY_WHEEL_WIN`, `WELCOME_BONUS`, `REFERRAL_BONUS`, `QUEST_REWARD`, `GIFT_RECEIVED`) și cheltuială (`ORDER_PAYMENT`, `LUCKY_WHEEL_FEE`, `LOOT_CRATE_FEE`, `GIFT_SENT`).
 - Afișează data, ora, descrierea detaliată, variația (+/- AP) și soldul rezultat după operațiune.
+
+### 26. 🎯 Misiuni Zilnice & Provocări (Daily Quests Hub)
+- Sistem dinamic de 5 misiuni zilnice reîmprospătate la miezul nopții:
+  - ⚡ *Conectare Zilnică* (+30 AP)
+  - 🧠 *Minte de Inginer (Quiz)* (+40 AP)
+  - 🎡 *Rotește și Câștigă* (+35 AP)
+  - 💖 *Explorator de Premii (Wishlist)* (+25 AP)
+  - 🎁 *Vânător de Cufere (Mystery Crate)* (+50 AP)
+- Urmărire automată pe baza acțiunilor utilizatorului, bară procentuală de progres și buton instant de revendicare cu confeti.
+
+### 27. 🎁 Cufăr Misterios & Deschidere Interactivă (Mystery Loot Crate)
+- Modul de unboxing animat (150 AP) cu 6 categorii de drop-uri:
+  - `COMMON` (75 AP), `UNCOMMON` (150 AP), `RARE` (300 AP), `EPIC` (600 AP), `LEGENDARY` (1500 AP Mega Jackpot) și `MYTHIC` (Voucher CV Template VIP + 250 AP).
+  - Efecte sonore de suspans Web Audio API și cutie 3D cu animație de vibrație și explozie de particule.
+
+### 28. ⚔️ Războiul Track-urilor & Ghilde Comunitare (Track Factions)
+- Împărțire în 4 facțiuni oficiale Generația Tech:
+  - ☕ **Cavalerii Java** (Backend & Spring Boot)
+  - 🐍 **Vrăjitorii Python** (AI & Data Science)
+  - ☁️ **Titanii DevOps & Cloud** (Containere & CI/CD)
+  - ⚛️ **Maeștrii Frontend** (UI/UX & Mobile)
+- Toate punctele câștigate de cursanți se acumulează automat în vistieria ghildei, afișând un clasament săptămânal live.
+
+### 29. 💌 Cadouri & Transfer Direct AP (P2P Gift System)
+- Cursanții pot trimite puncte de activitate colegilor ca semn de apreciere, felicitare sau sprijin în proiecte.
+- Căutare destinatar după email, ID sau cod de recomandare GT, cu transfer atomic ACID și mesaj personalizat.
+
+### 30. 🚚 Timeline Livrare Comenzi Fizice & Export CSV
+- Stepper vizual în Istoric pentru produsele fizice (Tricouri, Mouse, Stickere, Agende): *Înregistrată* ➔ *Ambalată* ➔ *La Curier (AWB FAN-GT-XXXX)* ➔ *Livrată*.
+- Export cu un singur clic al întregului jurnal de tranzacții în format `CSV` descărcabil direct din browser.
 
 ---
 
@@ -192,7 +222,17 @@ Toate rutele de API sunt prefixate cu `/RewardHub/api`. Documentația interactiv
 - `GET /api/user/tier` — Calculare rang (Bronze - Diamond), nivel de experiență (1-5), discount activ și progres XP.
 - `GET /api/user/referrals` — Date program de recomandare (cod propriu, număr prieteni invitați, puncte câștigate).
 - `GET /api/user/transactions` — Jurnal tranzacții auditate (decontări comenzi, streak, quiz, rotiri roată).
+- `POST /api/user/gift` — Trimite AP cadou unui coleg (`{ "recipient": "...", "amount": 100, "message": "..." }`).
 - `GET /api/user/history` — Istoric comenzi și coduri de vouchere generate.
+
+### Misiuni, Cufere & Ghilde
+- `GET /api/quests` — Lista misiunilor zilnice active și progresul utilizatorului curent.
+- `POST /api/quests/{id}/claim` — Revendicare recompensă misiune finalizată.
+- `POST /api/quests/track-favorite` — Înregistrare acțiune de adăugare produs la favorite.
+- `POST /api/gamification/open-crate` — Deschidere Mystery Loot Crate (150 AP).
+- `GET /api/guilds` — Clasament și statistici facțiuni comunitare.
+- `GET /api/guilds/me` — Ghilda utilizatorului curent.
+- `POST /api/guilds/select` — Schimbare sau selectare facțiune (`{ "guildId": "JAVA_KNIGHTS" }`).
 
 ### Catalog, Recenzii & Comenzi
 - `GET /api/rewards` — Lista completă a recompenselor (suportă parametri `category` și `search`).

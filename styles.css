@@ -3919,3 +3919,443 @@ select:focus-visible {
     border-color: #334155 !important;
     color: #cbd5e1 !important;
 }
+
+/* ==========================================================================
+   Mystery Loot Crate & Unboxing Styles
+   ========================================================================== */
+.crate-card {
+    background: linear-gradient(135deg, #1e1b4b 0%, #311042 100%) !important;
+    border: 2px solid #a855f7 !important;
+    color: white !important;
+}
+
+.crate-card h3, .crate-card p {
+    color: #f3e8ff !important;
+}
+
+.crate-display-wrap {
+    text-align: center;
+    padding: 1.5rem 0;
+}
+
+.crate-chest-icon {
+    font-size: 4rem;
+    display: inline-block;
+    filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.6));
+    animation: chestHover 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes chestHover {
+    0% { transform: translateY(0) scale(1); }
+    100% { transform: translateY(-8px) scale(1.05); }
+}
+
+.crate-tiers-hint {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.crate-tag {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    text-transform: uppercase;
+}
+
+.tag-rare { background: rgba(59, 130, 246, 0.25); color: #60a5fa; border: 1px solid #3b82f6; }
+.tag-epic { background: rgba(168, 85, 247, 0.25); color: #c084fc; border: 1px solid #a855f7; }
+.tag-legendary { background: rgba(234, 179, 8, 0.25); color: #fde047; border: 1px solid #eab308; }
+
+.crate-modal-content {
+    max-width: 480px;
+    text-align: center;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%) !important;
+    color: white !important;
+    border: 2px solid #a855f7 !important;
+    box-shadow: 0 0 40px rgba(168, 85, 247, 0.3) !important;
+}
+
+.crate-stage {
+    padding: 2.5rem 0;
+    position: relative;
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.crate-box-animated {
+    font-size: 5.5rem;
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+
+.crate-box-animated.shaking {
+    animation: crateShake 0.4s ease-in-out infinite;
+}
+
+@keyframes crateShake {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    20% { transform: translate(-8px, -4px) rotate(-8deg); }
+    40% { transform: translate(8px, 4px) rotate(8deg); }
+    60% { transform: translate(-6px, 2px) rotate(-6deg); }
+    80% { transform: translate(6px, -2px) rotate(6deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+.crate-reward-reveal {
+    animation: revealPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+@keyframes revealPop {
+    0% { opacity: 0; transform: scale(0.6); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* ==========================================================================
+   Daily Quests & Missions Hub
+   ========================================================================== */
+.quests-container-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.quests-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 1rem;
+}
+
+.quests-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.quests-icon {
+    font-size: 2rem;
+}
+
+.quests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.quest-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1rem;
+    transition: transform 0.15s ease;
+}
+
+.quest-item.completed {
+    border-color: #86efac;
+    background: #f0fdf4;
+}
+
+.quest-item.claimed {
+    opacity: 0.65;
+    background: #f1f5f9;
+}
+
+.quest-left {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.quest-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.quest-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #1e293b;
+}
+
+.quest-bounty-badge {
+    background: #fef08a;
+    color: #854d0e;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+}
+
+.quest-desc {
+    font-size: 0.825rem;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+}
+
+.quest-progress-track {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.quest-progress-bar-bg {
+    flex-grow: 1;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.quest-progress-bar-fill {
+    height: 100%;
+    background: #10b981;
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+.quest-progress-txt {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #475569;
+    min-width: 35px;
+    text-align: right;
+}
+
+/* ==========================================================================
+   Guild Factions (Track Wars)
+   ========================================================================== */
+.guilds-container-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.guilds-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.guilds-header-icon {
+    font-size: 2rem;
+}
+
+.guilds-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.25rem;
+}
+
+.guild-card {
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: center;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.guild-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+.guild-card.active-guild {
+    border-color: #7c3aed !important;
+    background: #faf5ff !important;
+    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.15) !important;
+}
+
+.guild-rank-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    background: #e2e8f0;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    color: #334155;
+}
+
+.guild-card.active-guild .guild-rank-badge {
+    background: #7c3aed;
+    color: white;
+}
+
+.guild-icon-large {
+    font-size: 3rem;
+    margin: 0.5rem 0;
+}
+
+.guild-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+}
+
+.guild-desc {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-bottom: 1rem;
+    line-height: 1.4;
+    min-height: 40px;
+}
+
+.guild-xp-badge {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #7c3aed;
+    background: rgba(124, 58, 237, 0.1);
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+
+/* ==========================================================================
+   Order Physical Delivery Stepper
+   ========================================================================== */
+.order-delivery-stepper {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin: 1.5rem 0 1rem;
+    padding: 0 0.5rem;
+}
+
+.order-delivery-stepper::before {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 20px;
+    right: 20px;
+    height: 3px;
+    background: #e2e8f0;
+    z-index: 1;
+}
+
+.stepper-step {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    flex: 1;
+}
+
+.step-node {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.stepper-step.completed .step-node {
+    background: #10b981;
+    border-color: #10b981;
+    color: white;
+}
+
+.stepper-step.active .step-node {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+.step-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.stepper-step.completed .step-label,
+.stepper-step.active .step-label {
+    color: #1e293b;
+    font-weight: 700;
+}
+
+/* Dark Mode Overrides for Quests, Guilds & Modals */
+[data-theme="dark"] .quests-container-card,
+[data-theme="dark"] .guilds-container-card {
+    background: #111827 !important;
+    border-color: #1f293d !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .quest-item {
+    background: #131c2e !important;
+    border-color: #1f293d !important;
+}
+
+[data-theme="dark"] .quest-item.completed {
+    background: #0f291e !important;
+    border-color: #059669 !important;
+}
+
+[data-theme="dark"] .quest-title {
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] .guild-card {
+    background: #131c2e !important;
+    border-color: #1f293d !important;
+}
+
+[data-theme="dark"] .guild-card.active-guild {
+    background: #1e1b4b !important;
+    border-color: #a855f7 !important;
+}
+
+[data-theme="dark"] .guild-name {
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] .step-node {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .order-delivery-stepper::before {
+    background: #1f293d !important;
+}
+
+[data-theme="dark"] .stepper-step.completed .step-label,
+[data-theme="dark"] .stepper-step.active .step-label {
+    color: #f8fafc !important;
+}

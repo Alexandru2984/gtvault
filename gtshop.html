@@ -461,6 +461,45 @@
               <button class="btn btn-accent btn-block" id="spin-btn" onclick="spinWheel()">Învârte Roata (50 AP)</button>
             </div>
           </div>
+
+          <!-- Mystery Loot Crate Card -->
+          <div class="game-card crate-card">
+            <div class="game-card-header">
+              <div class="game-badge" style="background: linear-gradient(135deg, #f59e0b, #ef4444); color: white;">🎁 MYSTERY CRATE</div>
+              <h3>Cufărul Norocos cu Drop-uri Rare</h3>
+              <p>Cost: <strong>150 AP</strong>. Șansă de Mega Jackpot până la <strong>1500 AP</strong> & vouchere!</p>
+            </div>
+            <div class="crate-display-wrap">
+              <div class="crate-chest-icon" id="crate-chest-icon">📦</div>
+              <div class="crate-tiers-hint">
+                <span class="crate-tag tag-rare">Rare (300 AP)</span>
+                <span class="crate-tag tag-epic">Epic (600 AP)</span>
+                <span class="crate-tag tag-legendary">Jackpot (1500 AP)</span>
+              </div>
+            </div>
+            <div class="game-card-actions">
+              <button class="btn btn-warning btn-block" id="open-crate-btn" onclick="openMysteryCrate()">
+                ✨ Deschide Cufărul (150 AP)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Daily Quests & Missions Hub -->
+        <div class="quests-container-card" id="quests-container-card">
+          <div class="quests-header">
+            <div class="quests-title-wrap">
+              <span class="quests-icon">🎯</span>
+              <div>
+                <h3>Misiuni & Provocări Zilnice</h3>
+                <p>Completează activitățile de astăzi pentru a revendica până la <strong>+180 AP</strong> bonus!</p>
+              </div>
+            </div>
+            <button class="btn btn-sm btn-secondary" onclick="loadDailyQuests()">🔄 Reîmprospătează</button>
+          </div>
+          <div class="quests-list" id="quests-list">
+            <div class="loading">Se încarcă misiunile zilei...</div>
+          </div>
         </div>
 
         <!-- Community Interactive Poll Card -->
@@ -502,6 +541,20 @@
               <tr><td colspan="4" style="text-align:center;">Se încarcă clasamentul...</td></tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Community Track Guilds / Factions -->
+        <div class="guilds-container-card" id="guilds-container-card">
+          <div class="guilds-header">
+            <span class="guilds-header-icon">⚔️</span>
+            <div>
+              <h3>Războiul Track-urilor & Ghilde Comunitare</h3>
+              <p>Alătură-te facțiunii track-ului tău. Toate punctele acumulate contribuie la victoria săptămânală a ghildei tale!</p>
+            </div>
+          </div>
+          <div class="guilds-grid" id="guilds-grid">
+            <div class="loading">Se calculează clasamentul ghildelor...</div>
+          </div>
         </div>
       </section>
 
@@ -862,6 +915,60 @@
       </div>
       <div id="compare-body" class="compare-body">
         <!-- Comparison table rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Mystery Crate Unboxing Modal -->
+  <div id="crate-modal" class="modal">
+    <div class="modal-content crate-modal-content">
+      <span class="close" onclick="closeCrateModal()">&times;</span>
+      <div class="crate-unboxing-wrap" id="crate-unboxing-wrap">
+        <div class="crate-modal-header">
+          <h2>🎁 Deschidere Cufăr Misterios</h2>
+          <p id="crate-modal-subtitle">Se deschide cufărul cu recompense...</p>
+        </div>
+        <div class="crate-stage">
+          <div class="crate-box-animated" id="crate-box-animated">
+            📦
+          </div>
+          <div class="crate-particles" id="crate-particles"></div>
+        </div>
+        <div class="crate-reward-reveal" id="crate-reward-reveal" style="display: none;">
+          <!-- Revealed item details -->
+        </div>
+        <div class="modal-actions" id="crate-modal-actions" style="margin-top: 1.5rem; display: none;">
+          <button class="btn btn-warning" onclick="openMysteryCrate()">🔄 Mai Deschide Unul (150 AP)</button>
+          <button class="btn btn-secondary" onclick="closeCrateModal()">Închide</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gift Points Modal -->
+  <div id="gift-modal" class="modal">
+    <div class="modal-content auth-modal">
+      <span class="close" onclick="closeGiftModal()">&times;</span>
+      <div class="auth-content">
+        <h2>🎁 Trimite Puncte AP Cadou</h2>
+        <p>Surprinde un coleg din comunitate transmițându-i puncte de activitate!</p>
+        <form id="gift-form" onsubmit="handleSendGift(event)">
+          <div class="form-group">
+            <label for="gift-recipient">Destinatar (Email, ID sau Cod Recomandare GT)</label>
+            <input type="text" id="gift-recipient" placeholder="ex: ion@exemplu.ro sau GT-ION123" required>
+          </div>
+          <div class="form-group">
+            <label for="gift-amount">Număr de Puncte AP (minim 25 AP)</label>
+            <input type="number" id="gift-amount" min="25" max="5000" placeholder="ex: 100" required>
+          </div>
+          <div class="form-group">
+            <label for="gift-message">Mesaj Personalizat (Opțional)</label>
+            <input type="text" id="gift-message" placeholder="ex: Felicitări pentru proiectul final!">
+          </div>
+          <div class="modal-actions">
+            <button type="submit" class="btn btn-primary btn-block" id="gift-submit-btn">Trimite Cadoul</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

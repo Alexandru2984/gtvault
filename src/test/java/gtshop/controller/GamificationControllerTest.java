@@ -33,6 +33,9 @@ class GamificationControllerTest {
     @Mock
     private gtshop.service.TransactionService transactionService;
 
+    @Mock
+    private gtshop.service.QuestService questService;
+
     @InjectMocks
     private GamificationController gamificationController;
 
@@ -167,5 +170,35 @@ class GamificationControllerTest {
         assertEquals("Alice", leaderboard.get(0).get("name"));
         assertEquals(2, leaderboard.get(1).get("rank"));
         assertEquals("Bob", leaderboard.get(1).get("name"));
+    }
+
+    @Test
+    @DisplayName("Opening mystery crate succeeds when user has >= 150 AP")
+    void testOpenCrate_Success() {
+        when(userService.getCurrentUser()).thenReturn(testUser);
+
+        ResponseEntity<Map<String, Object>> response = gamificationController.openCrate();
+        assertEquals(200, response.getStatusCode().value());
+        Map<String, Object> body = response.getBody();
+        assertNotNull(body);
+        assertTrue((Boolean) body.get("success"));
+        assertNotNull(body.get("tier"));
+        assertNotNull(body.get("prizeName"));
+        verify(userRepository).save(testUser);
+        verify(questService).trackAction(testUser, "OPEN_CRATE", 1);
+    }
+
+    @Test
+    @DisplayName("Opening mystery crate fails when user has < 150 AP")
+    void testOpenCrate_InsufficientFunds() {
+        testUser.setActivityPoints(50);
+        when(userService.getCurrentUser()).thenReturn(testUser);
+
+        ResponseEntity<Map<String, Object>> response = gamificationController.openCrate();
+        assertEquals(400, response.getStatusCode().value());
+        Map<String, Object> body = response.getBody();
+        assertNotNull(body);
+        assertFalse((Boolean) body.get("success"));
+        verify(userRepository, never()).save(testUser);
     }
 }

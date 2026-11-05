@@ -23,6 +23,7 @@ public class UserProfile {
     private String referralCode;
     private String referredBy;
     private int totalPointsEarned;
+    private String guildId = "JAVA_KNIGHTS";
 
     @JsonIgnore
     private String email;
@@ -157,5 +158,13 @@ public class UserProfile {
 
     public void setTotalPointsEarned(int totalPointsEarned) {
         this.totalPointsEarned = totalPointsEarned;
+    }
+
+    public String getGuildId() {
+        return this.guildId;
+    }
+
+    public void setGuildId(String guildId) {
+        this.guildId = guildId;
     }
 }

@@ -130,6 +130,7 @@ function toggleWishlist(productId) {
   } else {
     list.push(idStr);
     showToast('Produs adăugat la favorite! ❤️', 'success');
+    apiCall('/quests/track-favorite', { method: 'POST' }).catch(() => {});
   }
   Storage.save(Storage.KEYS.WISHLIST, list);
   updateWishlistBadges();
@@ -877,9 +878,15 @@ function renderProfile() {
           <div class="stat-label">Produse în coș</div>
         </div>
       </div>
-      <div style="margin-top: 1.25rem;">
-        <button class="btn btn-secondary btn-block" onclick="switchSection('history')">
+      <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <button class="btn btn-secondary" style="flex: 1; min-width: 220px;" onclick="switchSection('history')">
           📋 Vezi Istoric Comenzi, Chitanțe & Vouchere
+        </button>
+        <button class="btn btn-primary" style="flex: 1; min-width: 180px;" onclick="openGiftModal()">
+          🎁 Trimite AP Cadou
+        </button>
+        <button class="btn btn-secondary" style="flex: 1; min-width: 180px;" onclick="exportTransactionsCsv()">
+          📥 Exportă Jurnal (CSV)
         </button>
       </div>
     </div>`;
@@ -929,9 +936,34 @@ function renderHistory(purchases) {
             <button class="btn-copy-voucher" onclick="copyVoucher('${p.voucherCode}')">Copiază</button>
           </div>
         </div>` : ''}
-        <div class="history-info" style="grid-column: 1 / -1; margin-top: 0.5rem;">
+        ${(!p.voucherCode || (p.rewardName && /tricou|mouse|agend|sticker/i.test(p.rewardName))) ? `
+        <div class="history-info" style="grid-column: 1 / -1; margin-top: 0.75rem;">
+          <span class="detail-label">Status Expediere Curier GT:</span>
+          <div class="order-delivery-stepper">
+            <div class="stepper-step completed">
+              <div class="step-node">✓</div>
+              <div class="step-label">Înregistrată</div>
+            </div>
+            <div class="stepper-step completed">
+              <div class="step-node">✓</div>
+              <div class="step-label">Ambalată</div>
+            </div>
+            <div class="stepper-step active">
+              <div class="step-node">🚚</div>
+              <div class="step-label">AWB FAN-GT-${p.id ? p.id.replace('tx-', '').substring(0, 6).toUpperCase() : '8421'}</div>
+            </div>
+            <div class="stepper-step">
+              <div class="step-node">4</div>
+              <div class="step-label">Livrată</div>
+            </div>
+          </div>
+        </div>` : ''}
+        <div class="history-info" style="grid-column: 1 / -1; margin-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
           <button class="btn btn-sm btn-secondary" onclick="showDigitalReceipt('${p.id || ''}')">
             📄 Vezi Chitanță & Certificat
+          </button>
+          <button class="btn btn-sm btn-outline" onclick="exportTransactionsCsv()">
+            📥 Exportă CSV
           </button>
         </div>
       </div>
@@ -1051,8 +1083,8 @@ function switchSection(name) {
     case 'profile': renderProfile(); break;
     case 'history': loadHistory(); break;
     case 'wishlist': renderWishlist(); break;
-    case 'gamification': loadGamificationStatus(); break;
-    case 'leaderboard': loadLeaderboard(); break;
+    case 'gamification': loadGamificationStatus(); loadDailyQuests(); break;
+    case 'leaderboard': loadLeaderboard(); loadGuilds(); break;
     case 'cart': break;
     case 'shop': if (!AppState.products.length) loadProducts(); break;
   }
@@ -3193,6 +3225,326 @@ async function loadUserTransactions() {
   }
 }
 
+/* ==========================================================
+   DAILY QUESTS, MYSTERY CRATE, GUILD WARS & GIFT AP
+   ========================================================== */
+
+async function loadDailyQuests() {
+  const container = document.getElementById('quests-list');
+  if (!container) return;
+  try {
+    const quests = await apiCall('/quests');
+    if (!quests || !quests.length) {
+      container.innerHTML = '<div class="empty-state">Toate misiunile sunt completate pentru astăzi!</div>';
+      return;
+    }
+
+    container.innerHTML = quests.map(q => {
+      const pct = Math.min(100, Math.round((q.currentProgress / q.targetProgress) * 100));
+      const isClaimed = q.claimed;
+      const isCompleted = q.completed;
+
+      let actionBtn;
+      if (isClaimed) {
+        actionBtn = `<button class="btn btn-sm btn-secondary" disabled>✅ Revendicat</button>`;
+      } else if (isCompleted) {
+        actionBtn = `<button class="btn btn-sm btn-primary" onclick="claimDailyQuest('${q.id}')">🎉 Revendică (+${q.rewardPoints} AP)</button>`;
+      } else {
+        actionBtn = `<button class="btn btn-sm btn-secondary" disabled>În Progres (${q.currentProgress}/${q.targetProgress})</button>`;
+      }
+
+      return `
+        <div class="quest-item ${isCompleted ? 'completed' : ''} ${isClaimed ? 'claimed' : ''}">
+          <div class="quest-left">
+            <div class="quest-title-row">
+              <span class="quest-title">${escapeHtml(q.title)}</span>
+              <span class="quest-bounty-badge">+${q.rewardPoints} AP</span>
+            </div>
+            <div class="quest-desc">${escapeHtml(q.description)}</div>
+            <div class="quest-progress-track">
+              <div class="quest-progress-bar-bg">
+                <div class="quest-progress-bar-fill" style="width: ${pct}%;"></div>
+              </div>
+              <span class="quest-progress-txt">${q.currentProgress}/${q.targetProgress}</span>
+            </div>
+          </div>
+          <div class="quest-right">
+            ${actionBtn}
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('Failed to load daily quests:', err);
+    container.innerHTML = '<div class="alert alert-danger">Eroare la încărcarea misiunilor.</div>';
+  }
+}
+
+async function claimDailyQuest(id) {
+  try {
+    const res = await apiCall(`/quests/${id}/claim`, { method: 'POST' });
+    if (res.success) {
+      SoundFx.playWin();
+      if (window.confetti) {
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+      }
+      showToast(res.message, 'success');
+      if (AppState.user) {
+        AppState.user.activityPoints = res.newBalance;
+      }
+      updateUserInterface();
+      loadDailyQuests();
+    } else {
+      showToast(res.message || 'Revendicare eșuată', 'error');
+    }
+  } catch (err) {
+    showToast('Eroare la revendicarea misiunii', 'error');
+  }
+}
+
+let isUnboxingCrate = false;
+async function openMysteryCrate() {
+  if (isUnboxingCrate) return;
+  const modal = document.getElementById('crate-modal');
+  const box = document.getElementById('crate-box-animated');
+  const reveal = document.getElementById('crate-reward-reveal');
+  const actions = document.getElementById('crate-modal-actions');
+  const subtitle = document.getElementById('crate-modal-subtitle');
+
+  if (AppState.user && AppState.user.activityPoints < 150) {
+    showToast('Ai nevoie de cel puțin 150 AP pentru a deschide cufărul!', 'warning');
+    return;
+  }
+
+  isUnboxingCrate = true;
+  modal.style.display = 'block';
+  box.className = 'crate-box-animated shaking';
+  reveal.style.display = 'none';
+  actions.style.display = 'none';
+  subtitle.textContent = 'Cufărul misterios se deschide... Suspans!';
+  SoundFx.playChord();
+
+  try {
+    const res = await apiCall('/gamification/open-crate', { method: 'POST' });
+    if (!res.success) {
+      isUnboxingCrate = false;
+      showToast(res.message || 'Deschiderea cufărului a eșuat', 'error');
+      closeCrateModal();
+      return;
+    }
+
+    setTimeout(() => {
+      box.className = 'crate-box-animated';
+      subtitle.textContent = 'Cufăr deschis cu succes!';
+      
+      const tierColors = {
+        COMMON: '#94a3b8',
+        UNCOMMON: '#10b981',
+        RARE: '#3b82f6',
+        EPIC: '#a855f7',
+        LEGENDARY: '#f59e0b',
+        MYTHIC: '#ef4444'
+      };
+      const color = tierColors[res.tier] || '#a855f7';
+
+      reveal.innerHTML = `
+        <div style="font-size: 3rem; margin-bottom: 0.5rem;">🎉</div>
+        <div style="display: inline-block; background: ${color}; color: white; font-weight: 800; font-size: 0.8rem; padding: 0.25rem 0.75rem; border-radius: 999px; text-transform: uppercase; margin-bottom: 0.5rem;">
+          ${res.tier} DROP
+        </div>
+        <h3 style="margin: 0.25rem 0; font-size: 1.3rem; color: #f8fafc;">${escapeHtml(res.prizeName)}</h3>
+        <p style="margin: 0.5rem 0; font-size: 1.1rem; font-weight: 700; color: #34d399;">
+          +${res.wonPoints} AP adăugate în cont!
+        </p>
+        ${res.voucherCode ? `
+          <div style="background: rgba(0,0,0,0.3); border: 1px dashed #f59e0b; padding: 0.75rem; border-radius: 8px; margin-top: 0.75rem;">
+            <div style="font-size: 0.75rem; color: #fde047; font-weight: 700;">COD VOUCHER EXCLUSIV:</div>
+            <div style="font-family: monospace; font-size: 1.1rem; font-weight: 800; color: white;">${res.voucherCode}</div>
+          </div>
+        ` : ''}
+      `;
+      reveal.style.display = 'block';
+      actions.style.display = 'flex';
+      actions.style.gap = '0.5rem';
+      actions.style.justifyContent = 'center';
+
+      SoundFx.playWin();
+      if (window.confetti) {
+        confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
+      }
+
+      if (AppState.user) {
+        AppState.user.activityPoints = res.newBalance;
+      }
+      updateUserInterface();
+      loadDailyQuests();
+      isUnboxingCrate = false;
+    }, 1200);
+  } catch (err) {
+    isUnboxingCrate = false;
+    showToast('Eroare la deschiderea cufărului', 'error');
+    closeCrateModal();
+  }
+}
+
+function closeCrateModal() {
+  const modal = document.getElementById('crate-modal');
+  if (modal) modal.style.display = 'none';
+  isUnboxingCrate = false;
+}
+
+async function loadGuilds() {
+  const container = document.getElementById('guilds-grid');
+  if (!container) return;
+  try {
+    const list = await apiCall('/guilds');
+    if (!list || !list.length) return;
+
+    const userGuild = (AppState.user && AppState.user.guildId) ? AppState.user.guildId : 'JAVA_KNIGHTS';
+
+    container.innerHTML = list.map(g => {
+      const isMyGuild = (g.id === userGuild);
+      return `
+        <div class="guild-card ${isMyGuild ? 'active-guild' : ''}" style="border-top: 4px solid ${g.color};">
+          <span class="guild-rank-badge">#${g.rank}</span>
+          <div class="guild-icon-large">${g.icon}</div>
+          <div class="guild-name">${escapeHtml(g.name)}</div>
+          <div class="guild-desc">${escapeHtml(g.description)}</div>
+          <div class="guild-xp-badge">⚡ ${g.totalXp.toLocaleString('ro-RO')} XP Ghildă</div>
+          <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 0.75rem;">👥 ${g.members} membri activi</div>
+          <div>
+            ${isMyGuild ? `
+              <button class="btn btn-sm btn-primary" style="width: 100%;" disabled>⭐ Ghilda Ta</button>
+            ` : `
+              <button class="btn btn-sm btn-secondary" style="width: 100%;" onclick="selectGuild('${g.id}')">Alătură-te</button>
+            `}
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('Failed to load guilds:', err);
+    container.innerHTML = '<div class="alert alert-danger">Eroare la încărcarea ghildelor.</div>';
+  }
+}
+
+async function selectGuild(guildId) {
+  try {
+    const res = await apiCall('/guilds/select', {
+      method: 'POST',
+      body: JSON.stringify({ guildId })
+    });
+    if (res.success) {
+      if (AppState.user) {
+        AppState.user.guildId = guildId;
+      }
+      SoundFx.playClick();
+      showToast(res.message, 'success');
+      loadGuilds();
+    } else {
+      showToast(res.message || 'Selectare eșuată', 'error');
+    }
+  } catch (err) {
+    showToast('Eroare la schimbarea ghildei', 'error');
+  }
+}
+
+function openGiftModal() {
+  const modal = document.getElementById('gift-modal');
+  if (modal) {
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeGiftModal() {
+  const modal = document.getElementById('gift-modal');
+  if (modal) {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+    const form = document.getElementById('gift-form');
+    if (form) form.reset();
+  }
+}
+
+async function handleSendGift(event) {
+  event.preventDefault();
+  const recipient = document.getElementById('gift-recipient').value.trim();
+  const amount = parseInt(document.getElementById('gift-amount').value, 10);
+  const message = document.getElementById('gift-message').value.trim();
+
+  if (!recipient || isNaN(amount) || amount < 25) {
+    showToast('Introdu un destinatar valid și minim 25 AP.', 'warning');
+    return;
+  }
+
+  const btn = document.getElementById('gift-submit-btn');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await apiCall('/user/gift', {
+      method: 'POST',
+      body: JSON.stringify({ recipient, amount, message })
+    });
+
+    if (res.success) {
+      SoundFx.playWin();
+      if (window.confetti) {
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+      }
+      showToast(res.message, 'success');
+      if (AppState.user) {
+        AppState.user.activityPoints = res.newBalance;
+      }
+      updateUserInterface();
+      closeGiftModal();
+      loadUserTransactions();
+    } else {
+      showToast(res.message || 'Trimiterea cadoului a eșuat', 'error');
+    }
+  } catch (err) {
+    showToast('Eroare la trimiterea cadoului', 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function exportTransactionsCsv() {
+  try {
+    showToast('Se generează fișierul CSV...', 'info');
+    const txs = await apiCall('/user/transactions');
+    if (!txs || !txs.length) {
+      showToast('Nu există tranzacții înregistrate de exportat.', 'info');
+      return;
+    }
+
+    const headers = ['ID', 'Data', 'Tip', 'Suma AP', 'Sold Dupa', 'Descriere'];
+    const rows = txs.map(t => [
+      `"${t.id || ''}"`,
+      `"${t.createdAt ? new Date(t.createdAt).toISOString() : ''}"`,
+      `"${t.type || ''}"`,
+      t.amount,
+      t.balanceAfter,
+      `"${(t.description || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `jurnal_tranzactii_gt_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Fișierul CSV a fost descărcat cu succes! 📥', 'success');
+  } catch (err) {
+    console.error('CSV export failed:', err);
+    showToast('Eroare la generarea raportului CSV.', 'error');
+  }
+}
+
 // Global window exports
 window.applyPromoCode = applyPromoCode;
 window.handleSortChange = handleSortChange;
@@ -3222,6 +3574,16 @@ window.loadUserReferrals = loadUserReferrals;
 window.copyReferralCode = copyReferralCode;
 window.shareReferralLink = shareReferralLink;
 window.loadUserTransactions = loadUserTransactions;
+window.loadDailyQuests = loadDailyQuests;
+window.claimDailyQuest = claimDailyQuest;
+window.openMysteryCrate = openMysteryCrate;
+window.closeCrateModal = closeCrateModal;
+window.loadGuilds = loadGuilds;
+window.selectGuild = selectGuild;
+window.openGiftModal = openGiftModal;
+window.closeGiftModal = closeGiftModal;
+window.handleSendGift = handleSendGift;
+window.exportTransactionsCsv = exportTransactionsCsv;
 
 /* ---------- Basic error boundary ---------- */
 
