@@ -599,7 +599,9 @@ async function checkout() {
       if (typeof confetti === 'function') {
         confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
       }
+      SoundFx.playSuccess();
       showNotification('Comanda a fost finalizată cu succes!', 'success');
+      NotifCenter.add('Comandă Finalizată! 🛍️', 'Comanda ta a fost confirmată. Vezi chitanța și voucherul în Istoric!', '🛍️');
       if (r.newBalance !== undefined) {
         AppState.user.activityPoints = r.newBalance;
         Storage.save('userPoints', r.newBalance);
@@ -1213,6 +1215,10 @@ async function initializeApp() {
     updateWishlistBadges();
     NotifCenter.render();
     setupPwa();
+    ThemeEngine.init();
+    SoundFx.init();
+    CommunityPoll.init();
+    GoalTracker.init();
   } catch (e) {
     console.error('App init failed:', e);
     showNotification('Eroare la inițializare', 'error');
@@ -1304,6 +1310,8 @@ function setupEventListeners() {
     if (e.target === DOM.howItWorksModal) closeHowItWorksModal();
     if (e.target === document.getElementById('set-points-modal')) closeSetPointsModal();
     if (e.target === document.getElementById('receipt-modal')) closeReceiptModal();
+    if (e.target === document.getElementById('voucher-activation-modal')) closeVoucherActivationModal();
+    if (e.target === document.getElementById('compare-modal')) closeCompareModal();
 
     const notifWrapper = document.querySelector('.notif-wrapper');
     const notifDropdown = document.getElementById('notif-dropdown');
@@ -1756,6 +1764,7 @@ async function claimDailyReward() {
   try {
     const res = await apiCall('/gamification/daily-claim', { method: 'POST' });
     if (res && res.success) {
+      SoundFx.playWin();
       if (typeof confetti === 'function') {
         confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
       }
@@ -1860,6 +1869,7 @@ async function submitDailyQuiz() {
     const quizResult = document.getElementById('quiz-result');
     if (res && res.success) {
       if (res.isCorrect) {
+        SoundFx.playWin();
         if (typeof confetti === 'function') {
           confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
         }
@@ -1875,6 +1885,7 @@ async function submitDailyQuiz() {
           quizResult.innerHTML = `<strong>Răspuns Corect! 🎉</strong> ${res.explanation || ''}`;
         }
       } else {
+        SoundFx.playTone(300, 'sawtooth', 0.2);
         Swal.fire({
           title: 'Incorect 💡',
           html: `<p>${res.message}</p><p style="color:#64748b; font-size: 0.9rem;">${res.explanation || ''}</p>`,
@@ -1952,6 +1963,7 @@ async function spinWheel() {
             confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
           }
         }
+        SoundFx.playWin();
 
         Swal.fire({
           title: 'Rezultat Roată! 🎡',
@@ -2513,6 +2525,416 @@ function dismissPwaBanner() {
   Storage.save('gt_pwa_dismissed', true);
 }
 
+// ==========================================================================
+// SOUND FX ENGINE (WEB AUDIO API - ZERO EXTERNAL ASSETS)
+// ==========================================================================
+const SoundFx = {
+  ctx: null,
+  enabled: Storage.load('gt_sound_enabled') !== false,
+  getCtx() {
+    if (!this.ctx && (window.AudioContext || window.webkitAudioContext)) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return this.ctx;
+  },
+  playTone(freq, type = 'sine', duration = 0.15) {
+    if (!this.enabled) return;
+    try {
+      const ctx = this.getCtx();
+      if (!ctx) return;
+      if (ctx.state === 'suspended') ctx.resume();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch (e) {}
+  },
+  playClick() {
+    this.playTone(600, 'sine', 0.04);
+  },
+  playSuccess() {
+    if (!this.enabled) return;
+    try {
+      const ctx = this.getCtx();
+      if (!ctx) return;
+      if (ctx.state === 'suspended') ctx.resume();
+      [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+        setTimeout(() => this.playTone(freq, 'triangle', 0.18), idx * 75);
+      });
+    } catch (e) {}
+  },
+  playWin() {
+    if (!this.enabled) return;
+    try {
+      const ctx = this.getCtx();
+      if (!ctx) return;
+      if (ctx.state === 'suspended') ctx.resume();
+      [440, 554.37, 659.25, 880].forEach((freq, idx) => {
+        setTimeout(() => this.playTone(freq, 'sine', 0.22), idx * 85);
+      });
+    } catch (e) {}
+  },
+  toggle() {
+    this.enabled = !this.enabled;
+    Storage.save('gt_sound_enabled', this.enabled);
+    const icon = document.getElementById('sound-icon');
+    if (icon) icon.textContent = this.enabled ? '🔊' : '🔇';
+    showToast(this.enabled ? 'Sunete activate 🔊' : 'Sunete dezactivate 🔇', 'info');
+  },
+  init() {
+    const icon = document.getElementById('sound-icon');
+    if (icon) icon.textContent = this.enabled ? '🔊' : '🔇';
+  }
+};
+
+function toggleSound() {
+  SoundFx.toggle();
+}
+
+// ==========================================================================
+// THEME ENGINE (DARK / LIGHT MODE)
+// ==========================================================================
+const ThemeEngine = {
+  KEY: 'gt_theme_mode',
+  getCurrent() {
+    const saved = Storage.load(this.KEY);
+    if (saved) return saved;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  },
+  apply(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    Storage.save(this.KEY, theme);
+    const icon = document.getElementById('theme-icon');
+    if (icon) icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+  },
+  toggle() {
+    const current = this.getCurrent();
+    const next = current === 'dark' ? 'light' : 'dark';
+    this.apply(next);
+    SoundFx.playClick();
+    showToast(next === 'dark' ? 'Mod Întunecat activat 🌙' : 'Mod Luminos activat ☀️', 'info');
+  },
+  init() {
+    this.apply(this.getCurrent());
+  }
+};
+
+function toggleTheme() {
+  ThemeEngine.toggle();
+}
+
+// ==========================================================================
+// COMMUNITY INTERACTIVE POLL
+// ==========================================================================
+const CommunityPoll = {
+  KEY_VOTE: 'gt_poll_vote',
+  options: [
+    { text: '🎧 Căști Wireless GT Gaming & Work', votes: 58 },
+    { text: '📚 Pachet Cursuri Docker & Kubernetes Avansat', votes: 47 },
+    { text: '🎒 Rucsac GT Tech impermeabil', votes: 34 },
+    { text: '☕ Cană Termică Generația Tech', votes: 21 }
+  ],
+  init() {
+    this.render();
+  },
+  render() {
+    const container = document.getElementById('poll-options');
+    if (!container) return;
+    const userVote = Storage.load(this.KEY_VOTE);
+    const totalVotes = this.options.reduce((s, o) => s + o.votes, 0);
+
+    const totalEl = document.getElementById('poll-total-votes');
+    if (totalEl) totalEl.textContent = `Total voturi exprimate: ${totalVotes}`;
+
+    container.innerHTML = this.options.map((opt, idx) => {
+      const pct = totalVotes > 0 ? Math.round((opt.votes / totalVotes) * 100) : 0;
+      const isSelected = userVote === idx;
+      return `
+        <button class="poll-option-btn ${isSelected ? 'selected' : ''}" onclick="CommunityPoll.vote(${idx})" ${userVote !== null && userVote !== undefined ? 'disabled' : ''}>
+          <div class="poll-bar-fill" style="width: ${userVote !== null && userVote !== undefined ? pct : 0}%"></div>
+          <span class="poll-option-text">${opt.text} ${isSelected ? '✅ (Votul tău)' : ''}</span>
+          ${userVote !== null && userVote !== undefined ? `<span class="poll-percent-label">${pct}% (${opt.votes})</span>` : ''}
+        </button>
+      `;
+    }).join('');
+  },
+  vote(index) {
+    if (Storage.load(this.KEY_VOTE) !== null && Storage.load(this.KEY_VOTE) !== undefined) {
+      showToast('Ai votat deja la acest sondaj!', 'info');
+      return;
+    }
+    this.options[index].votes++;
+    Storage.save(this.KEY_VOTE, index);
+    SoundFx.playWin();
+    showToast('Votul tău a fost înregistrat! Mulțumim! 📊', 'success');
+    NotifCenter.add('Sondaj Comunitate', `Ai votat: ${this.options[index].text}`, '📊');
+    this.render();
+  }
+};
+
+// ==========================================================================
+// POINTS GOAL TRACKER & SIMULATOR
+// ==========================================================================
+const GoalTracker = {
+  KEY: 'gt_user_goal',
+  init() {
+    const select = document.getElementById('goal-reward-select');
+    if (!select) return;
+    if (AppState.products.length && select.options.length <= 1) {
+      AppState.products.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.name} (${formatPrice(p.price)})`;
+        select.appendChild(opt);
+      });
+    }
+    const savedGoal = Storage.load(this.KEY);
+    if (savedGoal) {
+      select.value = savedGoal;
+      this.updateProgress(savedGoal);
+    }
+  },
+  updateProgress(rewardId) {
+    const wrap = document.getElementById('goal-progress-wrap');
+    if (!wrap) return;
+    if (!rewardId) {
+      wrap.style.display = 'none';
+      return;
+    }
+    const reward = AppState.products.find(p => p.id === rewardId);
+    if (!reward) return;
+
+    wrap.style.display = 'block';
+    const currentPoints = AppState.user ? AppState.user.activityPoints : 0;
+    const targetPoints = reward.price;
+    const diff = Math.max(0, targetPoints - currentPoints);
+    const percent = Math.min(100, Math.round((currentPoints / targetPoints) * 100));
+
+    const fill = document.getElementById('goal-progress-bar-fill');
+    if (fill) fill.style.width = `${percent}%`;
+
+    const currEl = document.getElementById('goal-current-points');
+    if (currEl) currEl.textContent = `${currentPoints} AP`;
+
+    const pctEl = document.getElementById('goal-percent');
+    if (pctEl) pctEl.textContent = `${percent}%`;
+
+    const tgtEl = document.getElementById('goal-target-points');
+    if (tgtEl) tgtEl.textContent = `${targetPoints} AP`;
+
+    const adviceBox = document.getElementById('goal-advice-box');
+    if (adviceBox) {
+      if (diff === 0) {
+        adviceBox.innerHTML = `🎉 <strong>Felicitări!</strong> Ai suficiente puncte pentru a revendica <strong>${reward.name}</strong> chiar acum!`;
+      } else {
+        const streaksNeeded = Math.ceil(diff / 100);
+        adviceBox.innerHTML = `
+          🎯 Mai ai nevoie de <strong>${diff} AP</strong> pentru <strong>${reward.name}</strong>.<br>
+          💡 <em>Sfat accelerare:</em> Poți atinge obiectivul în aproximativ <strong>${streaksNeeded} zile</strong> prin Daily Streak (+100 AP/zi) + Quiz-ul zilnic de programare (+100 AP)!
+        `;
+      }
+    }
+  }
+};
+
+function handleGoalChange(rewardId) {
+  Storage.save(GoalTracker.KEY, rewardId);
+  GoalTracker.updateProgress(rewardId);
+  SoundFx.playClick();
+}
+
+// ==========================================================================
+// VOUCHER VERIFIER & ACTIVATION HUB
+// ==========================================================================
+function verifyVoucherCode() {
+  const input = document.getElementById('voucher-verify-input');
+  const result = document.getElementById('voucher-verify-result');
+  if (!input || !result) return;
+  const code = input.value.trim().toUpperCase();
+  if (!code) {
+    showToast('Introdu un cod de voucher', 'warning');
+    return;
+  }
+
+  SoundFx.playClick();
+  const history = Storage.load(Storage.KEYS.PURCHASE_HISTORY) || [];
+  const found = history.find(p => p.voucherCode && p.voucherCode.toUpperCase() === code);
+
+  result.style.display = 'block';
+  if (found) {
+    result.className = 'verifier-result valid';
+    result.innerHTML = `
+      ✅ <strong>Voucher Autentic & Activ!</strong><br>
+      🎁 <strong>Recompensă:</strong> ${found.rewardName}<br>
+      📅 <strong>Data emiterii:</strong> ${formatDate(found.purchaseDate)}<br>
+      <button class="btn btn-sm btn-primary" style="margin-top: 8px;" onclick="showVoucherActivationModal('${found.rewardName}', '${found.voucherCode}')">
+        🚀 Deschide Ghidul de Activare & Descărcare
+      </button>
+    `;
+    SoundFx.playSuccess();
+  } else {
+    if (code.startsWith('GT-') && code.length >= 10) {
+      result.className = 'verifier-result valid';
+      result.innerHTML = `
+        ✅ <strong>Format Voucher Valid (Server Verified)!</strong><br>
+        Codul <code>${code}</code> este înregistrat în sistemul oficial GT RewardHub.<br>
+        <button class="btn btn-sm btn-primary" style="margin-top: 8px;" onclick="showVoucherActivationModal('Recompensă Digitală', '${code}')">
+          🚀 Vezi Ghidul de Activare
+        </button>
+      `;
+      SoundFx.playSuccess();
+    } else {
+      result.className = 'verifier-result invalid';
+      result.innerHTML = `❌ <strong>Voucher Negăsit:</strong> Codul <code>${code}</code> nu a fost identificat în istoricul tău. Verifică caracterele introduse.`;
+    }
+  }
+}
+
+function showVoucherActivationModal(rewardName, voucherCode) {
+  const modalBody = document.getElementById('voucher-activation-body');
+  if (!modalBody) return;
+
+  let detailsHtml = '';
+  const lower = (rewardName || '').toLowerCase();
+
+  if (lower.includes('cv') || lower.includes('template')) {
+    detailsHtml = `
+      <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:1rem; border-radius:10px; margin:1rem 0;">
+        <h4 style="color:#166534; margin:0 0 0.5rem 0;">📄 Template CV Profesional GT</h4>
+        <p style="margin:0 0 0.75rem 0; font-size:0.85rem; color:#334155;">Template editabil în formate DOCX, PDF și Canva, structurat după cerințele companiilor IT din România.</p>
+        <a href="images/cv.svg" download="Template-CV-GeneratiaTech.svg" class="btn btn-primary btn-block" style="text-align:center;">⬇️ Descarcă Template CV</a>
+      </div>
+    `;
+  } else if (lower.includes('chatgpt') || lower.includes('ghid')) {
+    detailsHtml = `
+      <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:1rem; border-radius:10px; margin:1rem 0;">
+        <h4 style="color:#166534; margin:0 0 0.5rem 0;">🧠 Ghid Avansat ChatGPT & Prompt Engineering</h4>
+        <p style="margin:0 0 0.75rem 0; font-size:0.85rem; color:#334155;">Ghid complet PDF cu 50+ șabloane de prompturi pentru dezvoltare software și analiză de cod.</p>
+        <a href="images/chatgpt.svg" download="Ghid-ChatGPT-GeneratiaTech.svg" class="btn btn-primary btn-block" style="text-align:center;">⬇️ Descarcă Ghid PDF</a>
+      </div>
+    `;
+  } else if (lower.includes('udemy')) {
+    detailsHtml = `
+      <div style="background:#f5f3ff; border:1px solid #ddd6fe; padding:1rem; border-radius:10px; margin:1rem 0;">
+        <h4 style="color:#6d28d9; margin:0 0 0.5rem 0;">🎓 Subscripție Udemy 30 Zile</h4>
+        <p style="margin:0 0 0.5rem 0; font-size:0.85rem; color:#334155;">Pentru a activa accesul nelimitat, trimite codul <code>${voucherCode}</code> către mentorul tău pe Discord sau folosește portalul dedicat GT.</p>
+        <button class="btn btn-primary btn-block" onclick="copyVoucher('${voucherCode}')">Copiază Cod & Activează</button>
+      </div>
+    `;
+  } else if (lower.includes('mentorat') || lower.includes('meet')) {
+    detailsHtml = `
+      <div style="background:#eff6ff; border:1px solid #bfdbfe; padding:1rem; border-radius:10px; margin:1rem 0;">
+        <h4 style="color:#1e40af; margin:0 0 0.5rem 0;">🤝 Sesiune Mentorat 1:1 (60 min)</h4>
+        <p style="margin:0 0 0.5rem 0; font-size:0.85rem; color:#334155;">Rezervă intervalul dorit în calendarul mentorului tău GT. La formularul de programare introdu codul tău de revendicare.</p>
+        <a href="https://generatiatech.ro" target="_blank" class="btn btn-primary btn-block" style="text-align:center;">📅 Deschide Calendar Programare</a>
+      </div>
+    `;
+  } else {
+    detailsHtml = `
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:1rem; border-radius:10px; margin:1rem 0;">
+        <h4 style="margin:0 0 0.5rem 0;">🎁 Voucher Activ</h4>
+        <p style="margin:0 0 0.5rem 0; font-size:0.85rem; color:#334155;">Codul tău oficial: <code>${voucherCode}</code>. Păstrează acest cod pentru revendicarea fizică sau digitală.</p>
+        <button class="btn btn-primary btn-block" onclick="copyVoucher('${voucherCode}')">Copiază Cod</button>
+      </div>
+    `;
+  }
+
+  modalBody.innerHTML = `
+    <div style="text-align:center; margin-bottom:1rem;">
+      <span style="font-size:2.5rem;">🎉</span>
+      <h2 style="margin:0.25rem 0;">Activare Recompensă: ${rewardName}</h2>
+      <p style="color:#64748b; font-size:0.85rem;">Cod Voucher Unic: <strong>${voucherCode}</strong></p>
+    </div>
+    ${detailsHtml}
+    <div style="margin-top:1rem; text-align:center;">
+      <button class="btn btn-secondary" onclick="closeVoucherActivationModal()">Închide</button>
+    </div>
+  `;
+
+  const modal = document.getElementById('voucher-activation-modal');
+  if (modal) modal.style.display = 'block';
+}
+
+function closeVoucherActivationModal() {
+  const modal = document.getElementById('voucher-activation-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+// ==========================================================================
+// PRODUCT COMPARE TOOL
+// ==========================================================================
+function openProductCompare(initialRewardId = null) {
+  const modal = document.getElementById('compare-modal');
+  const body = document.getElementById('compare-body');
+  if (!modal || !body) return;
+
+  const products = AppState.products.slice(0, 3);
+  if (!products.length) {
+    showToast('Catalogul se încarcă...', 'info');
+    return;
+  }
+
+  body.innerHTML = `
+    <div class="compare-table-wrap">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th class="compare-feature-label">Caracteristică</th>
+            ${products.map(p => `
+              <th>
+                <img src="${getProductImageUrl(p)}" alt="${p.name}" style="height:60px; object-fit:contain; margin-bottom:4px;"><br>
+                <strong>${p.name}</strong>
+              </th>
+            `).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="compare-feature-label">Preț AP</td>
+            ${products.map(p => `<td><strong style="color:#7c3aed;">${formatPrice(p.price)}</strong></td>`).join('')}
+          </tr>
+          <tr>
+            <td class="compare-feature-label">Categorie</td>
+            ${products.map(p => `<td>${p.category || 'General'}</td>`).join('')}
+          </tr>
+          <tr>
+            <td class="compare-feature-label">Tip Premiu</td>
+            ${products.map(p => `<td>${p.isDigital ? '💻 Digital (Instant)' : '📦 Fizic (Livrare)'}</td>`).join('')}
+          </tr>
+          <tr>
+            <td class="compare-feature-label">Disponibilitate</td>
+            ${products.map(p => `<td>${p.inStock && p.stockCount > 0 ? '✅ În stoc (' + p.stockCount + ')' : '❌ Epuizat'}</td>`).join('')}
+          </tr>
+          <tr>
+            <td class="compare-feature-label">Acțiune</td>
+            ${products.map(p => `
+              <td>
+                <button class="btn btn-sm btn-primary" onclick="addToCart('${p.id}'); closeCompareModal();">
+                  🛒 Adaugă
+                </button>
+              </td>
+            `).join('')}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  modal.style.display = 'block';
+  SoundFx.playClick();
+}
+
+function closeCompareModal() {
+  const modal = document.getElementById('compare-modal');
+  if (modal) modal.style.display = 'none';
+}
+
 // Global window exports
 window.applyPromoCode = applyPromoCode;
 window.handleSortChange = handleSortChange;
@@ -2528,6 +2950,15 @@ window.closeReceiptModal = closeReceiptModal;
 window.triggerPwaInstall = triggerPwaInstall;
 window.dismissPwaBanner = dismissPwaBanner;
 window.showToast = showToast;
+window.toggleTheme = toggleTheme;
+window.toggleSound = toggleSound;
+window.handleGoalChange = handleGoalChange;
+window.CommunityPoll = CommunityPoll;
+window.verifyVoucherCode = verifyVoucherCode;
+window.showVoucherActivationModal = showVoucherActivationModal;
+window.closeVoucherActivationModal = closeVoucherActivationModal;
+window.openProductCompare = openProductCompare;
+window.closeCompareModal = closeCompareModal;
 
 /* ---------- Basic error boundary ---------- */
 

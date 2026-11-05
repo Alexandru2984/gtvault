@@ -115,9 +115,34 @@
 - Clopoțel interactiv în antet cu contor de notificări necitite, dropdown cu istoricul acțiunilor și alerte flotante de tip toast.
 
 ### 16. 🔍 SEO Avansat & Schema.org Rich Snippets
-- **Structured Data:** Script JSON-LD cu entitățile `WebSite` (SearchAction), `Store` (Generația Tech) și `ItemList` pentru afișarea prețurilor și a recenziilor direct în motoarele de căutare Google.
+- **Structured Data:** Script JSON-LD cu entitățile `WebSite` (SearchAction), `Store` (Generația Tech), `ItemList`, `FAQPage` (răspunsuri acordeon în Google Search) și `BreadcrumbList`.
 - **Social Sharing:** Meta tag-uri complete OpenGraph și Twitter Cards.
 - **Indexare:** Fișiere dedicate `sitemap.xml` și `robots.txt` servite direct pe domeniul `https://shop.micutu.com/`.
+
+### 17. 🌙 Mod Întunecat & Mod Luminos (Theme Engine)
+- Comutator dinamic cu persistență în stocarea locală (`gt_theme_mode`) și detectare automată a preferinței de sistem (`prefers-color-scheme`).
+- Paletă cromatică optimizată pentru programatori (nuanțe profunde de indigo/slate `#090d16` și accente neon `#a855f7`).
+
+### 18. 🔊 Efecte Audio Interactive (Web Audio API)
+- Motor audio pur nativ (fără fișiere MP3 externe) bazat pe oscilatoare browser pentru feedback auditiv la:
+  - Câștig roată și quiz corect (arpegiu ascendent).
+  - Finalizare comandă (acord melodic de succes).
+  - Comutare temă și acțiuni rapide (clic discret).
+  - Buton dedicat de mute (`🔊`/`🔇`) în antet.
+
+### 19. 🎯 Simulator de Obiective & Calculator AP (Goal Tracker)
+- Utilizatorii își pot seta o recompensă țintă în Profil (ex: *Tricou GT* sau *Mentorat 1:1*).
+- Bară animată de progres (`0 - 100%`) și calculator inteligent care estimează în câte zile poate fi atins obiectivul prin activitate zilnică.
+
+### 20. 📊 Sondaj Interactiv al Comunității
+- Sondaj săptămânal în secțiunea Gamification prin care cursanții votează noile premii dorite în shop, cu afișare animată a procentelor în timp real.
+
+### 21. 🔍 Verificator & Hub de Activare Vouchere
+- Instrument de validare a oricărui cod de voucher în secțiunea Istoric.
+- Modal de livrare și descărcare a resurselor educaționale (Template CV, Ghid ChatGPT PDF, instrucțiuni activare Udemy, programare mentorat).
+
+### 22. ⚖️ Modul de Comparație Premii (Side-by-Side)
+- Tabel comparativ interactiv pentru analizarea simultană a 3 produse (preț, categorie, tip digital/fizic, stoc și recenzii).
 
 ---
 
