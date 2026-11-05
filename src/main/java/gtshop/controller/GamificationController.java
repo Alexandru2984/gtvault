@@ -114,6 +114,7 @@ public class GamificationController {
         resp.put("success", true);
         resp.put("message", "Felicitări! Ai primit " + bonus + " AP pentru ziua " + newStreak + " de streak!");
         resp.put("bonusPoints", bonus);
+        resp.put("bonusAwarded", bonus);
         resp.put("streakDays", newStreak);
         resp.put("newBalance", user.getActivityPoints());
         return ResponseEntity.ok(resp);
