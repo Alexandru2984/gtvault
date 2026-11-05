@@ -8,6 +8,8 @@ import gtshop.repository.UserRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,20 @@ public class UserServiceImpl implements UserService {
         });
     }
 
+    public UserProfile getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+            String principal = auth.getName();
+            UserProfile user = this.userRepository.findById(principal)
+                .or(() -> this.userRepository.findByEmail(principal))
+                .orElse(null);
+            if (user != null) {
+                return user;
+            }
+        }
+        return this.getUser();
+    }
+
     public UserProfile getUserById(String userId) {
         return this.userRepository.findById(userId).orElse(null);
     }
@@ -39,7 +55,7 @@ public class UserServiceImpl implements UserService {
     }
 
     public List<PurchaseRecord> getHistory() {
-        UserProfile user = this.getUser();
+        UserProfile user = this.getCurrentUser();
         return this.purchaseRecordRepository.findByUserOrderByPurchaseDateDesc(user);
     }
 
@@ -52,7 +68,7 @@ public class UserServiceImpl implements UserService {
     }
 
     public void addPurchase(PurchaseRecord record) {
-        UserProfile user = this.getUser();
+        UserProfile user = this.getCurrentUser();
         record.setUser(user);
         this.purchaseRecordRepository.save(record);
     }
@@ -79,12 +95,12 @@ public class UserServiceImpl implements UserService {
     }
 
     public void setUserPoints(int points) {
-        UserProfile user = this.getUser();
+        UserProfile user = this.getCurrentUser();
         user.setActivityPoints(points);
         this.userRepository.save(user);
     }
 
     public int getUserPoints() {
-        return this.getUser().getActivityPoints();
+        return this.getCurrentUser().getActivityPoints();
     }
 }

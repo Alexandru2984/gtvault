@@ -29,11 +29,13 @@ public class UserController {
     @GetMapping("/profile")
     @Operation(summary = "Get user profile")
     public UserProfile getProfile(@RequestParam(value = "userId", required = false) String userId) {
-        UserProfile user;
-        if (userId != null && !userId.isEmpty() && (user = this.userService.getUserById(userId)) != null) {
-            return user;
+        if (userId != null && !userId.isEmpty()) {
+            UserProfile user = this.userService.getUserById(userId);
+            if (user != null) {
+                return user;
+            }
         }
-        return this.userService.getUser();
+        return this.userService.getCurrentUser();
     }
 
     @GetMapping("/history")
@@ -49,38 +51,21 @@ public class UserController {
     }
 
     @PostMapping("/profile")
-    @Operation(summary = "Update user points")
+    @Operation(summary = "Update user profile")
     public Map<String, Object> updateProfile(@RequestBody Map<String, Object> request) {
         Map<String, Object> response = new HashMap<>();
         try {
-            int activityPoints;
-            String userId = (String) request.get("userId");
-            Object pointsObj = request.get("activityPoints");
-            if (userId == null || pointsObj == null) {
-                response.put("success", false);
-                response.put("message", "userId și activityPoints sunt obligatorii");
-                return response;
+            UserProfile user = this.userService.getCurrentUser();
+            if (request.containsKey("name") && request.get("name") != null) {
+                String name = request.get("name").toString().trim();
+                if (!name.isEmpty()) {
+                    user.setName(name);
+                    this.userRepository.save(user);
+                }
             }
-            if (pointsObj instanceof Integer) {
-                activityPoints = (Integer) pointsObj;
-            } else if (pointsObj instanceof Number) {
-                activityPoints = ((Number) pointsObj).intValue();
-            } else if (pointsObj instanceof String) {
-                activityPoints = Integer.parseInt((String) pointsObj);
-            } else {
-                response.put("success", false);
-                response.put("message", "activityPoints trebuie să fie un număr");
-                return response;
-            }
-            boolean updated = this.userService.updateUserPoints(userId, activityPoints);
-            if (updated) {
-                response.put("success", true);
-                response.put("message", "Punctele au fost actualizate cu succes");
-                response.put("newBalance", activityPoints);
-            } else {
-                response.put("success", false);
-                response.put("message", "Nu s-au putut actualiza punctele");
-            }
+            response.put("success", true);
+            response.put("message", "Profil actualizat cu succes");
+            response.put("newBalance", user.getActivityPoints());
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Eroare internă: " + e.getMessage());
@@ -99,7 +84,7 @@ public class UserController {
                 response.put("message", "Avatar URL este obligatoriu");
                 return response;
             }
-            UserProfile user = this.userService.getUser();
+            UserProfile user = this.userService.getCurrentUser();
             user.setAvatar(avatarUrl.trim());
             this.userRepository.save(user);
             response.put("success", true);

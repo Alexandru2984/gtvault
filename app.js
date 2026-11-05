@@ -168,10 +168,19 @@ function debounce(fn, wait) {
 
 async function apiCall(endpoint, options = {}) {
   const url = `${CONFIG.API_BASE_URL}${endpoint}`;
-  const base = {
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+  const token = localStorage.getItem('auth_token') || Storage.load('auth_token');
+  const baseHeaders = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
   };
-  const finalOptions = { ...base, ...options };
+  const finalOptions = {
+    ...options,
+    headers: {
+      ...baseHeaders,
+      ...(options.headers || {})
+    }
+  };
 
   for (let attempt = 1; attempt <= CONFIG.RETRY_ATTEMPTS; attempt++) {
     try {

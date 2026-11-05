@@ -6,24 +6,25 @@ import gtshop.model.UserProfile;
 import java.util.List;
 
 public interface UserService {
-    public UserProfile getUser();
+    UserProfile getUser();
 
-    public UserProfile getUserById(String var1);
+    UserProfile getCurrentUser();
 
-    public void createUser(UserProfile var1);
+    UserProfile getUserById(String id);
 
-    public List<PurchaseRecord> getHistory();
+    void createUser(UserProfile user);
 
-    public List<PurchaseRecord> getHistoryByUserId(String var1);
+    List<PurchaseRecord> getHistory();
 
-    public void addPurchase(PurchaseRecord var1);
+    List<PurchaseRecord> getHistoryByUserId(String userId);
 
-    public HistorySummary getHistorySummary();
+    void addPurchase(PurchaseRecord record);
 
-    public boolean updateUserPoints(String var1, int var2);
+    HistorySummary getHistorySummary();
 
-    public void setUserPoints(int var1);
+    boolean updateUserPoints(String userId, int points);
 
-    public int getUserPoints();
+    void setUserPoints(int points);
+
+    int getUserPoints();
 }
-
