@@ -1,8 +1,6 @@
 package gtshop.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import gtshop.model.CartItem;
-import gtshop.model.PurchaseRecord;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -12,23 +10,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name="users")
+@Table(name = "users")
 public class UserProfile {
     @Id
     private String id;
     private String name;
     private String avatar;
     private int activityPoints;
+    private int streakDays;
+    private String lastDailyClaimDate;
+    private String lastQuizDate;
+
     @JsonIgnore
     private String email;
     @JsonIgnore
     private String password;
+
     @JsonIgnore
-    @OneToMany(mappedBy="user", cascade={CascadeType.ALL}, orphanRemoval=true)
-    private List<CartItem> cartItems = new ArrayList();
+    @OneToMany(mappedBy = "user", cascade = {CascadeType.ALL}, orphanRemoval = true)
+    private List<CartItem> cartItems = new ArrayList<>();
+
     @JsonIgnore
-    @OneToMany(mappedBy="user", cascade={CascadeType.ALL}, orphanRemoval=true)
-    private List<PurchaseRecord> purchases = new ArrayList();
+    @OneToMany(mappedBy = "user", cascade = {CascadeType.ALL}, orphanRemoval = true)
+    private List<PurchaseRecord> purchases = new ArrayList<>();
 
     public UserProfile() {
     }
@@ -72,6 +76,30 @@ public class UserProfile {
         this.activityPoints = activityPoints;
     }
 
+    public int getStreakDays() {
+        return this.streakDays;
+    }
+
+    public void setStreakDays(int streakDays) {
+        this.streakDays = streakDays;
+    }
+
+    public String getLastDailyClaimDate() {
+        return this.lastDailyClaimDate;
+    }
+
+    public void setLastDailyClaimDate(String lastDailyClaimDate) {
+        this.lastDailyClaimDate = lastDailyClaimDate;
+    }
+
+    public String getLastQuizDate() {
+        return this.lastQuizDate;
+    }
+
+    public void setLastQuizDate(String lastQuizDate) {
+        this.lastQuizDate = lastQuizDate;
+    }
+
     public String getEmail() {
         return this.email;
     }
@@ -104,4 +132,3 @@ public class UserProfile {
         this.purchases = purchases;
     }
 }
-

@@ -1,7 +1,6 @@
 package gtshop.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import gtshop.model.UserProfile;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
@@ -11,7 +10,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 
 @Entity
-@Table(name="purchase_records")
+@Table(name = "purchase_records")
 public class PurchaseRecord {
     @Id
     private String id;
@@ -19,8 +18,10 @@ public class PurchaseRecord {
     private int pointsSpent;
     private Instant purchaseDate;
     private String status;
-    @ManyToOne(fetch=FetchType.LAZY)
-    @JoinColumn(name="user_id")
+    private String voucherCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
     @JsonIgnore
     private UserProfile user;
 
@@ -64,6 +65,14 @@ public class PurchaseRecord {
         this.status = status;
     }
 
+    public String getVoucherCode() {
+        return this.voucherCode;
+    }
+
+    public void setVoucherCode(String voucherCode) {
+        this.voucherCode = voucherCode;
+    }
+
     public UserProfile getUser() {
         return this.user;
     }
@@ -72,4 +81,3 @@ public class PurchaseRecord {
         this.user = user;
     }
 }
-

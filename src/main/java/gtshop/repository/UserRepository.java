@@ -1,15 +1,16 @@
 package gtshop.repository;
 
 import gtshop.model.UserProfile;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface UserRepository
-extends JpaRepository<UserProfile, String> {
-    public Optional<UserProfile> findByEmail(String var1);
+public interface UserRepository extends JpaRepository<UserProfile, String> {
+    Optional<UserProfile> findByEmail(String email);
 
-    public boolean existsByEmail(String var1);
+    boolean existsByEmail(String email);
+
+    List<UserProfile> findTop10ByOrderByActivityPointsDesc();
 }
-

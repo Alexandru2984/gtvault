@@ -99,6 +99,10 @@ public class CheckoutServiceImpl implements CheckoutService {
             pr.setPointsSpent(it.getPrice() * it.getQuantity());
             pr.setPurchaseDate(Instant.now());
             pr.setStatus("Completed");
+            String voucher = "GT-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase() + "-" +
+                             UUID.randomUUID().toString().substring(0, 4).toUpperCase() + "-" +
+                             UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+            pr.setVoucherCode(voucher);
             pr.setUser(user);
             this.userService.addPurchase(pr);
         }
