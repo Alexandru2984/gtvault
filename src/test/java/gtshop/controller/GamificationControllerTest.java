@@ -201,4 +201,35 @@ class GamificationControllerTest {
         assertFalse((Boolean) body.get("success"));
         verify(userRepository, never()).save(testUser);
     }
+
+    @Test
+    @DisplayName("Opening tech fortune cookie awards bonus AP and quotes")
+    void testOpenFortuneCookie_Success() {
+        when(userService.getCurrentUser()).thenReturn(testUser);
+
+        ResponseEntity<Map<String, Object>> response = gamificationController.openFortuneCookie();
+        assertEquals(200, response.getStatusCode().value());
+        Map<String, Object> body = response.getBody();
+        assertNotNull(body);
+        assertTrue((Boolean) body.get("success"));
+        assertNotNull(body.get("quote"));
+        assertNotNull(body.get("author"));
+        assertEquals(320, body.get("newBalance")); // 300 + 20
+        verify(userRepository).save(testUser);
+    }
+
+    @Test
+    @DisplayName("Opening tech fortune cookie twice on same day fails")
+    void testOpenFortuneCookie_AlreadyClaimed() {
+        testUser.setLastFortuneDate(java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE));
+        when(userService.getCurrentUser()).thenReturn(testUser);
+
+        ResponseEntity<Map<String, Object>> response = gamificationController.openFortuneCookie();
+        assertEquals(400, response.getStatusCode().value());
+        Map<String, Object> body = response.getBody();
+        assertNotNull(body);
+        assertFalse((Boolean) body.get("success"));
+        assertTrue((Boolean) body.get("alreadyClaimed"));
+        verify(userRepository, never()).save(testUser);
+    }
 }

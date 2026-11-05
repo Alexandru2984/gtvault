@@ -24,6 +24,7 @@ public class UserProfile {
     private String referredBy;
     private int totalPointsEarned;
     private String guildId = "JAVA_KNIGHTS";
+    private String lastFortuneDate;
 
     @JsonIgnore
     private String email;
@@ -166,5 +167,13 @@ public class UserProfile {
 
     public void setGuildId(String guildId) {
         this.guildId = guildId;
+    }
+
+    public String getLastFortuneDate() {
+        return this.lastFortuneDate;
+    }
+
+    public void setLastFortuneDate(String lastFortuneDate) {
+        this.lastFortuneDate = lastFortuneDate;
     }
 }

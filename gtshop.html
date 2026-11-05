@@ -201,41 +201,13 @@
         </div>
         <nav class="nav desktop-nav">
           <a href="#" class="nav-link active" data-section="shop"><span class="nav-icon">🛍️</span> Magazin</a>
-          <a href="#" class="nav-link" data-section="gamification"><span class="nav-icon">⚡</span> Daily & Quiz</a>
+          <a href="#" class="nav-link" data-section="gamification"><span class="nav-icon">⚡</span> Activități</a>
           <a href="#" class="nav-link" data-section="leaderboard"><span class="nav-icon">🏆</span> Clasament</a>
-          <a href="#" class="nav-link" data-section="wishlist"><span class="nav-icon">💖</span> Favorite (<span id="wishlist-count">0</span>)</a>
           <a href="#" class="nav-link" data-section="cart"><span class="nav-icon">🛒</span> Coș (<span id="cart-count">0</span>)</a>
           <a href="#" class="nav-link" data-section="profile"><span class="nav-icon">👤</span> Profil</a>
           <a href="#" class="nav-link" data-section="history"><span class="nav-icon">📋</span> Istoric</a>
         </nav>
         <div class="user-info">
-          <!-- Theme & Sound Controls -->
-          <div class="quick-tools-wrapper">
-            <button class="header-tool-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Comută Temă (Întunecat/Luminos)" aria-label="Comută temă">
-              <span id="theme-icon">🌙</span>
-            </button>
-            <button class="header-tool-btn" id="sound-toggle-btn" onclick="toggleSound()" title="Sunete Interfață" aria-label="Sunete">
-              <span id="sound-icon">🔊</span>
-            </button>
-          </div>
-
-          <!-- Notification Bell -->
-          <div class="notif-wrapper">
-            <button class="notif-bell-btn" id="notif-bell-btn" onclick="toggleNotifDropdown()" title="Notificări" aria-label="Notificări">
-              <span class="bell-icon">🔔</span>
-              <span class="notif-badge" id="notif-badge" style="display: none;">0</span>
-            </button>
-            <div id="notif-dropdown" class="notif-dropdown">
-              <div class="notif-header">
-                <h4>🔔 Notificări</h4>
-                <button class="notif-clear-btn" onclick="clearNotifications()">Șterge tot</button>
-              </div>
-              <div class="notif-list" id="notif-list">
-                <!-- Rendered dynamically -->
-              </div>
-            </div>
-          </div>
-
           <div class="user-details">
             <span id="user-name">Se încarcă...</span>
             <span id="user-points" class="points">0 puncte</span>
@@ -249,6 +221,9 @@
                 </div>
                 <button class="dropdown-item" onclick="switchSection('profile')">
                   <span class="dropdown-icon">👤</span> Profilul Meu
+                </button>
+                <button class="dropdown-item" onclick="switchSection('wishlist')">
+                  <span class="dropdown-icon">💖</span> Favorite
                 </button>
                 <button class="dropdown-item" onclick="showChangeAvatarModal()">
                   <span class="dropdown-icon">🖼️</span> Schimbă Avatar
@@ -372,6 +347,26 @@
           </div>
         </div>
 
+        <!-- Flash Deals & Happy Hour Banner -->
+        <div class="flash-deals-banner" id="flash-deals-banner">
+          <div class="flash-deals-header">
+            <div class="flash-deals-title-wrap">
+              <span class="flash-deals-icon">⚡</span>
+              <div>
+                <h3>Oferte Fulger & Happy Hour (-20% AP)</h3>
+                <p>Reduceri speciale pe stoc limitat — profită acum de prețurile reduse!</p>
+              </div>
+            </div>
+            <div class="flash-countdown-box" id="flash-countdown-box">
+              <span class="countdown-label">Expiră în:</span>
+              <span class="countdown-digits" id="flash-countdown-digits">--:--:--</span>
+            </div>
+          </div>
+          <div class="flash-deals-grid" id="flash-deals-grid">
+            <div class="loading">Se încarcă ofertele fulger...</div>
+          </div>
+        </div>
+
         <div class="products-section physical-section">
           <div class="section-title">
             <h3>📦 Premii fizice</h3>
@@ -483,6 +478,28 @@
               </button>
             </div>
           </div>
+
+          <!-- Daily Tech Fortune Cookie Card -->
+          <div class="game-card fortune-card">
+            <div class="game-card-header">
+              <div class="game-badge" style="background: linear-gradient(135deg, #10b981, #06b6d4); color: white;">🥠 RĂVAȘUL ZILEI (+20 AP)</div>
+              <h3>Sfat Tehnic & Răvaș de Înțelepciune</h3>
+              <p>Sparge răvașul zilnic pentru o vorbă de duh din programare și puncte cadou!</p>
+            </div>
+            <div class="fortune-display-wrap">
+              <div class="fortune-cookie-icon" id="fortune-cookie-icon" onclick="openDailyFortuneCookie()">🥠</div>
+              <div id="fortune-reveal-wrap" class="fortune-reveal-wrap" style="display: none;">
+                <blockquote id="fortune-quote-text"></blockquote>
+                <cite id="fortune-author-text"></cite>
+                <div id="fortune-tip-text" class="fortune-tip-box"></div>
+              </div>
+            </div>
+            <div class="game-card-actions">
+              <button class="btn btn-primary btn-block" id="fortune-crack-btn" onclick="openDailyFortuneCookie()">
+                🥠 Sparge Răvașul (+20 AP)
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Daily Quests & Missions Hub -->
@@ -514,6 +531,23 @@
           </div>
           <div class="poll-footer">
             <small id="poll-total-votes">Total voturi exprimate: 142</small>
+          </div>
+        </div>
+
+        <!-- Community Proposals & Wish Board -->
+        <div class="proposals-container-card" id="proposals-container-card">
+          <div class="proposals-header">
+            <div class="proposals-title-wrap">
+              <span class="proposals-icon">💡</span>
+              <div>
+                <h3>Panoul Comunității — Propuneri de Premii Noi</h3>
+                <p>Propune premii dorite în shop (+15 AP) și votează ideile colegilor (+5 AP/vot)!</p>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openProposalModal()">✍️ Propune Premiu (+15 AP)</button>
+          </div>
+          <div class="proposals-grid" id="proposals-grid">
+            <div class="loading">Se încarcă propunerile comunității...</div>
           </div>
         </div>
       </section>
@@ -743,7 +777,12 @@
           <img src="images/micus-stuff-logo.png" alt="Micu's Stuff" class="footer-brand-logo">
           <span>&copy; 2026 Micu's Stuff &bull; Generația Tech</span>
         </a>
-        <p class="footer-course">Proiect creat în cadrul comunității <a href="https://generatiatech.ro" target="_blank">Generația Tech</a></p>
+        <div class="footer-course">Proiect creat în cadrul comunității <a href="https://generatiatech.ro" target="_blank">Generația Tech</a></div>
+        <div class="footer-terminal-link" style="margin-top: 0.75rem;">
+          <button class="btn btn-sm btn-outline" onclick="openTerminalModal()" style="font-family: monospace; font-size: 0.75rem; border-color: rgba(255,255,255,0.2); color: #cbd5e1;">
+            💻 &gt;_ Deschide Consola GT-CLI
+          </button>
+        </div>
       </div>
     </div>
   </footer>
@@ -969,6 +1008,64 @@
             <button type="submit" class="btn btn-primary btn-block" id="gift-submit-btn">Trimite Cadoul</button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Community Proposal Modal -->
+  <div id="proposal-modal" class="modal">
+    <div class="modal-content auth-modal">
+      <span class="close" onclick="closeProposalModal()">&times;</span>
+      <div class="auth-content">
+        <h2>💡 Propune o Recompensă Nouă</h2>
+        <p>Spune-ne ce premiu dorești în magazin. Dacă este votat de comunitate, va fi adăugat oficial!</p>
+        <form id="proposal-form" onsubmit="handleCreateProposal(event)">
+          <div class="form-group">
+            <label for="proposal-title">Titlu Recompensă</label>
+            <input type="text" id="proposal-title" placeholder="ex: Curs Rust Avansat / Licență Docker Pro" required minlength="3">
+          </div>
+          <div class="form-group">
+            <label for="proposal-category">Categorie</label>
+            <select id="proposal-category" class="filter-select" style="width: 100%;">
+              <option value="Premii digitale">💻 Premii digitale & Cursuri</option>
+              <option value="Premii fizice">📦 Premii fizice (Merch / Tech)</option>
+              <option value="Premii exclusive">⭐ Premii exclusive & Evenimente</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="proposal-desc">Descriere & De ce ar fi util comunității</label>
+            <textarea id="proposal-desc" rows="3" placeholder="Descrie pe scurt recompensa..." required minlength="10" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid #cbd5e1;"></textarea>
+          </div>
+          <div class="modal-actions">
+            <button type="submit" class="btn btn-primary btn-block">Trimite Propunerea (+15 AP)</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Developer Console Terminal Modal -->
+  <div id="terminal-modal" class="modal">
+    <div class="modal-content terminal-modal-content">
+      <span class="close" onclick="closeTerminalModal()">&times;</span>
+      <div class="terminal-window">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+          </div>
+          <div class="terminal-title">bash &mdash; micu@gtshop-vps:~ (Java 21 / Spring Boot 3.4.1)</div>
+        </div>
+        <div class="terminal-screen" id="terminal-screen">
+          <div class="terminal-line"><span class="terminal-prompt">gtshop-cli:~$</span> welcome</div>
+          <div class="terminal-output">Bine ai venit la consola de dezvoltator RewardHub Generația Tech!
+Tastează <span class="term-highlight">help</span> pentru lista comenzilor disponibile.</div>
+        </div>
+        <div class="terminal-input-row">
+          <span class="terminal-prompt">gtshop-cli:~$</span>
+          <input type="text" id="terminal-input" class="terminal-input" autocomplete="off" spellcheck="false" placeholder="type a command...">
+        </div>
       </div>
     </div>
   </div>

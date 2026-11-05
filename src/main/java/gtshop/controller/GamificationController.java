@@ -402,4 +402,89 @@ public class GamificationController {
             this.explanation = explanation;
         }
     }
+
+    private static final List<FortuneCookieQuote> TECH_FORTUNES = List.of(
+        new FortuneCookieQuote(
+            "Talk is cheap. Show me the code.",
+            "Linus Torvalds",
+            "Scrie cod curat și lasă implementarea să vorbească pentru tine."
+        ),
+        new FortuneCookieQuote(
+            "Java is, in many ways, like the English language: robust, widely adopted, and continually evolving.",
+            "James Gosling",
+            "Construiește sisteme pe fundații sigure și testabile."
+        ),
+        new FortuneCookieQuote(
+            "The most dangerous phrase in the language is: 'We've always done it this way.'",
+            "Grace Hopper",
+            "Fii deschis la inovație și refactorizare continuă."
+        ),
+        new FortuneCookieQuote(
+            "Any fool can write code that a computer can understand. Good programmers write code that humans can understand.",
+            "Martin Fowler",
+            "Scrie cod lizibil, auto-documentat și ușor de întreținut."
+        ),
+        new FortuneCookieQuote(
+            "Simplicity is prerequisite for reliability.",
+            "Edsger W. Dijkstra",
+            "Păstrează arhitectura cât mai simplă; complexitatea nenecesară ascunde bug-uri."
+        ),
+        new FortuneCookieQuote(
+            "We can only see a short distance ahead, but we can see plenty there that needs to be done.",
+            "Alan Turing",
+            "Fiecare commit și fiecare linie de cod te aduce mai aproape de succesul proiectului."
+        )
+    );
+
+    @PostMapping("/fortune-cookie")
+    @Operation(summary = "Break open daily tech fortune cookie for wisdom and bonus AP")
+    public ResponseEntity<Map<String, Object>> openFortuneCookie() {
+        UserProfile user = this.userService.getCurrentUser();
+        String today = getTodayString();
+        Map<String, Object> resp = new HashMap<>();
+
+        if (today.equals(user.getLastFortuneDate())) {
+            resp.put("success", false);
+            resp.put("alreadyClaimed", true);
+            resp.put("message", "Ai deschis deja răvașul zilei! Revino mâine pentru un nou sfat tehnic.");
+            return ResponseEntity.badRequest().body(resp);
+        }
+
+        int dayIndex = LocalDate.now().getDayOfYear() % TECH_FORTUNES.size();
+        FortuneCookieQuote fortune = TECH_FORTUNES.get(dayIndex);
+        int bonusPoints = 20;
+
+        user.setLastFortuneDate(today);
+        user.setActivityPoints(user.getActivityPoints() + bonusPoints);
+        this.userRepository.save(user);
+
+        this.transactionService.recordTransaction(
+            user,
+            "FORTUNE_COOKIE",
+            bonusPoints,
+            user.getActivityPoints(),
+            "Răvașul Tehnic: " + fortune.author
+        );
+
+        resp.put("success", true);
+        resp.put("quote", fortune.quote);
+        resp.put("author", fortune.author);
+        resp.put("tip", fortune.tip);
+        resp.put("bonusPoints", bonusPoints);
+        resp.put("newBalance", user.getActivityPoints());
+        resp.put("message", "Ai deblocat răvașul zilei și ai primit +" + bonusPoints + " AP!");
+        return ResponseEntity.ok(resp);
+    }
+
+    private static class FortuneCookieQuote {
+        String quote;
+        String author;
+        String tip;
+
+        FortuneCookieQuote(String quote, String author, String tip) {
+            this.quote = quote;
+            this.author = author;
+            this.tip = tip;
+        }
+    }
 }

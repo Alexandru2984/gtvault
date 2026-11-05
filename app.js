@@ -1083,10 +1083,10 @@ function switchSection(name) {
     case 'profile': renderProfile(); break;
     case 'history': loadHistory(); break;
     case 'wishlist': renderWishlist(); break;
-    case 'gamification': loadGamificationStatus(); loadDailyQuests(); break;
+    case 'gamification': loadGamificationStatus(); loadDailyQuests(); if (typeof loadProposals === 'function') loadProposals(); break;
     case 'leaderboard': loadLeaderboard(); loadGuilds(); break;
     case 'cart': break;
-    case 'shop': if (!AppState.products.length) loadProducts(); break;
+    case 'shop': if (!AppState.products.length) loadProducts(); if (typeof loadFlashDeals === 'function') loadFlashDeals(); break;
   }
 }
 
@@ -1263,7 +1263,9 @@ async function initializeApp() {
     updateWishlistBadges();
     NotifCenter.render();
     setupPwa();
-    ThemeEngine.init();
+    document.documentElement.removeAttribute('data-theme');
+    try { localStorage.removeItem('gt_theme_mode'); } catch (_) {}
+    if (typeof loadFlashDeals === 'function') loadFlashDeals();
     SoundFx.init();
     CommunityPoll.init();
     GoalTracker.init();
@@ -2659,35 +2661,23 @@ function toggleSound() {
 }
 
 // ==========================================================================
-// THEME ENGINE (DARK / LIGHT MODE)
+// THEME (100% UNIFIED CLEAN LIGHT MODE)
 // ==========================================================================
 const ThemeEngine = {
-  KEY: 'gt_theme_mode',
-  getCurrent() {
-    const saved = Storage.load(this.KEY);
-    if (saved) return saved;
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  },
-  apply(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    Storage.save(this.KEY, theme);
-    const icon = document.getElementById('theme-icon');
-    if (icon) icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+  apply() {
+    document.documentElement.removeAttribute('data-theme');
+    try { localStorage.removeItem('gt_theme_mode'); } catch (_) {}
   },
   toggle() {
-    const current = this.getCurrent();
-    const next = current === 'dark' ? 'light' : 'dark';
-    this.apply(next);
-    SoundFx.playClick();
-    showToast(next === 'dark' ? 'Mod Întunecat activat 🌙' : 'Mod Luminos activat ☀️', 'info');
+    this.apply();
   },
   init() {
-    this.apply(this.getCurrent());
+    this.apply();
   }
 };
 
 function toggleTheme() {
-  ThemeEngine.toggle();
+  ThemeEngine.apply();
 }
 
 // ==========================================================================
@@ -3545,7 +3535,204 @@ async function exportTransactionsCsv() {
   }
 }
 
+// ==========================================================================
+// DAILY TECH FORTUNE COOKIE
+// ==========================================================================
+async function openDailyFortuneCookie() {
+  const btn = document.getElementById('fortune-crack-btn');
+  const cookieIcon = document.getElementById('fortune-cookie-icon');
+  const revealWrap = document.getElementById('fortune-reveal-wrap');
+  const quoteEl = document.getElementById('fortune-quote-text');
+  const authorEl = document.getElementById('fortune-author-text');
+  const tipEl = document.getElementById('fortune-tip-text');
+
+  if (btn) btn.disabled = true;
+  try {
+    const res = await apiCall('/gamification/fortune-cookie', { method: 'POST' });
+    if (res && res.success) {
+      if (cookieIcon) cookieIcon.textContent = '🥠✨';
+      if (quoteEl) quoteEl.textContent = `"${res.quote}"`;
+      if (authorEl) authorEl.textContent = `— ${res.author}`;
+      if (tipEl) tipEl.textContent = `💡 Sfat practic: ${res.tip}`;
+      if (revealWrap) revealWrap.style.display = 'block';
+      if (btn) {
+        btn.textContent = '✅ Răvaș Revendicat (+20 AP)';
+        btn.className = 'btn btn-secondary btn-block';
+      }
+      if (typeof confetti === 'function') confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 } });
+      showToast(`🥠 Ai spart răvașul și ai primit +${res.bonusPoints} AP!`, 'success');
+      if (res.newBalance !== undefined) updateUserPointsDisplay(res.newBalance);
+    } else {
+      showToast(res && res.message ? res.message : 'Ai deschis deja răvașul zilei!', 'info');
+      if (btn) {
+        btn.textContent = '✅ Răvaș Revendicat pentru Azi';
+        btn.className = 'btn btn-secondary btn-block';
+      }
+    }
+  } catch (err) {
+    console.error('Failed to open fortune cookie:', err);
+    showToast('Ai deschis deja răvașul zilei! Revino mâine.', 'info');
+    if (btn) {
+      btn.textContent = '✅ Răvaș Revendicat pentru Azi';
+      btn.className = 'btn btn-secondary btn-block';
+    }
+  }
+}
+
+// ==========================================================================
+// COMMUNITY PROPOSALS & WISH BOARD
+// ==========================================================================
+async function loadProposals() {
+  const grid = document.getElementById('proposals-grid');
+  if (!grid) return;
+  try {
+    const proposals = await apiCall('/proposals');
+    if (!proposals || !proposals.length) {
+      grid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;">Fii primul care propune o nouă recompensă în shop!</div>';
+      return;
+    }
+    grid.innerHTML = proposals.map(p => `
+      <div class="proposal-card" id="proposal-${p.id}">
+        <div class="proposal-top">
+          <span class="product-category" style="margin-bottom: 0.4rem;">${escapeHtml(p.category || 'Comunitate')}</span>
+          <div class="proposal-title">${escapeHtml(p.title)}</div>
+          <div class="proposal-desc">${escapeHtml(p.description)}</div>
+        </div>
+        <div class="proposal-footer">
+          <span class="proposal-author">👤 ${escapeHtml(p.authorName || 'Membru GT')}</span>
+          <button class="proposal-vote-btn ${p.votedByCurrentUser ? 'voted' : ''}" onclick="voteProposal(${p.id})">
+            ▲ <span class="vote-count">${p.votesCount || 0}</span> voturi
+          </button>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error('Failed to load proposals:', err);
+    grid.innerHTML = '<div class="alert alert-danger" style="grid-column: 1/-1;">Eroare la încărcarea propunerilor.</div>';
+  }
+}
+
+function openProposalModal() {
+  const modal = document.getElementById('proposal-modal');
+  if (modal) modal.style.display = 'block';
+}
+
+function closeProposalModal() {
+  const modal = document.getElementById('proposal-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function handleCreateProposal(e) {
+  e.preventDefault();
+  const title = document.getElementById('proposal-title').value.trim();
+  const category = document.getElementById('proposal-category').value;
+  const description = document.getElementById('proposal-desc').value.trim();
+
+  if (!title || !description) {
+    showToast('Completează toate câmpurile necesare!', 'error');
+    return;
+  }
+
+  try {
+    const res = await apiCall('/proposals', {
+      method: 'POST',
+      body: JSON.stringify({ title, category, description })
+    });
+    closeProposalModal();
+    document.getElementById('proposal-form').reset();
+    showToast('Propunerea ta a fost publicată! Ai primit +15 AP bonus! 🎉', 'success');
+    if (res && res.newBalance !== undefined) updateUserPointsDisplay(res.newBalance);
+    loadProposals();
+  } catch (err) {
+    console.error('Failed to submit proposal:', err);
+    showToast('Eroare la trimiterea propunerii. Verifică datele introduse.', 'error');
+  }
+}
+
+async function voteProposal(id) {
+  try {
+    const res = await apiCall(`/proposals/${id}/vote`, { method: 'POST' });
+    showToast('Vot înregistrat cu succes! Ai primit +5 AP bonus! 🗳️', 'success');
+    if (res && res.newBalance !== undefined) updateUserPointsDisplay(res.newBalance);
+    loadProposals();
+  } catch (err) {
+    console.error('Failed to vote proposal:', err);
+    showToast('Ai votat deja această propunere!', 'info');
+  }
+}
+
+// ==========================================================================
+// FLASH DEALS & HAPPY HOUR
+// ==========================================================================
+let flashCountdownInterval = null;
+function startFlashCountdown(seconds) {
+  if (flashCountdownInterval) clearInterval(flashCountdownInterval);
+  let remaining = seconds;
+  const digitsEl = document.getElementById('flash-countdown-digits');
+  function tick() {
+    if (remaining <= 0) {
+      if (digitsEl) digitsEl.textContent = 'EXPIRAT';
+      clearInterval(flashCountdownInterval);
+      return;
+    }
+    const h = Math.floor(remaining / 3600).toString().padStart(2, '0');
+    const m = Math.floor((remaining % 3600) / 60).toString().padStart(2, '0');
+    const s = Math.floor(remaining % 60).toString().padStart(2, '0');
+    if (digitsEl) digitsEl.textContent = `${h}:${m}:${s}`;
+    remaining--;
+  }
+  tick();
+  flashCountdownInterval = setInterval(tick, 1000);
+}
+
+async function loadFlashDeals() {
+  const grid = document.getElementById('flash-deals-grid');
+  const banner = document.getElementById('flash-deals-banner');
+  if (!grid) return;
+  try {
+    const deals = await apiCall('/flash-deals');
+    if (!deals || !deals.length) {
+      if (banner) banner.style.display = 'none';
+      return;
+    }
+    if (banner) banner.style.display = 'block';
+    grid.innerHTML = deals.map(d => `
+      <div class="flash-deal-card">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span style="background: #ea580c; color: white; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 20px;">
+              ⚡ -${d.discountPercent}% REDUCERE
+            </span>
+            <span style="font-size: 0.8rem; color: #9a3412; font-weight: 600;">Stoc: ${d.stock}</span>
+          </div>
+          <h4 style="font-size: 1.05rem; font-weight: 700; color: #1e293b; margin-bottom: 0.35rem;">${escapeHtml(d.name)}</h4>
+          <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 0.85rem;">${escapeHtml(d.description || '')}</p>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 0.75rem; border-top: 1px dashed #fed7aa;">
+          <div>
+            <span style="text-decoration: line-through; font-size: 0.85rem; color: #94a3b8; margin-right: 0.5rem;">${d.originalPrice} AP</span>
+            <strong style="font-size: 1.15rem; color: #7c3aed;">${d.discountedPrice} AP</strong>
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="addToCart('${d.id}')">Adaugă în Coș</button>
+        </div>
+      </div>
+    `).join('');
+
+    startFlashCountdown(deals[0].remainingSeconds || 7200);
+  } catch (err) {
+    console.error('Failed to load flash deals:', err);
+    if (banner) banner.style.display = 'none';
+  }
+}
+
 // Global window exports
+window.openDailyFortuneCookie = openDailyFortuneCookie;
+window.loadProposals = loadProposals;
+window.openProposalModal = openProposalModal;
+window.closeProposalModal = closeProposalModal;
+window.handleCreateProposal = handleCreateProposal;
+window.voteProposal = voteProposal;
+window.loadFlashDeals = loadFlashDeals;
 window.applyPromoCode = applyPromoCode;
 window.handleSortChange = handleSortChange;
 window.handleStockFilterToggle = handleStockFilterToggle;
