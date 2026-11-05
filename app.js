@@ -69,7 +69,8 @@ const Storage = {
     USER_PREFERENCES: 'gt_shop_preferences',
     LAST_CATEGORY: 'gt_shop_last_category',
     API_MODE: 'gt_shop_api_mode',
-    PURCHASE_HISTORY: 'gt_shop_history'
+    PURCHASE_HISTORY: 'gt_shop_history',
+    WISHLIST: 'gt_shop_wishlist'
   },
   save(key, data) {
     try {
@@ -95,6 +96,74 @@ const Storage = {
     showStorageStatus('Toate datele locale au fost șterse', 'error');
   }
 };
+
+/* Wishlist Helpers */
+function getWishlist() {
+  return Storage.load(Storage.KEYS.WISHLIST) || [];
+}
+
+function isWishlisted(productId) {
+  const list = getWishlist();
+  return list.includes(String(productId));
+}
+
+function toggleWishlist(productId) {
+  let list = getWishlist();
+  const idStr = String(productId);
+  const exists = list.includes(idStr);
+  if (exists) {
+    list = list.filter(id => id !== idStr);
+    showNotification('Produs eliminat din favorite', 'info');
+  } else {
+    list.push(idStr);
+    showNotification('Produs adăugat la favorite! ❤️', 'success');
+  }
+  Storage.save(Storage.KEYS.WISHLIST, list);
+  
+  document.querySelectorAll(`.product-card[data-product-id="${productId}"] .wishlist-btn`).forEach(btn => {
+    btn.classList.toggle('active', !exists);
+    btn.innerHTML = !exists ? '❤️' : '🤍';
+  });
+
+  const wishlistSec = document.getElementById('wishlist-section');
+  if (wishlistSec && wishlistSec.classList.contains('active')) {
+    renderWishlist();
+  }
+}
+
+function renderWishlist() {
+  const container = document.getElementById('wishlist-grid');
+  if (!container) return;
+  const list = getWishlist();
+  if (!list.length) {
+    container.innerHTML = `
+      <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 3rem 1rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">💔</div>
+        <h3>Nu ai niciun produs la favorite</h3>
+        <p style="color: #64748b; margin-bottom: 1.5rem;">Apasă pe inimioara de pe orice produs din magazin pentru a-l salva aici.</p>
+        <button class="btn btn-primary" onclick="switchSection('shop')">Explorează Magazinul</button>
+      </div>
+    `;
+    return;
+  }
+
+  const favProducts = AppState.products.filter(p => list.includes(String(p.id)));
+  if (!favProducts.length) {
+    container.innerHTML = `
+      <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 3rem 1rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
+        <h3>Produsele favorite nu mai sunt disponibile</h3>
+        <button class="btn btn-primary" onclick="switchSection('shop')">Înapoi la Magazin</button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = '';
+  favProducts.forEach(p => {
+    container.appendChild(createProductCard(p));
+  });
+}
 
 function showStorageStatus(message, type = 'success') {
   if (!DOM.storageStatus) return;
@@ -501,18 +570,13 @@ async function checkout() {
     }
 
     const body = { items: AppState.cart };
-    const currentPoints = AppState.user?.activityPoints ?? 0;
-
-    try {
-      await apiCall('/user/profile', { method: 'POST', body: JSON.stringify({ userId: 'user-123', activityPoints: currentPoints }) });
-    } catch (e) {
-      console.warn('Sync points (checkout) a eșuat:', e);
-    }
-
     const r = await apiCall('/checkout', { method: 'POST', body: JSON.stringify(body) });
 
     if (r.success) {
-      showNotification('Comanda a fost finalizată cu succes!');
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+      }
+      showNotification('Comanda a fost finalizată cu succes!', 'success');
       if (r.newBalance !== undefined) {
         AppState.user.activityPoints = r.newBalance;
         Storage.save('userPoints', r.newBalance);
@@ -526,19 +590,27 @@ async function checkout() {
             rewardName: item.name,
             pointsSpent: item.price * item.quantity,
             purchaseDate: new Date().toISOString(),
-            status: 'Completed'
+            status: 'Completed',
+            voucherCode: r.voucherCode || `GT-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
           };
           localHistory.unshift(purchaseRecord);
         });
         Storage.save(Storage.KEYS.PURCHASE_HISTORY, localHistory);
-        showNotification(`Comandă finalizată • ID: ${r.transactionId}`, 'success');
       }
 
       AppState.cart = [];
       Storage.remove(Storage.KEYS.CART);
       updateCartInterface();
       await loadUserProfile();
-      switchSection('profile');
+      
+      Swal.fire({
+        title: 'Comandă Reușită! 🎉',
+        html: `<p>Comanda ta a fost procesată cu succes.</p><p>ID Tranzacție: <strong>#${r.transactionId || 'Finalizat'}</strong></p>`,
+        icon: 'success',
+        confirmButtonColor: '#7c3aed'
+      });
+
+      switchSection('history');
     } else {
       let msg = r.message || 'Eroare la finalizarea comenzii';
       if (r.missingPoints) msg = `Îți lipsesc ${r.missingPoints} puncte.`;
@@ -556,17 +628,23 @@ function updateUserInterface() {
   if (!AppState.user) return;
   DOM.userName.textContent = AppState.user.name;
   DOM.userPoints.textContent = formatPrice(AppState.user.activityPoints);
-  const avatarUrl = 'images/user-avatar.svg';
+  const avatarUrl = AppState.user.avatar || 'images/user-avatar.svg';
   DOM.userAvatar.src = avatarUrl;
   DOM.userAvatar.alt = AppState.user.name;
+  const sidebarStreak = document.getElementById('sidebar-streak-val');
+  if (sidebarStreak) {
+    sidebarStreak.textContent = `${AppState.user.streakDays || 0} Zile Active`;
+  }
 }
 
 function updateCartInterface() {
   const totalItems = AppState.cart.reduce((s, it) => s + it.quantity, 0);
   const totalPrice = AppState.cart.reduce((s, it) => s + it.price * it.quantity, 0);
-  DOM.cartCount.textContent = totalItems;
-  DOM.cartTotal.textContent = formatPrice(totalPrice);
-  DOM.checkoutBtn.disabled = AppState.cart.length === 0;
+  if (DOM.cartCount) DOM.cartCount.textContent = totalItems;
+  const mobileBadge = document.getElementById('mobile-cart-badge');
+  if (mobileBadge) mobileBadge.textContent = totalItems;
+  if (DOM.cartTotal) DOM.cartTotal.textContent = formatPrice(totalPrice);
+  if (DOM.checkoutBtn) DOM.checkoutBtn.disabled = AppState.cart.length === 0;
   Storage.save(Storage.KEYS.CART, AppState.cart);
   if (AppState.cart.length) showStorageStatus('Coșul a fost salvat local', 'success');
   renderCart();
@@ -654,7 +732,11 @@ function createProductCard(product) {
   const el = document.createElement('div');
   el.className = 'product-card';
   el.setAttribute('data-product-id', product.id);
+  const isFav = isWishlisted(product.id);
   el.innerHTML = `
+    <button class="wishlist-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleWishlist('${product.id}')" title="Adaugă la favorite">
+      ${isFav ? '❤️' : '🤍'}
+    </button>
     <div class="product-image">
       <img src="${getProductImageUrl(product)}" alt="${product.name}"
            onerror="this.style.display='none'; this.parentElement.innerHTML='📦';" loading="lazy" />
@@ -752,7 +834,7 @@ function renderHistory(purchases) {
         <div class="empty-icon">📋</div>
         <h3>Nu ai încă cumpărături</h3>
         <p>Istoricul va apărea după prima achiziție</p>
-        <button class="btn btn-primary" onclick="goToShop()">Începe cumpărăturile</button>
+        <button class="btn btn-primary" onclick="switchSection('shop')">Începe cumpărăturile</button>
       </div>`;
     return;
   }
@@ -769,12 +851,20 @@ function renderHistory(purchases) {
         </div>
         <div class="history-info">
           <span class="detail-label">Status:</span>
-          <span class="detail-value status-${p.status?.toLowerCase() || 'unknown'}">${p.status || 'Necunoscut'}</span>
+          <span class="detail-value status-${p.status?.toLowerCase() || 'unknown'}">${p.status || 'Finalizat'}</span>
         </div>
         ${p.id ? `
         <div class="history-info">
           <span class="detail-label">ID comandă:</span>
-          <span class="detail-value">${p.id}</span>
+          <span class="detail-value">#${p.id}</span>
+        </div>` : ''}
+        ${p.voucherCode ? `
+        <div class="history-info" style="grid-column: 1 / -1;">
+          <span class="detail-label">Cod Voucher Digital:</span>
+          <div class="voucher-box">
+            <span class="voucher-code">${p.voucherCode}</span>
+            <button class="btn-copy-voucher" onclick="copyVoucher('${p.voucherCode}')">Copiază</button>
+          </div>
         </div>` : ''}
       </div>
     </div>
@@ -791,6 +881,32 @@ function renderHistory(purchases) {
     </div>
     <hr>`;
   DOM.historyContent.innerHTML = summary + DOM.historyContent.innerHTML;
+}
+
+function copyVoucher(code) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(code).then(() => {
+      showNotification('Cod voucher copiat în clipboard! 📋', 'success');
+    }).catch(() => {
+      fallbackCopyText(code);
+    });
+  } else {
+    fallbackCopyText(code);
+  }
+}
+
+function fallbackCopyText(text) {
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+  document.body.appendChild(textArea);
+  textArea.select();
+  try {
+    document.execCommand('copy');
+    showNotification('Cod voucher copiat! 📋', 'success');
+  } catch (err) {
+    showNotification('Nu s-a putut copia codul: ' + text, 'info');
+  }
+  document.body.removeChild(textArea);
 }
 
 function showProductModal(product) {
@@ -830,13 +946,17 @@ function showProductModal(product) {
 /* ---------- Nav / filters ---------- */
 
 function switchSection(name) {
-  const navLinks = document.querySelectorAll('.nav-link');
+  const navLinks = document.querySelectorAll('.nav-link, .mobile-nav-item');
   const sections = document.querySelectorAll('.section');
   navLinks.forEach(l => l.classList.toggle('active', l.dataset.section === name));
   sections.forEach(s => s.classList.toggle('active', s.id === `${name}-section`));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   switch (name) {
     case 'profile': renderProfile(); break;
     case 'history': loadHistory(); break;
+    case 'wishlist': renderWishlist(); break;
+    case 'gamification': loadGamificationStatus(); break;
+    case 'leaderboard': loadLeaderboard(); break;
     case 'cart': break;
     case 'shop': if (!AppState.products.length) loadProducts(); break;
   }
@@ -1030,7 +1150,7 @@ function setupApiToggle() {
 }
 
 function setupEventListeners() {
-  const navLinks = document.querySelectorAll('.nav-link');
+  const navLinks = document.querySelectorAll('.nav-link, .mobile-nav-item');
   navLinks.forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
@@ -1411,6 +1531,388 @@ window.handleRegister = handleRegister;
 window.logout = logout;
 window.selectAvatar = selectAvatar;
 window.saveCustomAvatar = saveCustomAvatar;
+window.switchSection = switchSection;
+window.toggleWishlist = toggleWishlist;
+window.renderWishlist = renderWishlist;
+window.copyVoucher = copyVoucher;
+window.claimDailyReward = claimDailyReward;
+window.submitDailyQuiz = submitDailyQuiz;
+window.selectQuizOption = selectQuizOption;
+window.spinWheel = spinWheel;
+window.loadGamificationStatus = loadGamificationStatus;
+window.loadLeaderboard = loadLeaderboard;
+
+/* ==========================================================
+   GAMIFICATION & COMMUNITY MODULE
+   Daily Streak, Tech Quiz, Lucky Wheel, Leaderboard
+   ========================================================== */
+
+let currentQuizData = null;
+let selectedQuizAnswerIndex = null;
+let wheelRotationDegrees = 0;
+let isSpinningWheel = false;
+
+async function loadGamificationStatus() {
+  try {
+    const res = await apiCall('/gamification/status');
+    if (!res) return;
+
+    // Update streak calendar
+    renderStreakTrack(res.streakDays || 0);
+
+    // Update claim button
+    const claimBtn = document.getElementById('streak-claim-btn');
+    if (claimBtn) {
+      if (res.canClaimDaily) {
+        claimBtn.disabled = false;
+        claimBtn.className = 'btn btn-primary btn-block glow';
+        claimBtn.textContent = `🎁 Revendică Bonusul Zilei (+${res.nextDailyBonus || 50} AP)`;
+      } else {
+        claimBtn.disabled = true;
+        claimBtn.className = 'btn btn-secondary btn-block';
+        claimBtn.textContent = '✅ Bonusul de azi a fost revendicat!';
+      }
+    }
+
+    // Sidebar streak
+    const sidebarStreak = document.getElementById('sidebar-streak-val');
+    if (sidebarStreak) {
+      sidebarStreak.textContent = `${res.streakDays || 0} Zile Active`;
+    }
+
+    // Load Quiz Question
+    loadDailyQuiz();
+
+  } catch (err) {
+    console.error('loadGamificationStatus failed:', err);
+  }
+}
+
+function renderStreakTrack(streakDays) {
+  const container = document.getElementById('streak-days-track');
+  if (!container) return;
+
+  const bonuses = [50, 75, 100, 150, 200, 250, 500];
+  const currentDayInCycle = streakDays % 7; // 0..6
+
+  let html = '';
+  for (let i = 0; i < 7; i++) {
+    const dayNum = i + 1;
+    const isCompleted = i < currentDayInCycle;
+    const isActive = i === currentDayInCycle;
+    const pts = bonuses[i];
+
+    let stateClass = '';
+    let icon = '🎁';
+    if (isCompleted) {
+      stateClass = 'completed';
+      icon = '✓';
+    } else if (isActive) {
+      stateClass = 'active';
+      icon = '🔥';
+    }
+    if (i === 6) icon = '👑';
+
+    html += `
+      <div class="streak-day-item ${stateClass}">
+        <span class="streak-day-label">Ziua ${dayNum}</span>
+        <div style="font-size: 1.2rem; margin: 4px 0;">${icon}</div>
+        <span class="streak-day-pts">+${pts}</span>
+      </div>
+    `;
+  }
+  container.innerHTML = html;
+}
+
+async function claimDailyReward() {
+  const btn = document.getElementById('streak-claim-btn');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await apiCall('/gamification/daily-claim', { method: 'POST' });
+    if (res && res.success) {
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+      }
+      Swal.fire({
+        title: 'Streak Revendicat! 🔥',
+        html: `<p>${res.message}</p><p>Ai primit: <strong>+${res.bonusAwarded} AP</strong></p>`,
+        icon: 'success',
+        confirmButtonColor: '#7c3aed'
+      });
+
+      if (AppState.user) {
+        AppState.user.activityPoints = res.newBalance;
+        AppState.user.streakDays = res.streakDays;
+        updateUserInterface();
+      }
+      loadGamificationStatus();
+    } else {
+      showNotification(res?.message || 'Eroare la revendicarea bonusului', 'warning');
+      if (btn) btn.disabled = false;
+    }
+  } catch (err) {
+    console.error('claimDailyReward error:', err);
+    showNotification('Eroare de rețea la revendicare', 'error');
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function loadDailyQuiz() {
+  const quizTitle = document.getElementById('quiz-question-title');
+  const quizQuestion = document.getElementById('quiz-question-text');
+  const quizOptions = document.getElementById('quiz-options');
+  const quizResult = document.getElementById('quiz-result');
+  const submitBtn = document.getElementById('quiz-submit-btn');
+
+  if (!quizQuestion || !quizOptions) return;
+
+  try {
+    const res = await apiCall('/gamification/quiz');
+    if (res && res.success) {
+      currentQuizData = res;
+      selectedQuizAnswerIndex = null;
+      if (quizTitle) quizTitle.textContent = '🧠 Provocarea Tehnică de Azi';
+      quizQuestion.textContent = res.question;
+      if (quizResult) quizResult.style.display = 'none';
+
+      quizOptions.innerHTML = res.options.map((opt, idx) => `
+        <button type="button" class="quiz-opt-btn" onclick="selectQuizOption(${idx})">
+          <span style="font-weight: 700; margin-right: 8px;">${String.fromCharCode(65 + idx)}.</span>
+          ${opt}
+        </button>
+      `).join('');
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Trimite Răspunsul (+100 AP)';
+      }
+    } else {
+      // Already completed today
+      if (quizQuestion) quizQuestion.textContent = 'Ai răspuns deja la întrebarea tehnică de astăzi.';
+      quizOptions.innerHTML = '';
+      if (quizResult) {
+        quizResult.style.display = 'block';
+        quizResult.className = 'quiz-result info';
+        quizResult.innerHTML = `<strong>Status:</strong> ${res.message || 'Revino mâine la miezul nopții pentru o nouă provocare din programare!'}`;
+      }
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '✅ Finalizat astăzi';
+      }
+    }
+  } catch (err) {
+    console.error('loadDailyQuiz error:', err);
+    if (quizQuestion) quizQuestion.textContent = 'Nu s-a putut încărca testul tehnic.';
+  }
+}
+
+function selectQuizOption(index) {
+  selectedQuizAnswerIndex = index;
+  const btns = document.querySelectorAll('.quiz-opt-btn');
+  btns.forEach((btn, idx) => {
+    btn.classList.toggle('selected', idx === index);
+  });
+  const submitBtn = document.getElementById('quiz-submit-btn');
+  if (submitBtn) submitBtn.disabled = false;
+}
+
+async function submitDailyQuiz() {
+  if (selectedQuizAnswerIndex === null) {
+    showNotification('Selectează o opțiune mai întâi', 'warning');
+    return;
+  }
+
+  const submitBtn = document.getElementById('quiz-submit-btn');
+  if (submitBtn) submitBtn.disabled = true;
+
+  try {
+    const res = await apiCall('/gamification/quiz/submit', {
+      method: 'POST',
+      body: JSON.stringify({ answerIndex: selectedQuizAnswerIndex })
+    });
+
+    const quizResult = document.getElementById('quiz-result');
+    if (res && res.success) {
+      if (res.isCorrect) {
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
+        }
+        Swal.fire({
+          title: 'Corect! 🌟',
+          html: `<p>${res.message}</p><p style="color:#64748b; font-size: 0.9rem;">${res.explanation || ''}</p>`,
+          icon: 'success',
+          confirmButtonColor: '#7c3aed'
+        });
+        if (quizResult) {
+          quizResult.style.display = 'block';
+          quizResult.className = 'quiz-result success';
+          quizResult.innerHTML = `<strong>Răspuns Corect! 🎉</strong> ${res.explanation || ''}`;
+        }
+      } else {
+        Swal.fire({
+          title: 'Incorect 💡',
+          html: `<p>${res.message}</p><p style="color:#64748b; font-size: 0.9rem;">${res.explanation || ''}</p>`,
+          icon: 'info',
+          confirmButtonColor: '#7c3aed'
+        });
+        if (quizResult) {
+          quizResult.style.display = 'block';
+          quizResult.className = 'quiz-result error';
+          quizResult.innerHTML = `<strong>Răspuns Incorect!</strong> ${res.explanation || ''}`;
+        }
+      }
+
+      // Mark buttons
+      const btns = document.querySelectorAll('.quiz-opt-btn');
+      btns.forEach(b => b.disabled = true);
+
+      if (AppState.user && res.newBalance !== undefined) {
+        AppState.user.activityPoints = res.newBalance;
+        updateUserInterface();
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '✅ Quiz finalizat';
+      }
+    } else {
+      showNotification(res?.message || 'Eroare la trimiterea răspunsului', 'error');
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  } catch (err) {
+    console.error('submitDailyQuiz error:', err);
+    showNotification('Eroare de conexiune la server', 'error');
+    if (submitBtn) submitBtn.disabled = false;
+  }
+}
+
+async function spinWheel() {
+  if (isSpinningWheel) return;
+  const spinBtn = document.getElementById('spin-btn');
+  const wheelDisc = document.getElementById('wheel-disc');
+
+  if (AppState.user && AppState.user.activityPoints < 50) {
+    Swal.fire({
+      title: 'Puncte insuficiente',
+      text: 'Ai nevoie de cel puțin 50 AP pentru a învârti roata norocului.',
+      icon: 'warning',
+      confirmButtonColor: '#7c3aed'
+    });
+    return;
+  }
+
+  isSpinningWheel = true;
+  if (spinBtn) spinBtn.disabled = true;
+
+  try {
+    const res = await apiCall('/gamification/spin-wheel', { method: 'POST' });
+    if (res && res.success) {
+      const prizeIdx = res.prizeIndex; // 0 to 5
+      const sectorAngle = prizeIdx * 60 + 30;
+      const targetDelta = 360 - sectorAngle;
+      wheelRotationDegrees += 1800 + targetDelta;
+
+      if (wheelDisc) {
+        wheelDisc.style.transition = 'transform 3.5s cubic-bezier(0.15, 0.9, 0.2, 1)';
+        wheelDisc.style.transform = `rotate(${wheelRotationDegrees}deg)`;
+      }
+
+      setTimeout(() => {
+        isSpinningWheel = false;
+        if (spinBtn) spinBtn.disabled = false;
+
+        if (res.wonPoints >= 100) {
+          if (typeof confetti === 'function') {
+            confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
+          }
+        }
+
+        Swal.fire({
+          title: 'Rezultat Roată! 🎡',
+          html: `<h3 style="color:#7c3aed; font-size: 1.5rem; margin-bottom: 0.5rem;">${res.prizeName}</h3><p>${res.message}</p><p>Balanță nouă: <strong>${res.newBalance} AP</strong></p>`,
+          icon: 'success',
+          confirmButtonColor: '#7c3aed'
+        });
+
+        if (AppState.user) {
+          AppState.user.activityPoints = res.newBalance;
+          updateUserInterface();
+        }
+      }, 3700);
+
+    } else {
+      isSpinningWheel = false;
+      if (spinBtn) spinBtn.disabled = false;
+      showNotification(res?.message || 'Eroare la învârtirea roții', 'warning');
+    }
+  } catch (err) {
+    isSpinningWheel = false;
+    if (spinBtn) spinBtn.disabled = false;
+    console.error('spinWheel error:', err);
+    showNotification('Eroare de conexiune la server', 'error');
+  }
+}
+
+async function loadLeaderboard() {
+  const container = document.getElementById('leaderboard-rows');
+  const podium = document.getElementById('leaderboard-podium');
+  if (!container) return;
+
+  container.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">Se încarcă clasamentul...</td></tr>';
+
+  try {
+    const list = await apiCall('/gamification/leaderboard');
+    if (!Array.isArray(list) || !list.length) {
+      container.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">Nu există date pentru clasament.</td></tr>';
+      return;
+    }
+
+    // Top 3 Podium
+    if (podium && list.length >= 3) {
+      podium.innerHTML = `
+        <div class="podium-card rank-2">
+          <div class="podium-rank-badge">🥈 Locul 2</div>
+          <img src="${list[1].avatar || 'images/user-avatar.svg'}" class="podium-avatar" alt="${list[1].name}">
+          <div class="podium-name">${list[1].name}</div>
+          <div class="podium-points">${formatPrice(list[1].points)}</div>
+        </div>
+        <div class="podium-card rank-1">
+          <div class="podium-rank-badge">👑 Locul 1</div>
+          <img src="${list[0].avatar || 'images/user-avatar.svg'}" class="podium-avatar" alt="${list[0].name}">
+          <div class="podium-name">${list[0].name}</div>
+          <div class="podium-points">${formatPrice(list[0].points)}</div>
+        </div>
+        <div class="podium-card rank-3">
+          <div class="podium-rank-badge">🥉 Locul 3</div>
+          <img src="${list[2].avatar || 'images/user-avatar.svg'}" class="podium-avatar" alt="${list[2].name}">
+          <div class="podium-name">${list[2].name}</div>
+          <div class="podium-points">${formatPrice(list[2].points)}</div>
+        </div>
+      `;
+    }
+
+    // Table rows
+    container.innerHTML = list.map(item => {
+      const isCurrent = AppState.user && String(AppState.user.id) === String(item.id);
+      return `
+        <tr style="${isCurrent ? 'background: #f5f3ff; font-weight: 700;' : ''}">
+          <td style="font-weight: 800; color: #64748b;">#${item.rank}</td>
+          <td style="display: flex; align-items: center; gap: 0.75rem;">
+            <img src="${item.avatar || 'images/user-avatar.svg'}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid #e2e8f0;">
+            <span>${item.name} ${isCurrent ? '<span style="font-size:0.75rem; background:#7c3aed; color:white; padding: 2px 6px; border-radius: 4px;">Tu</span>' : ''}</span>
+          </td>
+          <td><span style="background: #f8fafc; padding: 3px 8px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #e2e8f0;">🔥 ${item.streakDays || 0} zile</span></td>
+          <td style="font-weight: 800; color: #7c3aed;">${formatPrice(item.points)}</td>
+        </tr>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error('loadLeaderboard error:', err);
+    container.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red; padding: 2rem;">Eroare la încărcarea clasamentului.</td></tr>';
+  }
+}
 
 /* ---------- Basic error boundary ---------- */
 

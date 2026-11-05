@@ -3,12 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RewardHub - Generația Tech</title>
+  <title>RewardHub - Magazin Oficial Generația Tech | Premii & Gamification</title>
+  <meta name="description" content="Magazinul oficial de recompense Generația Tech. Transformă punctele de activitate (AP) în premii fizice, exclusive și digitale. Quiz zilnic, daily streak și clasament comunitate.">
+  <meta name="keywords" content="generatia tech, rewardhub, shop micutu, premii, puncte activitate, cursuri it, programare">
+  
+  <!-- OpenGraph / Social Sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://shop.micutu.com/">
+  <meta property="og:title" content="RewardHub - Generația Tech">
+  <meta property="og:description" content="Câștigă puncte prin participarea la activități și transformă-le în premii valoroase!">
+  <meta property="og:image" content="images/gt-logo.svg">
+
   <link rel="stylesheet" href="styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
   <!-- SweetAlert2 for beautiful alerts -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script defer src="https://analytics.micutu.com/script.js" data-website-id="c770d28f-125b-4229-b6c4-7345fa69559d"></script>
+  <!-- Confetti Canvas -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script defer src="https://analytics.micutu.com/script.js" data-website-id="c770d28f-125b-4229-b6c4-7345fa69559d"></script>
 </head>
 <body>
   <header class="header">
@@ -20,25 +33,30 @@
           </a>
           <p class="subtitle">RewardHub</p>
         </div>
-        <nav class="nav">
-          <a href="#" class="nav-link active" data-section="shop"><span class="nav-icon">🛍️</span> Shop</a>
+        <nav class="nav desktop-nav">
+          <a href="#" class="nav-link active" data-section="shop"><span class="nav-icon">🛍️</span> Magazin</a>
+          <a href="#" class="nav-link" data-section="gamification"><span class="nav-icon">⚡</span> Daily & Quiz</a>
+          <a href="#" class="nav-link" data-section="leaderboard"><span class="nav-icon">🏆</span> Clasament</a>
+          <a href="#" class="nav-link" data-section="wishlist"><span class="nav-icon">💖</span> Favorite</a>
           <a href="#" class="nav-link" data-section="cart"><span class="nav-icon">🛒</span> Coș (<span id="cart-count">0</span>)</a>
           <a href="#" class="nav-link" data-section="profile"><span class="nav-icon">👤</span> Profil</a>
           <a href="#" class="nav-link" data-section="history"><span class="nav-icon">📋</span> Istoric</a>
         </nav>
         <div class="user-info">
           <div class="user-details">
-            <span id="user-name">Loading...</span>
+            <span id="user-name">Se încarcă...</span>
             <span id="user-points" class="points">0 puncte</span>
           </div>
-          <button id="set-points-btn" class="set-points-btn" onclick="showSetPointsModal()" title="Setează puncte">⚙️</button>
           <div class="user-avatar-wrapper">
-            <img id="user-avatar" src="" alt="Avatar" class="avatar" onclick="toggleUserDropdown()">
+            <img id="user-avatar" src="images/user-avatar.svg" alt="Avatar" class="avatar" onclick="toggleUserDropdown()">
             <div id="user-dropdown" class="user-dropdown">
               <div id="dropdown-logged-in" class="dropdown-section">
                 <div class="dropdown-header">
                   <span id="dropdown-user-name">User</span>
                 </div>
+                <button class="dropdown-item" onclick="switchSection('profile')">
+                  <span class="dropdown-icon">👤</span> Profilul Meu
+                </button>
                 <button class="dropdown-item" onclick="showChangeAvatarModal()">
                   <span class="dropdown-icon">🖼️</span> Schimbă Avatar
                 </button>
@@ -68,14 +86,23 @@
           <span class="btn-icon">❓</span>
           <div class="btn-text">
             <strong>Cum funcționează?</strong>
-            <small>Află cum poți câștiga puncte</small>
+            <small>Află cum câștigi puncte</small>
           </div>
         </button>
+
+        <div class="sidebar-streak-card" id="sidebar-streak-card" onclick="switchSection('gamification')">
+          <div class="streak-icon">🔥</div>
+          <div class="streak-info">
+            <span class="streak-title">Daily Streak</span>
+            <strong id="sidebar-streak-val">0 Zile Active</strong>
+          </div>
+        </div>
+
         <div class="categories-sidebar">
-          <h3>Categorii</h3>
+          <h3>Categorii Premii</h3>
           <div class="category-list">
             <button class="category-btn active" data-category="">Toate</button>
-            <button class="category-btn" data-category="Premii fizice">� Premii fizice</button>
+            <button class="category-btn" data-category="Premii fizice">📦 Premii fizice</button>
             <button class="category-btn" data-category="Premii exclusive">⭐ Premii exclusive</button>
             <button class="category-btn" data-category="Premii digitale">💻 Premii digitale</button>
           </div>
@@ -84,15 +111,26 @@
     </aside>
 
     <div class="main-content">
+      <!-- SHOP SECTION -->
       <section id="shop-section" class="section active">
+        <!-- Interactive Daily Bonus Banner -->
+        <div class="daily-hero-banner" id="daily-hero-banner">
+          <div class="banner-badge">⚡ BONUS ZILNIC</div>
+          <div class="banner-text">
+            <h3>Revendică Bonusul de Prezență!</h3>
+            <p>Fii activ zilnic în Generația Tech și crește-ți streak-ul pentru premii uriașe.</p>
+          </div>
+          <button class="btn btn-claim" id="hero-claim-btn" onclick="claimDailyReward()">Revendică Acum 🎁</button>
+        </div>
+
         <div class="shop-header">
           <div class="welcome-text">
-            <h2>Alătură-te programului de recompense!</h2>
-            <p>Transformă punctele în premii valoroase</p>
+            <h2>Catalogul Oficial de Recompense</h2>
+            <p>Transformă punctele de activitate (AP) în premii reale și beneficii de carieră</p>
           </div>
           <div class="search-filter">
             <div class="search">
-              <input type="text" id="search-input" placeholder="Caută produse...">
+              <input type="text" id="search-input" placeholder="Caută tricou, curs, mentorat...">
               <span class="search-icon">🔍</span>
             </div>
           </div>
@@ -100,7 +138,7 @@
 
         <div class="products-section physical-section">
           <div class="section-title">
-            <h3>Premii fizice</h3>
+            <h3>📦 Premii fizice</h3>
             <span class="view-all" data-category="Premii fizice" onclick="showCategoryProducts('Premii fizice')">Vezi toate →</span>
           </div>
           <div id="products-grid" class="products-grid-4x4"></div>
@@ -108,7 +146,7 @@
 
         <div class="products-section courses-section">
           <div class="section-title">
-            <h3>Premii exclusive</h3>
+            <h3>⭐ Premii exclusive & Mentorat</h3>
             <span class="view-all" data-category="Premii exclusive" onclick="showCategoryProducts('Premii exclusive')">Vezi toate →</span>
           </div>
           <div id="courses-grid" class="products-grid-4x4"></div>
@@ -116,7 +154,7 @@
 
         <div class="products-section digital-section">
           <div class="section-title">
-            <h3>Premii digitale</h3>
+            <h3>💻 Premii digitale & Cursuri</h3>
             <span class="view-all" data-category="Premii digitale" onclick="showCategoryProducts('Premii digitale')">Vezi toate →</span>
           </div>
           <div id="digital-grid" class="products-grid-4x4"></div>
@@ -125,26 +163,161 @@
         <div id="loading" class="loading">Se încarcă produsele...</div>
       </section>
 
-      <section id="cart-section" class="section">
-        <div class="section-header"><h2>Coșul Meu</h2></div>
-        <div id="cart-content"></div>
-        <div class="cart-summary">
-          <div class="total"><strong>Total: <span id="cart-total">0</span> puncte</strong></div>
-          <button id="checkout-btn" class="btn btn-primary" disabled>Finalizează Comanda</button>
+      <!-- GAMIFICATION (STREAK, QUIZ, LUCKY WHEEL) SECTION -->
+      <section id="gamification-section" class="section">
+        <div class="section-header">
+          <h2>⚡ Centru de Recompense & Activitate</h2>
+          <p class="section-subtitle">Câștigă puncte suplimentare rezolvând provocările tehnice zilnice!</p>
+        </div>
+
+        <div class="gamification-grid">
+          <!-- Daily Login Streak Card -->
+          <div class="game-card streak-card">
+            <div class="game-card-header">
+              <div class="game-badge">🔥 DAILY STREAK</div>
+              <h3>Calendarul Tău de Activitate</h3>
+              <p>Autentifică-te 7 zile la rând pentru super bonusul de <strong>500 AP</strong>!</p>
+            </div>
+            <div class="streak-days-track" id="streak-days-track">
+              <!-- Rendered via JS -->
+            </div>
+            <div class="game-card-actions">
+              <button class="btn btn-primary btn-block" id="streak-claim-btn" onclick="claimDailyReward()">Revendică Bonusul Zilei</button>
+            </div>
+          </div>
+
+          <!-- Daily Tech Quiz Card -->
+          <div class="game-card quiz-card">
+            <div class="game-card-header">
+              <div class="game-badge">🧠 QUIZ ZILNIC (+100 AP)</div>
+              <h3 id="quiz-question-title">Test Tehnic de Programare</h3>
+              <p>Răspunde corect la întrebarea zilei și fii premiat pe loc.</p>
+            </div>
+            <div class="quiz-body" id="quiz-body">
+              <p class="quiz-question" id="quiz-question-text">Se încarcă întrebarea zilei...</p>
+              <div class="quiz-options" id="quiz-options"></div>
+              <div class="quiz-result" id="quiz-result" style="display: none;"></div>
+            </div>
+            <div class="game-card-actions">
+              <button class="btn btn-secondary btn-block" id="quiz-submit-btn" onclick="submitDailyQuiz()" disabled>Trimite Răspunsul</button>
+            </div>
+          </div>
+
+          <!-- Lucky Spin Wheel Card -->
+          <div class="game-card wheel-card">
+            <div class="game-card-header">
+              <div class="game-badge">🎡 ROATA NOROCULUI</div>
+              <h3>Învârte și Câștigă!</h3>
+              <p>Cost: <strong>50 AP</strong> per rotire. Poți câștiga până la <strong>500 AP</strong>!</p>
+            </div>
+            <div class="wheel-container">
+              <div class="wheel-pointer">▼</div>
+              <div class="wheel-disc" id="wheel-disc">
+                <div class="wheel-slot slot-0">25 AP</div>
+                <div class="wheel-slot slot-1">50 AP</div>
+                <div class="wheel-slot slot-2">100 AP</div>
+                <div class="wheel-slot slot-3">200 AP</div>
+                <div class="wheel-slot slot-4">500 AP</div>
+                <div class="wheel-slot slot-5">75 AP</div>
+              </div>
+            </div>
+            <div class="game-card-actions">
+              <button class="btn btn-accent btn-block" id="spin-btn" onclick="spinWheel()">Învârte Roata (50 AP)</button>
+            </div>
+          </div>
         </div>
       </section>
 
+      <!-- LEADERBOARD SECTION -->
+      <section id="leaderboard-section" class="section">
+        <div class="section-header">
+          <h2>🏆 Clasamentul Comunității Generația Tech</h2>
+          <p class="section-subtitle">Cei mai activi membri și cursanți cu cele mai multe puncte acumulate.</p>
+        </div>
+        <div class="leaderboard-podium" id="leaderboard-podium">
+          <!-- Top 3 rendered via JS -->
+        </div>
+        <div class="leaderboard-table-container">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>Loc</th>
+                <th>Membru</th>
+                <th>Streak</th>
+                <th>Puncte AP</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-rows">
+              <tr><td colspan="4" style="text-align:center;">Se încarcă clasamentul...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- WISHLIST SECTION -->
+      <section id="wishlist-section" class="section">
+        <div class="section-header">
+          <h2>💖 Produse Favorite</h2>
+          <p class="section-subtitle">Premiile pe care le ai în vedere pentru următoarea achiziție.</p>
+        </div>
+        <div id="wishlist-grid" class="products-grid-4x4"></div>
+      </section>
+
+      <!-- CART SECTION -->
+      <section id="cart-section" class="section">
+        <div class="section-header"><h2>🛒 Coșul Meu</h2></div>
+        <div id="cart-content"></div>
+        <div class="cart-summary">
+          <div class="total"><strong>Total: <span id="cart-total">0</span> puncte</strong></div>
+          <button id="checkout-btn" class="btn btn-primary" onclick="checkout()" disabled>Finalizează Comanda</button>
+        </div>
+      </section>
+
+      <!-- PROFILE SECTION -->
       <section id="profile-section" class="section">
-        <div class="section-header"><h2>Profilul Meu</h2></div>
+        <div class="section-header"><h2>👤 Profilul Meu</h2></div>
         <div id="profile-content"></div>
       </section>
 
+      <!-- HISTORY SECTION WITH VOUCHERS -->
       <section id="history-section" class="section">
-        <div class="section-header"><h2>Istoric Cumpărături</h2></div>
+        <div class="section-header">
+          <h2>📋 Istoric Comenzi & Vouchere Digitale</h2>
+          <p class="section-subtitle">Toate comenzile tale și codurile unice de revendicare.</p>
+        </div>
         <div id="history-content"></div>
       </section>
     </div>
   </main>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR -->
+  <nav class="mobile-nav">
+    <a href="#" class="mobile-nav-item active" data-section="shop">
+      <span class="mobile-nav-icon">🛍️</span>
+      <span class="mobile-nav-label">Shop</span>
+    </a>
+    <a href="#" class="mobile-nav-item" data-section="gamification">
+      <span class="mobile-nav-icon">⚡</span>
+      <span class="mobile-nav-label">Quiz</span>
+    </a>
+    <a href="#" class="mobile-nav-item" data-section="leaderboard">
+      <span class="mobile-nav-icon">🏆</span>
+      <span class="mobile-nav-label">Top</span>
+    </a>
+    <a href="#" class="mobile-nav-item" data-section="wishlist">
+      <span class="mobile-nav-icon">💖</span>
+      <span class="mobile-nav-label">Favorite</span>
+    </a>
+    <a href="#" class="mobile-nav-item" data-section="cart">
+      <span class="mobile-nav-icon">🛒</span>
+      <span class="mobile-nav-label">Coș</span>
+      <span class="mobile-badge" id="mobile-cart-badge">0</span>
+    </a>
+    <a href="#" class="mobile-nav-item" data-section="profile">
+      <span class="mobile-nav-icon">👤</span>
+      <span class="mobile-nav-label">Profil</span>
+    </a>
+  </nav>
 
   <footer class="footer">
     <div class="container">
@@ -154,31 +327,29 @@
           <p>Câștigă puncte prin participarea la activități și transformă-le în premii valoroase. Fii activ în comunitatea noastră și bucură-te de beneficii exclusive!</p>
         </div>
         <div class="footer-section">
-          <h4>Lasă un feedback</h4>
-          <div class="feedback-form">
-            <input type="email" placeholder="Email">
-            <textarea placeholder="Mesaj"></textarea>
-            <button class="btn btn-secondary">Trimite</button>
-          </div>
+          <h4>Generația Tech</h4>
+          <p>Împuternicim tinerii și pasionații de IT prin mentorat practic, proiecte reale și comunitate activă.</p>
         </div>
       </div>
       <div class="footer-bottom">
         <a href="https://micutu.com" target="_blank" rel="noopener noreferrer" class="footer-brand" title="Micu's Stuff">
           <img src="images/micus-stuff-logo.png" alt="Micu's Stuff" class="footer-brand-logo">
-          <span>&copy; 2025 Micu's Stuff</span>
+          <span>&copy; 2026 Micu's Stuff &bull; Generația Tech</span>
         </a>
-        <p class="footer-course">Proiect creat în cadrul cursului <a href="https://generatiatech.ro" target="_blank">Generația Tech</a></p>
+        <p class="footer-course">Proiect creat în cadrul comunității <a href="https://generatiatech.ro" target="_blank">Generația Tech</a></p>
       </div>
     </div>
   </footer>
 
+  <!-- Product Detail Modal -->
   <div id="product-modal" class="modal">
     <div class="modal-content">
-      <span class="close">&times;</span>
+      <span class="close" onclick="closeProductModal()">&times;</span>
       <div id="modal-body"></div>
     </div>
   </div>
 
+  <!-- How it works modal -->
   <div id="how-it-works-modal" class="modal">
     <div class="modal-content">
       <span class="close" onclick="closeHowItWorksModal()">&times;</span>
@@ -189,75 +360,38 @@
             <div class="step-icon">🏆</div>
             <div class="step-content">
               <h3>1. Câștigă puncte</h3>
-              <p>Participă la activitățile Generația Tech: cursuri, workshop-uri, competiții și evenimente.</p>
+              <p>Participă la cursuri, rezolvă quiz-ul zilnic și revendică bonusul de streak.</p>
             </div>
           </div>
           <div class="step">
             <div class="step-icon">🛒</div>
             <div class="step-content">
-              <h3>2. Explorează magazinul</h3>
-              <p>Premii fizice, exclusive și digitale te așteaptă.</p>
+              <h3>2. Alege premiile dorite</h3>
+              <p>Premii fizice, exclusive și digitale te așteaptă în catalog.</p>
             </div>
           </div>
           <div class="step">
             <div class="step-icon">💳</div>
             <div class="step-content">
-              <h3>3. Cumpără cu punctele tale</h3>
-              <p>Adaugă în coș sau cumpără direct.</p>
+              <h3>3. Finalizează comanda</h3>
+              <p>Punctele sunt scăzute autoritar pe server, iar pentru premii digitale primești cod voucher unic pe loc.</p>
             </div>
           </div>
           <div class="step">
             <div class="step-icon">📦</div>
             <div class="step-content">
-              <h3>4. Primește recompensele</h3>
-              <p>Produsele ajung la tine, istoricul e în profil.</p>
+              <h3>4. Bucură-te de premii</h3>
+              <p>Istoricul și voucherele sunt salvate permanent în profilul tău.</p>
             </div>
           </div>
         </div>
-        <div class="tips-section">
-          <h3>💡 Sfaturi utile:</h3>
-          <ul>
-            <li><strong>Verifică stocul:</strong> Produsele populare dispar repede</li>
-            <li><strong>Coșul se salvează:</strong> Rămâne și după închiderea aplicației</li>
-            <li><strong>Categorii:</strong> Filtre pentru căutare rapidă</li>
-            <li><strong>Căutare:</strong> Bara de sus pentru rezultate imediate</li>
-          </ul>
-        </div>
         <div class="modal-actions">
-          <button class="btn btn-primary" onclick="closeHowItWorksModal(); goToShop();">Începe cumpărăturile</button>
+          <button class="btn btn-primary" onclick="closeHowItWorksModal(); switchSection('shop');">Începe Cumpărăturile</button>
           <button class="btn btn-secondary" onclick="closeHowItWorksModal()">Închide</button>
         </div>
       </div>
     </div>
   </div>
-
-  <div id="set-points-modal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeSetPointsModal()">&times;</span>
-      <div class="set-points-content">
-        <h2>⚙️ Setează Puncte</h2>
-        <p>Introduceți numărul de puncte pentru utilizator.</p>
-        <div class="set-points-form">
-          <div class="form-group">
-            <label for="points-input">Puncte noi:</label>
-            <input type="number" id="points-input" min="0" max="999999" step="1" placeholder="Ex: 1000">
-          </div>
-          <div class="current-points">
-            <span class="label">Puncte curente:</span>
-            <span id="current-points-display" class="value">0 puncte</span>
-          </div>
-          <div class="modal-actions">
-            <button class="btn btn-primary" onclick="setUserPoints()">Setează Puncte</button>
-            <button class="btn btn-secondary" onclick="closeSetPointsModal()">Anulează</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="notification" class="notification"><span id="notification-message"></span></div>
-  <div id="storage-status" class="storage-status">💾 Coșul a fost salvat local</div>
-  <button id="clear-storage-btn" class="clear-storage-btn" title="Șterge datele locale (debug)" style="display: none;">🗑️ Reset Local</button>
 
   <!-- Login Modal -->
   <div id="login-modal" class="modal">
@@ -276,8 +410,7 @@
             <input type="password" id="login-password" placeholder="••••••••" required minlength="6">
           </div>
           <div class="modal-actions">
-            <button type="submit" class="btn btn-primary">Autentificare</button>
-            <button type="button" class="btn btn-secondary" onclick="closeLoginModal()">Anulează</button>
+            <button type="submit" class="btn btn-primary btn-block">Autentificare</button>
           </div>
         </form>
         <p class="auth-switch">Nu ai cont? <a href="#" onclick="switchToRegister()">Înregistrează-te</a></p>
@@ -290,12 +423,12 @@
     <div class="modal-content auth-modal">
       <span class="close" onclick="closeRegisterModal()">&times;</span>
       <div class="auth-content">
-        <h2>📝 Înregistrare</h2>
-        <p>Creează un cont nou RewardHub</p>
+        <h2>📝 Înregistrare Cont Nou</h2>
+        <p>Creează un cont nou și primești 1000 AP cadou de bun venit!</p>
         <form id="register-form" onsubmit="handleRegister(event)">
           <div class="form-group">
-            <label for="register-name">Nume</label>
-            <input type="text" id="register-name" placeholder="Numele tău" required>
+            <label for="register-name">Nume Complet</label>
+            <input type="text" id="register-name" placeholder="Popescu Ion" required>
           </div>
           <div class="form-group">
             <label for="register-email">Email</label>
@@ -306,8 +439,7 @@
             <input type="password" id="register-password" placeholder="Minim 6 caractere" required minlength="6">
           </div>
           <div class="modal-actions">
-            <button type="submit" class="btn btn-primary">Creează Cont</button>
-            <button type="button" class="btn btn-secondary" onclick="closeRegisterModal()">Anulează</button>
+            <button type="submit" class="btn btn-primary btn-block">Creează Cont (+1000 AP)</button>
           </div>
         </form>
         <p class="auth-switch">Ai deja cont? <a href="#" onclick="switchToLogin()">Autentifică-te</a></p>
@@ -324,29 +456,25 @@
         <p>Alege un avatar pentru profilul tău</p>
         <div class="avatar-grid" id="avatar-options">
           <div class="avatar-option" onclick="selectAvatar('images/user-avatar.svg')">
-            <img src="images/user-avatar.svg" alt="Avatar 1">
+            <img src="images/user-avatar.svg" alt="Avatar GT">
           </div>
-          <div class="avatar-option" onclick="selectAvatar('images/avatar-2.svg')">
-            <img src="images/avatar-2.svg" alt="Avatar 2" onerror="this.src='images/user-avatar.svg'">
-          </div>
-          <div class="avatar-option" onclick="selectAvatar('images/avatar-3.svg')">
-            <img src="images/avatar-3.svg" alt="Avatar 3" onerror="this.src='images/user-avatar.svg'">
-          </div>
-          <div class="avatar-option" onclick="selectAvatar('images/avatar-4.svg')">
-            <img src="images/avatar-4.svg" alt="Avatar 4" onerror="this.src='images/user-avatar.svg'">
+          <div class="avatar-option" onclick="selectAvatar('images/micus-stuff-logo.png')">
+            <img src="images/micus-stuff-logo.png" alt="Avatar Micu">
           </div>
         </div>
         <div class="form-group">
-          <label for="custom-avatar-url">Sau introdu URL personalizat</label>
+          <label for="custom-avatar-url">Sau introdu URL imagine externă</label>
           <input type="url" id="custom-avatar-url" placeholder="https://exemplu.ro/avatar.png">
         </div>
         <div class="modal-actions">
-          <button class="btn btn-primary" onclick="saveCustomAvatar()">Salvează</button>
+          <button class="btn btn-primary" onclick="saveCustomAvatar()">Salvează Avatar</button>
           <button class="btn btn-secondary" onclick="closeChangeAvatarModal()">Anulează</button>
         </div>
       </div>
     </div>
   </div>
+
+  <div id="notification" class="notification"><span id="notification-message"></span></div>
 
   <script src="app.js"></script>
 </body>
