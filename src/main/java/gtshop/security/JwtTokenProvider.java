@@ -4,56 +4,90 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
+import java.time.Instant;
 import java.util.Date;
+import java.util.Optional;
+import java.util.UUID;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+/**
+ * Emite si valideaza token-uri JWT semnate HMAC.
+ * Secretul este obligatoriu (minim 32 octeti) - nu mai exista completare cu zerouri.
+ */
 @Component
 public class JwtTokenProvider {
-    @Value(value="${jwt.secret}")
-    private String jwtSecret;
-    @Value(value="${jwt.expiration}")
-    private long jwtExpiration;
+    static final String CLAIM_TOKEN_VERSION = "tv";
+    private static final int MIN_SECRET_BYTES = 32;
 
-    private SecretKey getSigningKey() {
-        byte[] keyBytes = this.jwtSecret.getBytes(StandardCharsets.UTF_8);
-        if (keyBytes.length < 32) {
-            byte[] paddedKey = new byte[32];
-            System.arraycopy(keyBytes, 0, paddedKey, 0, keyBytes.length);
-            keyBytes = paddedKey;
+    private final String jwtSecret;
+    private final long jwtExpirationMs;
+    private final String issuer;
+    private SecretKey signingKey;
+
+    public JwtTokenProvider(@Value("${jwt.secret:}") String jwtSecret,
+                            @Value("${jwt.expiration:604800000}") long jwtExpirationMs,
+                            @Value("${jwt.issuer:rewardhub}") String issuer) {
+        this.jwtSecret = jwtSecret;
+        this.jwtExpirationMs = jwtExpirationMs;
+        this.issuer = issuer;
+    }
+
+    @PostConstruct
+    void init() {
+        byte[] keyBytes = jwtSecret == null ? new byte[0] : jwtSecret.getBytes(StandardCharsets.UTF_8);
+        if (keyBytes.length < MIN_SECRET_BYTES) {
+            throw new IllegalStateException(
+                    "JWT_SECRET lipseste sau este prea scurt (minim " + MIN_SECRET_BYTES + " caractere). Aplicatia nu porneste fara un secret sigur.");
         }
-        return Keys.hmacShaKeyFor((byte[])keyBytes);
+        if (jwtExpirationMs < 60_000) {
+            throw new IllegalStateException("jwt.expiration trebuie sa fie de cel putin 60 de secunde.");
+        }
+        this.signingKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(Authentication authentication) {
-        UserDetails userDetails = (UserDetails)authentication.getPrincipal();
-        return this.generateToken(userDetails.getUsername());
+    public record IssuedToken(String token, Instant expiresAt) {}
+
+    public record TokenClaims(String userId, int tokenVersion) {}
+
+    public IssuedToken generateToken(String userId, int tokenVersion) {
+        Instant now = Instant.now();
+        Instant expiry = now.plusMillis(jwtExpirationMs);
+        String token = Jwts.builder()
+                .id(UUID.randomUUID().toString())
+                .issuer(issuer)
+                .subject(userId)
+                .claim(CLAIM_TOKEN_VERSION, tokenVersion)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiry))
+                .signWith(signingKey)
+                .compact();
+        return new IssuedToken(token, expiry);
     }
 
-    public String generateToken(String username) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + this.jwtExpiration);
-        return Jwts.builder().subject(username).issuedAt(now).expiration(expiryDate).signWith((Key)this.getSigningKey()).compact();
-    }
-
-    public String getUsernameFromToken(String token) {
-        Claims claims = (Claims)Jwts.parser().verifyWith(this.getSigningKey()).build().parseSignedClaims((CharSequence)token).getPayload();
-        return claims.getSubject();
-    }
-
-    public boolean validateToken(String token) {
+    public Optional<TokenClaims> parse(String token) {
+        if (token == null || token.isBlank() || token.length() > 4096) {
+            return Optional.empty();
+        }
         try {
-            Jwts.parser().verifyWith(this.getSigningKey()).build().parseSignedClaims((CharSequence)token);
-            return true;
-        }
-        catch (JwtException | IllegalArgumentException e) {
-            return false;
+            Claims claims = Jwts.parser()
+                    .verifyWith(signingKey)
+                    .requireIssuer(issuer)
+                    .clockSkewSeconds(30)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            String subject = claims.getSubject();
+            if (subject == null || subject.isBlank()) {
+                return Optional.empty();
+            }
+            Number tv = claims.get(CLAIM_TOKEN_VERSION, Number.class);
+            return Optional.of(new TokenClaims(subject, tv == null ? 0 : tv.intValue()));
+        } catch (JwtException | IllegalArgumentException e) {
+            return Optional.empty();
         }
     }
 }
-

@@ -1,42 +1,39 @@
 package gtshop.config;
 
 import gtshop.model.Reward;
-import gtshop.model.UserProfile;
 import gtshop.repository.RewardRepository;
 import gtshop.repository.UserRepository;
-import jakarta.annotation.PostConstruct;
-import java.util.Arrays;
 import java.util.List;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Populeaza catalogul la prima pornire si sincronizeaza rolurile de admin din configurare.
+ * Nu se mai creeaza niciun utilizator implicit (anterior "user-123" era folosit pentru orice vizitator anonim).
+ */
 @Component
 public class DataInitializer {
+    private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
+
     private final RewardRepository rewardRepository;
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final AppProperties props;
 
-    public DataInitializer(RewardRepository rewardRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public DataInitializer(RewardRepository rewardRepository, UserRepository userRepository, AppProperties props) {
         this.rewardRepository = rewardRepository;
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+        this.props = props;
     }
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
+    @Transactional
     public void init() {
-        if (this.userRepository.findById("user-123").isEmpty()) {
-            UserProfile defaultUser = new UserProfile("user-123", "Popescu Ion", "https://example.com/avatar.png", 2056);
-            defaultUser.setEmail("demo@gtshop.ro");
-            String initPassword = System.getenv("DEFAULT_USER_INIT_PASSWORD");
-            if (initPassword == null || initPassword.isBlank()) {
-                initPassword = java.util.UUID.randomUUID().toString();
-            }
-            defaultUser.setPassword(this.passwordEncoder.encode(initPassword));
-            this.userRepository.save(defaultUser);
-            System.out.println("✅ Default user initialized with 2056 points");
-        }
-        if (this.rewardRepository.count() == 0L) {
-            List<Reward> rewards = Arrays.asList(
+        if (rewardRepository.count() == 0L) {
+            List<Reward> rewards = List.of(
                 new Reward("rew-tricou", "Tricou GT", "Tricou personalizat Generația Tech din bumbac", "Tricou personalizat Generația Tech din bumbac. Mărimi: S, M, L, XL.", 550, "", "Premii fizice", true, 100, false),
                 new Reward("rew-sticker", "Sticker GT", "Sticker personalizat Generația Tech", "Sticker Generația Tech. Personalizează-ți obiectele.", 180, "", "Premii fizice", true, 300, false),
                 new Reward("rew-mouse", "Mouse Logitech G305", "Mouse pentru birou sau gaming", "Mouse Logitech G305, senzor HERO, autonomie ridicată.", 350, "", "Premii fizice", true, 20, false),
@@ -50,8 +47,18 @@ public class DataInitializer {
                 new Reward("rew-lucky", "Lucky Crate", "Cu acest lucky crate îți poți testa norocul", "Șanse: 50% Lose, 15% CV Template, 15% Ghid ChatGPT, 10% Agendă GT, 5% Mouse G305, 5% Subscripție Udemy.", 2550, "", "Premii exclusive", true, 1000, true),
                 new Reward("rew-alltracks", "Acces la toate track-urile", "Acces la toate track-urile pentru 30 zile", "Acces 30 zile la toate track-urile (fără teme/questuri).", 3500, "", "Premii exclusive", true, 1000, false)
             );
-            this.rewardRepository.saveAll(rewards);
-            System.out.println("✅ " + rewards.size() + " rewards initialized");
+            rewardRepository.saveAll(rewards);
+            log.info("{} rewards initialized", rewards.size());
+        }
+
+        if (!props.getAdminEmails().isEmpty()) {
+            userRepository.findByEmailIn(props.getAdminEmails()).forEach(u -> {
+                if (!u.isAdmin()) {
+                    u.setRole(gtshop.model.UserProfile.ROLE_ADMIN);
+                    userRepository.save(u);
+                    log.info("Rol ADMIN acordat pentru {}", u.getId());
+                }
+            });
         }
     }
 }

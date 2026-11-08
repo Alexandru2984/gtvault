@@ -1,57 +1,51 @@
 package gtshop.security;
 
-import gtshop.security.CustomUserDetailsService;
-import gtshop.security.JwtTokenProvider;
+import gtshop.model.UserProfile;
+import gtshop.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+/**
+ * Autentifica cererea pe baza header-ului {@code Authorization: Bearer <jwt>}.
+ * Token-ul este acceptat doar daca utilizatorul exista, nu este suspendat si versiunea token-ului
+ * corespunde (schimbarea parolei / "deconectare peste tot" invalideaza token-urile vechi).
+ * Un token invalid NU blocheaza cererea - aceasta continua ca anonima, iar regulile din
+ * {@link SecurityConfig} decid accesul.
+ */
 @Component
-public class JwtAuthenticationFilter
-extends OncePerRequestFilter {
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider tokenProvider;
-    private final CustomUserDetailsService userDetailsService;
+    private final UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, CustomUserDetailsService userDetailsService) {
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, UserRepository userRepository) {
         this.tokenProvider = tokenProvider;
-        this.userDetailsService = userDetailsService;
+        this.userRepository = userRepository;
     }
 
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        try {
-            String jwt = this.getJwtFromRequest(request);
-            if (StringUtils.hasText((String)jwt) && this.tokenProvider.validateToken(jwt)) {
-                String username = this.tokenProvider.getUsernameFromToken(jwt);
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken((Object)userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails((Object)new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication((Authentication)authentication);
-            }
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer ")) {
+            tokenProvider.parse(header.substring(7).trim()).ifPresent(claims -> {
+                UserProfile user = userRepository.findById(claims.userId()).orElse(null);
+                if (user != null && !user.isBanned() && user.getTokenVersion() == claims.tokenVersion()) {
+                    AuthUser principal = new AuthUser(user.getId(), user.getRole());
+                    var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()));
+                    var auth = new UsernamePasswordAuthenticationToken(principal, null, authorities);
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
+            });
         }
-        catch (Exception ex) {
-            this.logger.error((Object)"Could not set user authentication in security context", (Throwable)ex);
-        }
-        filterChain.doFilter((ServletRequest)request, (ServletResponse)response);
-    }
-
-    private String getJwtFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (StringUtils.hasText((String)bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-        return null;
+        chain.doFilter(request, response);
     }
 }
-

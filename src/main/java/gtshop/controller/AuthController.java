@@ -2,20 +2,14 @@ package gtshop.controller;
 
 import gtshop.dto.AuthRequest;
 import gtshop.dto.AuthResponse;
-import gtshop.model.UserProfile;
-import gtshop.repository.UserRepository;
-import gtshop.security.JwtTokenProvider;
-import gtshop.service.TransactionService;
+import gtshop.security.CurrentUser;
+import gtshop.security.RateLimit;
+import gtshop.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.UUID;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,86 +17,46 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
-@Tag(name = "Authentication", description = "User registration and login endpoints")
+@Tag(name = "Authentication", description = "Înregistrare, autentificare și gestionarea sesiunilor")
 public class AuthController {
-    private final AuthenticationManager authenticationManager;
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtTokenProvider tokenProvider;
-    private final TransactionService transactionService;
+    private final AuthService authService;
+    private final CurrentUser currentUser;
 
-    public AuthController(AuthenticationManager authenticationManager,
-                          UserRepository userRepository,
-                          PasswordEncoder passwordEncoder,
-                          JwtTokenProvider tokenProvider,
-                          TransactionService transactionService) {
-        this.authenticationManager = authenticationManager;
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.tokenProvider = tokenProvider;
-        this.transactionService = transactionService;
+    public AuthController(AuthService authService, CurrentUser currentUser) {
+        this.authService = authService;
+        this.currentUser = currentUser;
     }
 
+    public record PasswordChangeRequest(
+            @NotBlank(message = "Parola curentă este obligatorie.") @Size(max = 128) String currentPassword,
+            @NotBlank(message = "Parola nouă este obligatorie.") @Size(max = 128) String newPassword) {}
+
     @PostMapping("/register")
-    @Operation(summary = "Register a new user")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody AuthRequest request) {
-        if (this.userRepository.existsByEmail(request.getEmail())) {
-            return ResponseEntity.badRequest().body(AuthResponse.error("Email already exists"));
-        }
-        UserProfile user = new UserProfile();
-        user.setId("user-" + UUID.randomUUID().toString().substring(0, 8));
-        user.setEmail(request.getEmail());
-        user.setPassword(this.passwordEncoder.encode(request.getPassword()));
-        user.setName(request.getName() != null ? request.getName() : "New User");
-        user.setAvatar("https://example.com/avatar.png");
-
-        String userRefCode = "GT-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-        user.setReferralCode(userRefCode);
-
-        int startingPoints = 1000;
-        UserProfile referrer = null;
-        if (request.getReferralCode() != null && !request.getReferralCode().trim().isEmpty()) {
-            referrer = this.userRepository.findByReferralCode(request.getReferralCode().trim()).orElse(null);
-            if (referrer != null) {
-                user.setReferredBy(referrer.getReferralCode());
-                startingPoints += 200; // Extra 200 AP for using referral
-            }
-        }
-
-        user.setActivityPoints(startingPoints);
-        user.setTotalPointsEarned(startingPoints);
-        this.userRepository.save(user);
-
-        // Record welcome transaction
-        this.transactionService.recordTransaction(user, "WELCOME_BONUS", startingPoints, user.getActivityPoints(),
-            referrer != null ? "Bonus de bun venit (+200 AP recomandare de la " + referrer.getName() + ")" : "Bonus de bun venit RewardHub");
-
-        // Reward referrer if applicable
-        if (referrer != null) {
-            int newReferrerBalance = referrer.getActivityPoints() + 300;
-            referrer.setActivityPoints(newReferrerBalance);
-            this.userRepository.save(referrer);
-            this.transactionService.recordTransaction(referrer, "REFERRAL_BONUS", 300, newReferrerBalance,
-                "Bonus recomandare prieten: " + user.getName());
-        }
-
-        String token = this.tokenProvider.generateToken(user.getId());
-        return ResponseEntity.ok(AuthResponse.success(token, user.getId(), user.getName(), user.getActivityPoints()));
+    @Operation(summary = "Creează un cont nou (+1000 AP bonus de bun venit)")
+    @RateLimit(name = "register-burst", limit = 3, windowSeconds = 600, scope = RateLimit.Scope.IP)
+    @RateLimit(name = "register-daily", limit = 10, windowSeconds = 86_400, scope = RateLimit.Scope.IP)
+    public AuthResponse register(@Valid @RequestBody AuthRequest request) {
+        return authService.register(request.getEmail(), request.getPassword(), request.getName(), request.getReferralCode());
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Login with email and password")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request) {
-        try {
-            UserProfile user = this.userRepository.findByEmail(request.getEmail()).orElse(null);
-            if (user == null) {
-                return ResponseEntity.badRequest().body(AuthResponse.error("Invalid email or password"));
-            }
-            Authentication authentication = this.authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getId(), request.getPassword()));
-            String token = this.tokenProvider.generateToken(authentication);
-            return ResponseEntity.ok(AuthResponse.success(token, user.getId(), user.getName(), user.getActivityPoints()));
-        } catch (AuthenticationException e) {
-            return ResponseEntity.badRequest().body(AuthResponse.error("Invalid email or password"));
-        }
+    @Operation(summary = "Autentificare cu email și parolă")
+    @RateLimit(name = "login", limit = 10, windowSeconds = 300, scope = RateLimit.Scope.IP)
+    public AuthResponse login(@Valid @RequestBody AuthRequest request) {
+        return authService.login(request.getEmail(), request.getPassword());
+    }
+
+    @PostMapping("/logout-all")
+    @Operation(summary = "Deconectează toate sesiunile (invalidează token-urile emise anterior)")
+    @RateLimit(name = "logout-all", limit = 5, windowSeconds = 3600)
+    public AuthResponse logoutAll() {
+        return authService.logoutEverywhere(currentUser.requireId());
+    }
+
+    @PostMapping("/password")
+    @Operation(summary = "Schimbă parola contului")
+    @RateLimit(name = "password-change", limit = 5, windowSeconds = 900)
+    public AuthResponse changePassword(@Valid @RequestBody PasswordChangeRequest request) {
+        return authService.changePassword(currentUser.requireId(), request.currentPassword(), request.newPassword());
     }
 }

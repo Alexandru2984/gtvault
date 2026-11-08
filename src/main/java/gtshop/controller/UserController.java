@@ -1,99 +1,85 @@
 package gtshop.controller;
 
+import gtshop.dto.UserSummary;
+import gtshop.model.HistorySummary;
 import gtshop.model.UserProfile;
 import gtshop.repository.UserRepository;
-import gtshop.service.UserService;
+import gtshop.security.CurrentUser;
+import gtshop.security.RateLimit;
+import gtshop.util.AvatarCatalog;
+import gtshop.util.InputSanitizer;
+import gtshop.web.ApiException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.HashMap;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import java.util.Map;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/user")
-@Tag(name = "User", description = "User profile and history endpoints")
+@Tag(name = "User", description = "Profilul utilizatorului autentificat")
 public class UserController {
-    private final UserService userService;
+    private final gtshop.service.UserService userService;
     private final UserRepository userRepository;
+    private final CurrentUser currentUser;
 
-    public UserController(UserService userService, UserRepository userRepository) {
+    public UserController(gtshop.service.UserService userService, UserRepository userRepository, CurrentUser currentUser) {
         this.userService = userService;
         this.userRepository = userRepository;
+        this.currentUser = currentUser;
     }
 
-    @GetMapping("/profile")
-    @Operation(summary = "Get user profile")
-    public UserProfile getProfile(@RequestParam(value = "userId", required = false) String userId) {
-        if (userId != null && !userId.isEmpty()) {
-            UserProfile user = this.userService.getUserById(userId);
-            if (user != null) {
-                return user;
-            }
+    public record ProfileUpdate(@Size(max = 80) String name, @Size(max = 120) String avatar) {}
+
+    @GetMapping({"/me", "/profile"})
+    @Operation(summary = "Profilul privat al utilizatorului autentificat")
+    public UserSummary me() {
+        return UserSummary.of(userService.getCurrentUser());
+    }
+
+    @PostMapping({"/me", "/profile"})
+    @Operation(summary = "Actualizează numele și/sau avatarul")
+    @RateLimit(name = "profile-update", limit = 20, windowSeconds = 3600)
+    @Transactional
+    public Map<String, Object> updateProfile(@Valid @RequestBody ProfileUpdate request) {
+        UserProfile user = userRepository.findByIdForUpdate(currentUser.requireId())
+                .orElseThrow(() -> ApiException.unauthorized("Contul nu mai există."));
+        if (request.name() != null) {
+            user.setName(InputSanitizer.cleanName(request.name()));
         }
-        return this.userService.getCurrentUser();
-    }
-
-    @GetMapping("/history")
-    @Operation(summary = "Get purchase history")
-    public Map<String, Object> getHistory() {
-        return Map.of("purchases", this.userService.getHistory());
-    }
-
-    @GetMapping("/history/summary")
-    @Operation(summary = "Get purchase history summary")
-    public Object getHistorySummary() {
-        return this.userService.getHistorySummary();
-    }
-
-    @PostMapping("/profile")
-    @Operation(summary = "Update user profile")
-    public Map<String, Object> updateProfile(@RequestBody Map<String, Object> request) {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            UserProfile user = this.userService.getCurrentUser();
-            if (request.containsKey("name") && request.get("name") != null) {
-                String name = request.get("name").toString().trim();
-                if (!name.isEmpty()) {
-                    user.setName(name);
-                    this.userRepository.save(user);
-                }
+        if (request.avatar() != null) {
+            if (!AvatarCatalog.isAllowed(request.avatar())) {
+                throw ApiException.badRequest("Avatarul ales nu este disponibil.");
             }
-            response.put("success", true);
-            response.put("message", "Profil actualizat cu succes");
-            response.put("newBalance", user.getActivityPoints());
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "Eroare internă: " + e.getMessage());
+            user.setAvatar(request.avatar());
         }
-        return response;
+        userRepository.save(user);
+        return Map.of("success", true, "message", "Profil actualizat cu succes.", "user", UserSummary.of(user));
     }
 
     @PostMapping("/avatar")
-    @Operation(summary = "Update user avatar")
+    @Operation(summary = "Schimbă avatarul (doar din galeria predefinită)")
+    @RateLimit(name = "profile-update", limit = 20, windowSeconds = 3600)
+    @Transactional
     public Map<String, Object> updateAvatar(@RequestBody Map<String, String> request) {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            String avatarUrl = request.get("avatar");
-            if (avatarUrl == null || avatarUrl.trim().isEmpty()) {
-                response.put("success", false);
-                response.put("message", "Avatar URL este obligatoriu");
-                return response;
-            }
-            UserProfile user = this.userService.getCurrentUser();
-            user.setAvatar(avatarUrl.trim());
-            this.userRepository.save(user);
-            response.put("success", true);
-            response.put("message", "Avatar actualizat cu succes");
-            response.put("avatar", avatarUrl);
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "Eroare: " + e.getMessage());
-        }
-        return response;
+        return updateProfile(new ProfileUpdate(null, request.get("avatar")));
+    }
+
+    @GetMapping("/avatars")
+    @Operation(summary = "Lista avatarelor disponibile")
+    public Map<String, Object> avatars() {
+        return Map.of("avatars", AvatarCatalog.paths(), "default", AvatarCatalog.DEFAULT);
+    }
+
+    @GetMapping("/history/summary")
+    @Operation(summary = "Rezumatul istoricului de comenzi")
+    public HistorySummary getHistorySummary() {
+        return userService.getHistorySummary();
     }
 }
