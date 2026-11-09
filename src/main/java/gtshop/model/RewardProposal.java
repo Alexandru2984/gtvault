@@ -40,6 +40,9 @@ public class RewardProposal {
     @Column(name = "admin_note", length = 255)
     private String adminNote;
 
+    @Column(name = "reviewed_at")
+    private Instant reviewedAt;
+
     public RewardProposal() {
     }
 
@@ -134,5 +137,13 @@ public class RewardProposal {
 
     public void setAdminNote(String adminNote) {
         this.adminNote = adminNote;
+    }
+
+    public Instant getReviewedAt() {
+        return reviewedAt;
+    }
+
+    public void setReviewedAt(Instant reviewedAt) {
+        this.reviewedAt = reviewedAt;
     }
 }

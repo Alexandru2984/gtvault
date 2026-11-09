@@ -73,7 +73,7 @@ public class OrderService {
     public record ItemView(String id, String rewardId, String name, int quantity, int unitPrice, int pointsSpent,
                            int flashUnits, String fulfillment, String status, String voucherCode, boolean redeemed) {}
 
-    public record Step(String status, String label, boolean reached, boolean current) {}
+    public record Step(String status, String label, boolean reached, boolean current, Instant at) {}
 
     public record OrderView(String id, String status, String statusLabel, Instant createdAt, Instant updatedAt,
                             List<ItemView> items, int itemCount, int subtotal, int flashDiscount, String tier,
@@ -183,6 +183,7 @@ public class OrderService {
         }
         order.setStatus(ShopOrder.CANCELLED);
         order.setAdminNote(reason);
+        order.setCancelledAt(time.now());
         order.setUpdatedAt(time.now());
         orders.save(order);
         notifications.notify(lockedOwner.getId(), "ORDER", "Comanda " + order.getId() + " a fost anulată",
@@ -247,14 +248,20 @@ public class OrderService {
         }
         List<String> flow = o.isRequiresShipping() ? PHYSICAL_FLOW : DIGITAL_FLOW;
         List<Step> timeline = new ArrayList<>();
+        boolean cancelled = ShopOrder.CANCELLED.equals(o.getStatus());
         int reachedIndex = flow.indexOf(o.getStatus());
         for (int i = 0; i < flow.size(); i++) {
             String st = flow.get(i);
-            boolean reached = reachedIndex >= 0 && i <= reachedIndex;
-            timeline.add(new Step(st, STATUS_LABELS.get(st), reached, i == reachedIndex));
+            Instant at = o.reachedAt(st);
+            // La comenzile anulate se marcheaza doar pasii parcursi efectiv inainte de anulare
+            boolean reached = cancelled ? at != null : reachedIndex >= 0 && i <= reachedIndex;
+            if (cancelled && !reached) {
+                continue;
+            }
+            timeline.add(new Step(st, STATUS_LABELS.get(st), reached, !cancelled && i == reachedIndex, reached ? at : null));
         }
-        if (ShopOrder.CANCELLED.equals(o.getStatus())) {
-            timeline.add(new Step(ShopOrder.CANCELLED, STATUS_LABELS.get(ShopOrder.CANCELLED), true, true));
+        if (cancelled) {
+            timeline.add(new Step(ShopOrder.CANCELLED, STATUS_LABELS.get(ShopOrder.CANCELLED), true, true, o.getCancelledAt()));
         }
         return new OrderView(o.getId(), o.getStatus(), STATUS_LABELS.getOrDefault(o.getStatus(), o.getStatus()),
                 o.getCreatedAt(), o.getUpdatedAt(), items, count, o.getSubtotal(), o.getFlashDiscount(), o.getTierCode(),

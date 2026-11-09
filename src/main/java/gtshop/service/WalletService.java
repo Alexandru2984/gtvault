@@ -51,6 +51,18 @@ public class WalletService {
         return user;
     }
 
+    /**
+     * Blocare pentru operatii administrative: functioneaza si pentru conturile suspendate
+     * (de exemplu rambursarea unei comenzi sau corectarea soldului unui cont blocat).
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public UserProfile lockForAdmin(String userId) {
+        UserProfile user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> ApiException.notFound("Utilizatorul nu a fost găsit."));
+        entityManager.refresh(user);
+        return user;
+    }
+
     @Transactional(propagation = Propagation.MANDATORY)
     public PointTransaction credit(UserProfile lockedUser, int amount, TxType type, String description) {
         if (amount <= 0) {

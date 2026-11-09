@@ -78,6 +78,14 @@ public class ShopOrder {
     private Instant createdAt;
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+    @Column(name = "processing_at")
+    private Instant processingAt;
+    @Column(name = "shipped_at")
+    private Instant shippedAt;
+    @Column(name = "delivered_at")
+    private Instant deliveredAt;
+    @Column(name = "cancelled_at")
+    private Instant cancelledAt;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.PERSIST)
     @OrderBy("id")
@@ -130,4 +138,25 @@ public class ShopOrder {
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
     public List<PurchaseRecord> getItems() { return items; }
+    public Instant getProcessingAt() { return processingAt; }
+    public void setProcessingAt(Instant processingAt) { this.processingAt = processingAt; }
+    public Instant getShippedAt() { return shippedAt; }
+    public void setShippedAt(Instant shippedAt) { this.shippedAt = shippedAt; }
+    public Instant getDeliveredAt() { return deliveredAt; }
+    public void setDeliveredAt(Instant deliveredAt) { this.deliveredAt = deliveredAt; }
+    public Instant getCancelledAt() { return cancelledAt; }
+    public void setCancelledAt(Instant cancelledAt) { this.cancelledAt = cancelledAt; }
+
+    /** Momentul in care comanda a ajuns intr-un anumit status (null daca nu a ajuns sau nu se cunoaste). */
+    public Instant reachedAt(String s) {
+        return switch (s) {
+            case PLACED -> createdAt;
+            case PROCESSING -> processingAt;
+            case SHIPPED -> shippedAt;
+            case DELIVERED -> deliveredAt;
+            case FULFILLED -> FULFILLED.equals(status) ? createdAt : null;
+            case CANCELLED -> cancelledAt;
+            default -> null;
+        };
+    }
 }
