@@ -54,6 +54,18 @@ public class TimeService {
         return today().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atStartOfDay(zone).toInstant();
     }
 
+    public LocalDate weekStartDate() {
+        return today().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+    }
+
+    public String weekStartIso() {
+        return weekStartDate().toString();
+    }
+
+    public Instant startOfNextWeek() {
+        return weekStartDate().plusWeeks(1).atStartOfDay(zone).toInstant();
+    }
+
     public Instant startOfMonth() {
         return today().withDayOfMonth(1).atStartOfDay(zone).toInstant();
     }

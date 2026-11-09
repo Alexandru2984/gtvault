@@ -63,6 +63,12 @@ public abstract class AbstractIntegrationTest {
         public MutableClock testClock() {
             return new MutableClock(START);
         }
+
+        @Bean
+        @Primary
+        public ScriptedRandom scriptedRandom() {
+            return new ScriptedRandom();
+        }
     }
 
     @Autowired
@@ -75,11 +81,14 @@ public abstract class AbstractIntegrationTest {
     protected MutableClock clock;
     @Autowired
     protected RateLimiter rateLimiter;
+    @Autowired
+    protected ScriptedRandom random;
 
     @BeforeEach
     void resetSharedState() {
         rateLimiter.reset();
         clock.set(START);
+        random.clear();
     }
 
     // ------------------------------------------------------------------ helpers
@@ -113,6 +122,21 @@ public abstract class AbstractIntegrationTest {
     /** Pune soldul direct in baza de date (doar pentru pregatirea testelor). */
     protected void setPoints(TestUser user, int points) {
         jdbc.update("update users set activity_points = ? where id = ?", points, user.id());
+    }
+
+    /** Cont „vechi” si activ: trece de regulile anti-abuz pentru cadouri. */
+    protected void makeVeteran(TestUser user, int xp) {
+        jdbc.update("update users set created_at = ?, total_points_earned = ? where id = ?",
+                java.sql.Timestamp.from(clock.instant().minus(java.time.Duration.ofDays(60))), xp, user.id());
+    }
+
+    protected int xp(TestUser user) {
+        Integer p = jdbc.queryForObject("select total_points_earned from users where id = ?", Integer.class, user.id());
+        return p == null ? 0 : p;
+    }
+
+    protected void advanceDays(int days) {
+        clock.advance(java.time.Duration.ofDays(days));
     }
 
     protected int points(TestUser user) {

@@ -1,17 +1,17 @@
 package gtshop.repository;
 
 import gtshop.model.ProposalVote;
-import gtshop.model.RewardProposal;
-import gtshop.model.UserProfile;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ProposalVoteRepository extends JpaRepository<ProposalVote, String> {
-    boolean existsByProposalAndUser(RewardProposal proposal, UserProfile user);
-    Optional<ProposalVote> findByProposalAndUser(RewardProposal proposal, UserProfile user);
-    List<ProposalVote> findByUser(UserProfile user);
+    Optional<ProposalVote> findByProposalIdAndUserId(String proposalId, String userId);
+
+    @Query("select v.proposal.id from ProposalVote v where v.user.id = :userId and v.active = true")
+    List<String> findActiveProposalIdsByUser(@Param("userId") String userId);
 }

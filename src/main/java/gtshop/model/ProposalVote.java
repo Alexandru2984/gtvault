@@ -26,6 +26,10 @@ public class ProposalVote {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    /** Voturile retrase raman in tabela (inactive), ca vot/retragere/vot sa nu mai genereze AP. */
+    @Column(nullable = false)
+    private boolean active = true;
+
     public ProposalVote() {
     }
 
@@ -66,5 +70,13 @@ public class ProposalVote {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }

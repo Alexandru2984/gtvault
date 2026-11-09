@@ -1,5 +1,6 @@
 package gtshop.service;
 
+import gtshop.game.Badge;
 import gtshop.config.AppProperties;
 import gtshop.dto.AuthResponse;
 import gtshop.dto.UserSummary;
@@ -34,17 +35,20 @@ public class AuthService {
     private final WalletService wallet;
     private final AppProperties props;
     private final NotificationService notifications;
+    private final BadgeService badges;
     /** Hash folosit cand email-ul nu exista, ca timpul de raspuns sa nu dezvaluie conturile. */
     private final String dummyHash;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider,
-                       WalletService wallet, AppProperties props, NotificationService notifications) {
+                       WalletService wallet, AppProperties props, NotificationService notifications,
+                       BadgeService badges) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.wallet = wallet;
         this.props = props;
         this.notifications = notifications;
+        this.badges = badges;
         this.dummyHash = passwordEncoder.encode("dummy-password-for-timing-" + Ids.code(8));
     }
 
@@ -118,6 +122,7 @@ public class AuthService {
                     "Bonus recomandare prieten: " + newUserName);
             notifications.notify(referrer.getId(), "REFERRAL", "Prietenul tău s-a alăturat! 🤝",
                     newUserName + " s-a înscris cu codul tău. Ai primit +" + REFERRAL_REFERRER_BONUS + " AP.", "🤝", "#/profil");
+            badges.evaluate(referrer, Badge.RECRUITER, Badge.INFLUENCER);
         } else {
             notifications.notify(referrer.getId(), "REFERRAL", "Un nou membru prin codul tău",
                     newUserName + " s-a înscris cu codul tău (limita de recompense pentru recomandări a fost atinsă).", "🤝", "#/profil");

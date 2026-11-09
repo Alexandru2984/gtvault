@@ -23,16 +23,20 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final RewardRepository rewardRepository;
     private final PromoCodeService promoCodeService;
     private final BadgeService badgeService;
-    private final TransactionService transactionService;
+    private final WalletService wallet;
+    private final QuestService quests;
+    private final gtshop.security.CurrentUser currentUser;
 
-    public CheckoutServiceImpl(UserService userService, CartService cartService, UserRepository userRepository, RewardRepository rewardRepository, PromoCodeService promoCodeService, BadgeService badgeService, TransactionService transactionService) {
+    public CheckoutServiceImpl(UserService userService, CartService cartService, UserRepository userRepository, RewardRepository rewardRepository, PromoCodeService promoCodeService, BadgeService badgeService, WalletService wallet, QuestService quests, gtshop.security.CurrentUser currentUser) {
         this.userService = userService;
         this.cartService = cartService;
         this.userRepository = userRepository;
         this.rewardRepository = rewardRepository;
         this.promoCodeService = promoCodeService;
         this.badgeService = badgeService;
-        this.transactionService = transactionService;
+        this.wallet = wallet;
+        this.quests = quests;
+        this.currentUser = currentUser;
     }
 
     @Override
@@ -50,7 +54,8 @@ public class CheckoutServiceImpl implements CheckoutService {
             return resp;
         }
 
-        UserProfile user = this.userService.getCurrentUser();
+        // Blocam intai contul (aceeasi ordine ca restul aplicatiei), apoi produsele
+        UserProfile user = this.wallet.lock(this.currentUser.requireId());
         int calculatedTotal = 0;
         List<Reward> rewardsToUpdate = new ArrayList<>();
 
@@ -80,6 +85,7 @@ public class CheckoutServiceImpl implements CheckoutService {
 
             // CRITICAL SECURITY FIX (SEC-01): Enforce server-authoritative price from DB
             item.setPrice(reward.getPrice());
+            item.setName(reward.getName());
             calculatedTotal += reward.getPrice() * item.getQuantity();
 
             reward.setStockCount(reward.getStockCount() - item.getQuantity());
@@ -107,12 +113,12 @@ public class CheckoutServiceImpl implements CheckoutService {
             return resp;
         }
 
-        // Deduct points and save state atomically
-        user.setActivityPoints(user.getActivityPoints() - finalTotal);
-        this.userRepository.save(user);
-        this.rewardRepository.saveAll(rewardsToUpdate);
-
         String transactionId = "TX-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        if (finalTotal > 0) {
+            this.wallet.debit(user, finalTotal, gtshop.model.TxType.ORDER_PAYMENT,
+                "Comandă #" + transactionId + (discount > 0 ? " (reducere -" + discount + " AP)" : ""));
+        }
+        this.rewardRepository.saveAll(rewardsToUpdate);
         for (CartItem it : items) {
             PurchaseRecord pr = new PurchaseRecord();
             pr.setId("PR-" + UUID.randomUUID().toString().substring(0, 8));
@@ -128,12 +134,8 @@ public class CheckoutServiceImpl implements CheckoutService {
             this.userService.addPurchase(pr);
         }
 
-        // Check and unlock achievements
-        this.badgeService.checkOrderBadges(user, finalTotal);
-
-        // Record point ledger transaction
-        this.transactionService.recordTransaction(user, "ORDER_PAYMENT", -finalTotal, user.getActivityPoints(),
-            "Comandă #" + transactionId + (discount > 0 ? " (reducere -" + discount + " AP)" : ""));
+        this.badgeService.onOrder(user, finalTotal);
+        this.quests.track(user, gtshop.game.QuestCatalog.Action.PLACE_ORDER, 1);
 
         resp.setSuccess(true);
         resp.setMessage(discount > 0 

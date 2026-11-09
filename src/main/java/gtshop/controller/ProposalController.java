@@ -1,68 +1,57 @@
 package gtshop.controller;
 
-import gtshop.model.RewardProposal;
-import gtshop.model.UserProfile;
+import gtshop.security.CurrentUser;
+import gtshop.security.RateLimit;
 import gtshop.service.ProposalService;
-import gtshop.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/proposals")
-@Tag(name = "Reward Proposals", description = "Community wish board, proposals, and upvotes")
+@Tag(name = "Proposals", description = "Panoul de propuneri și voturi al comunității")
 public class ProposalController {
+    private final ProposalService proposals;
+    private final CurrentUser currentUser;
 
-    private final ProposalService proposalService;
-    private final UserService userService;
-
-    public ProposalController(ProposalService proposalService, UserService userService) {
-        this.proposalService = proposalService;
-        this.userService = userService;
+    public ProposalController(ProposalService proposals, CurrentUser currentUser) {
+        this.proposals = proposals;
+        this.currentUser = currentUser;
     }
 
+    public record NewProposal(String title, String category, String description) {}
+
     @GetMapping
-    @Operation(summary = "Get community reward proposals with vote status")
-    public List<Map<String, Object>> getProposals() {
-        UserProfile user = userService.getCurrentUser();
-        return proposalService.getProposals(user);
+    @Operation(summary = "Lista propunerilor (sort = top | new)")
+    public List<Map<String, Object>> list(@RequestParam(defaultValue = "top") String sort) {
+        return proposals.list(currentUser.optionalId(), sort);
+    }
+
+    @GetMapping("/categories")
+    @Operation(summary = "Categoriile permise")
+    public List<String> categories() {
+        return ProposalService.CATEGORIES;
     }
 
     @PostMapping
-    @Operation(summary = "Submit a new reward proposal")
-    public ResponseEntity<Map<String, Object>> createProposal(@RequestBody Map<String, String> body) {
-        UserProfile user = userService.getCurrentUser();
-        try {
-            RewardProposal prop = proposalService.createProposal(
-                user,
-                body.get("title"),
-                body.get("category"),
-                body.get("description")
-            );
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Propunerea ta a fost publicată cu succes! Ai primit +15 AP.",
-                "proposal", prop,
-                "newBalance", user != null ? user.getActivityPoints() : 0
-            ));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", ex.getMessage()));
-        }
+    @RateLimit(name = "proposal-create", limit = 5, windowSeconds = 3600)
+    @Operation(summary = "Publică o propunere nouă")
+    public Map<String, Object> create(@RequestBody NewProposal body) {
+        return proposals.create(currentUser.requireId(), body.title(), body.category(), body.description());
     }
 
     @PostMapping("/{id}/vote")
-    @Operation(summary = "Upvote or retract vote on a proposal")
-    public ResponseEntity<Map<String, Object>> toggleVote(@PathVariable String id) {
-        UserProfile user = userService.getCurrentUser();
-        try {
-            Map<String, Object> res = proposalService.toggleVote(user, id);
-            return ResponseEntity.ok(res);
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", ex.getMessage()));
-        }
+    @RateLimit(name = "proposal-vote", limit = 40, windowSeconds = 60)
+    @Operation(summary = "Votează sau retrage votul")
+    public Map<String, Object> vote(@PathVariable String id) {
+        return proposals.toggleVote(currentUser.requireId(), id);
     }
 }

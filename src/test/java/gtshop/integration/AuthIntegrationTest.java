@@ -74,7 +74,8 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
         TestUser referrer = register();
         TestUser invited = register(uniqueEmail(), "Prieten Nou", referrer.referralCode().toLowerCase());
         assertThat(points(invited)).isEqualTo(1200);
-        assertThat(points(referrer)).isEqualTo(1300);
+        // 1000 + 300 bonus recomandare + 75 insigna RECRUITER
+        assertThat(points(referrer)).isEqualTo(1375);
         Integer notifs = jdbc.queryForObject("select count(*) from notifications where user_id = ? and type = 'REFERRAL'",
                 Integer.class, referrer.id());
         assertThat(notifs).isEqualTo(1);

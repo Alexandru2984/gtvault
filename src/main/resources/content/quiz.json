@@ -1,0 +1,782 @@
+[
+ {
+  "id": "q01",
+  "category": "Spring",
+  "question": "Ce adnotare Spring marchează un bean care conține logică de business?",
+  "options": [
+   "@Service",
+   "@Entity",
+   "@Repository",
+   "@Controller"
+  ],
+  "answer": 0,
+  "explanation": "@Service este specializarea lui @Component dedicată stratului de business; @Repository e pentru persistență, @Controller pentru web."
+ },
+ {
+  "id": "q02",
+  "category": "Java",
+  "question": "Ce colecție Java păstrează cheile sortate după ordinea lor naturală?",
+  "options": [
+   "TreeMap",
+   "HashMap",
+   "LinkedHashMap",
+   "HashSet"
+  ],
+  "answer": 0,
+  "explanation": "TreeMap implementează SortedMap (arbore roșu-negru); LinkedHashMap păstrează doar ordinea inserării."
+ },
+ {
+  "id": "q03",
+  "category": "HTTP",
+  "question": "Ce metodă HTTP este atât sigură (safe), cât și idempotentă?",
+  "options": [
+   "GET",
+   "POST",
+   "PATCH",
+   "CONNECT"
+  ],
+  "answer": 0,
+  "explanation": "GET nu modifică starea serverului și poate fi repetată fără efecte suplimentare."
+ },
+ {
+  "id": "q04",
+  "category": "Baze de date",
+  "question": "Ce mecanism împiedică două tranzacții concurente să suprascrie același rând?",
+  "options": [
+   "Blocare pesimistă (SELECT ... FOR UPDATE)",
+   "Fără blocare",
+   "Nivelul Read Uncommitted",
+   "Citiri murdare (dirty reads)"
+  ],
+  "answer": 0,
+  "explanation": "SELECT ... FOR UPDATE blochează rândul până la commit, serializând modificările concurente."
+ },
+ {
+  "id": "q05",
+  "category": "Securitate",
+  "question": "Ce este un JWT (JSON Web Token)?",
+  "options": [
+   "Un token compact și semnat care transportă claim-uri",
+   "O bază de date NoSQL",
+   "Un framework CSS",
+   "Un protocol de rutare"
+  ],
+  "answer": 0,
+  "explanation": "JWT (RFC 7519) are header, payload și semnătură; semnătura garantează integritatea, nu confidențialitatea."
+ },
+ {
+  "id": "q06",
+  "category": "Algoritmi",
+  "question": "Care este complexitatea căutării binare într-un vector sortat?",
+  "options": [
+   "O(log n)",
+   "O(n)",
+   "O(n log n)",
+   "O(1)"
+  ],
+  "answer": 0,
+  "explanation": "La fiecare pas jumătate din spațiul de căutare este eliminat."
+ },
+ {
+  "id": "q07",
+  "category": "Git",
+  "question": "Ce comandă creează o ramură nouă și te mută pe ea?",
+  "options": [
+   "git switch -c nume",
+   "git branch -d nume",
+   "git merge nume",
+   "git stash pop"
+  ],
+  "answer": 0,
+  "explanation": "git switch -c (sau git checkout -b) creează ramura și face switch în aceeași comandă."
+ },
+ {
+  "id": "q08",
+  "category": "HTTP",
+  "question": "Ce cod de status indică faptul că o resursă a fost creată?",
+  "options": [
+   "201 Created",
+   "200 OK",
+   "204 No Content",
+   "301 Moved Permanently"
+  ],
+  "answer": 0,
+  "explanation": "201 se folosește după un POST care a creat o resursă nouă."
+ },
+ {
+  "id": "q09",
+  "category": "HTTP",
+  "question": "Ce cod de status semnalează că ai trimis prea multe cereri?",
+  "options": [
+   "429 Too Many Requests",
+   "403 Forbidden",
+   "503 Service Unavailable",
+   "418 I'm a teapot"
+  ],
+  "answer": 0,
+  "explanation": "429 este folosit pentru rate limiting și poate fi însoțit de antetul Retry-After."
+ },
+ {
+  "id": "q10",
+  "category": "CSS",
+  "question": "Ce proprietate stabilește direcția axei principale într-un container flex?",
+  "options": [
+   "flex-direction",
+   "align-content",
+   "justify-self",
+   "order"
+  ],
+  "answer": 0,
+  "explanation": "flex-direction: row | column (și variantele reverse) definește axa principală."
+ },
+ {
+  "id": "q11",
+  "category": "JavaScript",
+  "question": "Ce returnează typeof null în JavaScript?",
+  "options": [
+   "\"object\"",
+   "\"null\"",
+   "\"undefined\"",
+   "\"number\""
+  ],
+  "answer": 0,
+  "explanation": "Este o eroare istorică a limbajului, păstrată pentru compatibilitate."
+ },
+ {
+  "id": "q12",
+  "category": "JavaScript",
+  "question": "Prin ce diferă === de == în JavaScript?",
+  "options": [
+   "=== nu face conversie de tip înainte de comparare",
+   "=== compară doar referințe",
+   "=== este mai lent",
+   "Nu există nicio diferență"
+  ],
+  "answer": 0,
+  "explanation": "== aplică coerciție de tip (\"1\" == 1 este true), pe când === cere și același tip."
+ },
+ {
+  "id": "q13",
+  "category": "SQL",
+  "question": "Ce clauză SQL filtrează grupurile după GROUP BY?",
+  "options": [
+   "HAVING",
+   "WHERE",
+   "ORDER BY",
+   "LIMIT"
+  ],
+  "answer": 0,
+  "explanation": "WHERE filtrează rânduri înainte de grupare; HAVING filtrează rezultatele agregate."
+ },
+ {
+  "id": "q14",
+  "category": "SQL",
+  "question": "Ce tip de JOIN returnează doar rândurile care au corespondent în ambele tabele?",
+  "options": [
+   "INNER JOIN",
+   "LEFT JOIN",
+   "FULL OUTER JOIN",
+   "CROSS JOIN"
+  ],
+  "answer": 0,
+  "explanation": "INNER JOIN păstrează doar perechile care satisfac condiția de join."
+ },
+ {
+  "id": "q15",
+  "category": "Securitate",
+  "question": "Care este principala apărare împotriva XSS?",
+  "options": [
+   "Escaparea datelor la afișare (output encoding)",
+   "Hash-uirea parolelor",
+   "Folosirea HTTPS",
+   "Indexarea tabelelor"
+  ],
+  "answer": 0,
+  "explanation": "Datele introduse de utilizatori trebuie tratate ca text, nu ca HTML; un CSP strict adaugă un strat în plus."
+ },
+ {
+  "id": "q16",
+  "category": "Securitate",
+  "question": "Cum previi SQL injection?",
+  "options": [
+   "Interogări parametrizate (prepared statements)",
+   "Concatenarea atentă a string-urilor",
+   "Ascunderea mesajelor de eroare",
+   "Criptarea bazei de date"
+  ],
+  "answer": 0,
+  "explanation": "Parametrii sunt trimiși separat de textul interogării, deci nu pot schimba structura SQL."
+ },
+ {
+  "id": "q17",
+  "category": "Securitate",
+  "question": "Ce algoritm este potrivit pentru stocarea parolelor?",
+  "options": [
+   "bcrypt / Argon2",
+   "MD5",
+   "Base64",
+   "SHA-1 fără salt"
+  ],
+  "answer": 0,
+  "explanation": "Algoritmii lenți, cu salt și factor de cost, fac atacurile brute-force foarte scumpe. Base64 nici nu e hash."
+ },
+ {
+  "id": "q18",
+  "category": "Web",
+  "question": "Ce controlează CORS?",
+  "options": [
+   "Ce origini pot citi răspunsurile unui API din browser",
+   "Viteza de încărcare a paginii",
+   "Criptarea conexiunii",
+   "Compresia imaginilor"
+  ],
+  "answer": 0,
+  "explanation": "CORS este o politică aplicată de browser pe baza antetelor Access-Control-* trimise de server."
+ },
+ {
+  "id": "q19",
+  "category": "Rețele",
+  "question": "Care este portul implicit pentru HTTPS?",
+  "options": [
+   "443",
+   "80",
+   "22",
+   "8080"
+  ],
+  "answer": 0,
+  "explanation": "80 este pentru HTTP, 22 pentru SSH, iar 8080 este doar o convenție pentru servere de dezvoltare."
+ },
+ {
+  "id": "q20",
+  "category": "Rețele",
+  "question": "Ce face DNS?",
+  "options": [
+   "Traduce numele de domeniu în adrese IP",
+   "Criptează traficul web",
+   "Atribuie adrese MAC",
+   "Comprimă pachetele"
+  ],
+  "answer": 0,
+  "explanation": "Când scrii un domeniu, resolver-ul DNS găsește adresa IP a serverului."
+ },
+ {
+  "id": "q21",
+  "category": "DevOps",
+  "question": "Ce fișier descrie pașii de construire a unei imagini Docker?",
+  "options": [
+   "Dockerfile",
+   "docker.lock",
+   "Makefile",
+   "compose.env"
+  ],
+  "answer": 0,
+  "explanation": "Dockerfile conține instrucțiuni ca FROM, COPY și RUN, executate la docker build."
+ },
+ {
+  "id": "q22",
+  "category": "DevOps",
+  "question": "Care este cea mai mică unitate care poate fi rulată în Kubernetes?",
+  "options": [
+   "Pod",
+   "Node",
+   "Cluster",
+   "Namespace"
+  ],
+  "answer": 0,
+  "explanation": "Un Pod grupează unul sau mai multe containere care împart rețeaua și volumele."
+ },
+ {
+  "id": "q23",
+  "category": "DevOps",
+  "question": "Ce înseamnă CI în CI/CD?",
+  "options": [
+   "Continuous Integration",
+   "Code Inspection",
+   "Container Isolation",
+   "Cloud Infrastructure"
+  ],
+  "answer": 0,
+  "explanation": "Integrarea continuă înseamnă build și teste automate la fiecare modificare."
+ },
+ {
+  "id": "q24",
+  "category": "Java",
+  "question": "Ce cuvânt cheie împiedică moștenirea unei clase Java?",
+  "options": [
+   "final",
+   "static",
+   "abstract",
+   "transient"
+  ],
+  "answer": 0,
+  "explanation": "O clasă final nu poate fi extinsă (exemplu: java.lang.String)."
+ },
+ {
+  "id": "q25",
+  "category": "Java",
+  "question": "Ce pot conține interfețele Java începând cu Java 8?",
+  "options": [
+   "Metode default cu implementare",
+   "Constructori",
+   "Câmpuri de instanță modificabile",
+   "Blocuri de inițializare de instanță"
+  ],
+  "answer": 0,
+  "explanation": "Metodele default (și static) permit evoluția interfețelor fără a strica implementările existente."
+ },
+ {
+  "id": "q26",
+  "category": "Java",
+  "question": "Ce generează automat un record în Java?",
+  "options": [
+   "Constructor, accesori, equals, hashCode și toString",
+   "Doar getteri și setteri",
+   "Un singleton thread-safe",
+   "O entitate JPA"
+  ],
+  "answer": 0,
+  "explanation": "Un record este un purtător de date imutabil; câmpurile sale sunt final."
+ },
+ {
+  "id": "q27",
+  "category": "Java",
+  "question": "Ce se întâmplă la apelul s.concat(\"x\") pe un String?",
+  "options": [
+   "Se returnează un String nou; s rămâne neschimbat",
+   "s este modificat pe loc",
+   "Se aruncă o excepție",
+   "Se modifică toate referințele către s"
+  ],
+  "answer": 0,
+  "explanation": "String este imutabil în Java; orice operație de modificare produce un obiect nou."
+ },
+ {
+  "id": "q28",
+  "category": "Java",
+  "question": "Ce obiecte poate elibera Garbage Collector-ul din Java?",
+  "options": [
+   "Obiectele care nu mai sunt accesibile din nicio referință activă",
+   "Toate obiectele mai vechi de un minut",
+   "Doar obiectele marcate cu @Deprecated",
+   "Obiectele declarate final"
+  ],
+  "answer": 0,
+  "explanation": "GC eliberează memoria obiectelor la care programul nu mai poate ajunge."
+ },
+ {
+  "id": "q29",
+  "category": "Spring",
+  "question": "La ce excepții face @Transactional rollback în mod implicit?",
+  "options": [
+   "La excepțiile unchecked (RuntimeException și Error)",
+   "La orice excepție",
+   "Doar la SQLException",
+   "Nu face niciodată rollback automat"
+  ],
+  "answer": 0,
+  "explanation": "Pentru excepțiile checked trebuie configurat explicit rollbackFor."
+ },
+ {
+  "id": "q30",
+  "category": "Spring",
+  "question": "Ce formă de injecție a dependențelor este recomandată în Spring?",
+  "options": [
+   "Prin constructor",
+   "Prin câmpuri cu @Autowired",
+   "Prin variabile statice",
+   "Prin reflecție manuală"
+  ],
+  "answer": 0,
+  "explanation": "Injecția prin constructor permite câmpuri final, dependențe explicite și teste fără container."
+ },
+ {
+  "id": "q31",
+  "category": "HTTP",
+  "question": "Ce metodă HTTP este idempotentă, dar nu sigură (safe)?",
+  "options": [
+   "PUT",
+   "POST",
+   "OPTIONS",
+   "CONNECT"
+  ],
+  "answer": 0,
+  "explanation": "PUT repetat lasă resursa în aceeași stare, dar o modifică; OPTIONS este și sigură."
+ },
+ {
+  "id": "q32",
+  "category": "JavaScript",
+  "question": "Ce împiedică declararea unui obiect cu const?",
+  "options": [
+   "Reatribuirea variabilei, nu modificarea obiectului",
+   "Orice modificare a obiectului",
+   "Citirea proprietăților",
+   "Folosirea în funcții"
+  ],
+  "answer": 0,
+  "explanation": "const blochează legătura numelui; pentru imutabilitate reală există Object.freeze."
+ },
+ {
+  "id": "q33",
+  "category": "JavaScript",
+  "question": "Când este respins Promise.all([...])?",
+  "options": [
+   "Imediat ce oricare promisiune este respinsă",
+   "Doar când toate sunt respinse",
+   "Niciodată",
+   "După un timeout de 30 de secunde"
+  ],
+  "answer": 0,
+  "explanation": "Pentru rezultatele tuturor, indiferent de eșecuri, se folosește Promise.allSettled."
+ },
+ {
+  "id": "q34",
+  "category": "JavaScript",
+  "question": "Când rulează callback-ul din setTimeout(fn, 0)?",
+  "options": [
+   "După ce stiva curentă și coada de microtask-uri se golesc",
+   "Imediat, sincron",
+   "Înaintea promisiunilor rezolvate",
+   "Doar după reîncărcarea paginii"
+  ],
+  "answer": 0,
+  "explanation": "Microtask-urile (de exemplu .then) au prioritate față de task-urile programate cu setTimeout."
+ },
+ {
+  "id": "q35",
+  "category": "HTML",
+  "question": "Ce element HTML semantic marchează navigația principală?",
+  "options": [
+   "<nav>",
+   "<div class=\"menu\">",
+   "<aside>",
+   "<section>"
+  ],
+  "answer": 0,
+  "explanation": "Elementele semantice ajută cititoarele de ecran și motoarele de căutare."
+ },
+ {
+  "id": "q36",
+  "category": "Accesibilitate",
+  "question": "De ce este important atributul alt la imagini?",
+  "options": [
+   "Descrie imaginea pentru cititoarele de ecran și când imaginea nu se încarcă",
+   "Mărește calitatea imaginii",
+   "Accelerează încărcarea",
+   "Este obligatoriu doar pentru SVG"
+  ],
+  "answer": 0,
+  "explanation": "Imaginile pur decorative pot primi alt=\"\" ca să fie ignorate de tehnologiile asistive."
+ },
+ {
+  "id": "q37",
+  "category": "CSS",
+  "question": "Față de ce este relativă unitatea rem?",
+  "options": [
+   "Dimensiunea fontului elementului rădăcină (html)",
+   "Dimensiunea fontului părintelui",
+   "Lățimea ferestrei",
+   "Înălțimea ecranului"
+  ],
+  "answer": 0,
+  "explanation": "em este relativ la fontul elementului curent; rem este mereu relativ la <html>."
+ },
+ {
+  "id": "q38",
+  "category": "CSS",
+  "question": "Ce face box-sizing: border-box?",
+  "options": [
+   "Include padding-ul și bordura în width/height",
+   "Elimină bordura",
+   "Adaugă margini automate",
+   "Transformă elementul în flex"
+  ],
+  "answer": 0,
+  "explanation": "Face dimensionarea mult mai previzibilă, motiv pentru care e folosit în aproape orice reset CSS."
+ },
+ {
+  "id": "q39",
+  "category": "Python",
+  "question": "Ce tip de date este imutabil în Python?",
+  "options": [
+   "tuple",
+   "list",
+   "dict",
+   "set"
+  ],
+  "answer": 0,
+  "explanation": "Tuplurile nu pot fi modificate după creare, deci pot fi folosite ca chei în dicționare."
+ },
+ {
+  "id": "q40",
+  "category": "Python",
+  "question": "Ce este PEP 8?",
+  "options": [
+   "Ghidul de stil pentru codul Python",
+   "Un manager de pachete",
+   "O versiune de Python",
+   "Un framework web"
+  ],
+  "answer": 0,
+  "explanation": "PEP 8 stabilește convenții de denumire, indentare și formatare."
+ },
+ {
+  "id": "q41",
+  "category": "Git",
+  "question": "Ce face git rebase main pe o ramură de feature?",
+  "options": [
+   "Reaplică commit-urile ramurii peste vârful lui main",
+   "Șterge ramura main",
+   "Creează un merge commit",
+   "Trimite modificările pe server"
+  ],
+  "answer": 0,
+  "explanation": "Rebase rescrie istoria ramurii; nu se face pe ramuri publice folosite de alții."
+ },
+ {
+  "id": "q42",
+  "category": "Git",
+  "question": "La ce folosește fișierul .gitignore?",
+  "options": [
+   "Indică fișierele pe care Git nu trebuie să le urmărească",
+   "Șterge fișiere din istoric",
+   "Ascunde commit-uri",
+   "Criptează repository-ul"
+  ],
+  "answer": 0,
+  "explanation": "Este util pentru build-uri, dependențe și fișiere locale; nu înlocuiește un manager de secrete."
+ },
+ {
+  "id": "q43",
+  "category": "Rețele",
+  "question": "Ce garantează TCP, spre deosebire de UDP?",
+  "options": [
+   "Livrarea pachetelor în ordine, cu retransmitere",
+   "Latență mai mică",
+   "Broadcast către toată rețeaua",
+   "Criptare implicită"
+  ],
+  "answer": 0,
+  "explanation": "UDP este mai simplu și mai rapid, dar nu garantează livrarea sau ordinea."
+ },
+ {
+  "id": "q44",
+  "category": "Linux",
+  "question": "Ce permisiuni setează chmod 600 pe un fișier?",
+  "options": [
+   "Citire și scriere doar pentru proprietar",
+   "Citire pentru toată lumea",
+   "Execuție pentru grup",
+   "Toate permisiunile pentru toți"
+  ],
+  "answer": 0,
+  "explanation": "6 = citire (4) + scriere (2) pentru proprietar, iar grupul și ceilalți primesc 0."
+ },
+ {
+  "id": "q45",
+  "category": "Linux",
+  "question": "Ce comandă afișează procesele care rulează?",
+  "options": [
+   "ps aux",
+   "ls -la",
+   "chmod +x",
+   "grep -r"
+  ],
+  "answer": 0,
+  "explanation": "top și htop oferă aceeași informație interactiv, în timp real."
+ },
+ {
+  "id": "q46",
+  "category": "Algoritmi",
+  "question": "Care este complexitatea medie a unei căutări într-un HashMap?",
+  "options": [
+   "O(1)",
+   "O(log n)",
+   "O(n)",
+   "O(n²)"
+  ],
+  "answer": 0,
+  "explanation": "Funcția hash duce direct la bucket; coliziunile multe degradează performanța."
+ },
+ {
+  "id": "q47",
+  "category": "Structuri de date",
+  "question": "După ce principiu funcționează o stivă (stack)?",
+  "options": [
+   "LIFO: ultimul intrat, primul ieșit",
+   "FIFO: primul intrat, primul ieșit",
+   "Acces aleator",
+   "Ordonare după prioritate"
+  ],
+  "answer": 0,
+  "explanation": "Stiva de apeluri a unui program este exemplul clasic de LIFO."
+ },
+ {
+  "id": "q48",
+  "category": "Algoritmi",
+  "question": "Care este complexitatea medie a algoritmului QuickSort?",
+  "options": [
+   "O(n log n)",
+   "O(n)",
+   "O(n²)",
+   "O(log n)"
+  ],
+  "answer": 0,
+  "explanation": "În cel mai rău caz ajunge la O(n²), dar alegerea bună a pivotului face asta foarte rar."
+ },
+ {
+  "id": "q49",
+  "category": "Baze de date",
+  "question": "Care este compromisul unui index?",
+  "options": [
+   "Accelerează citirile, dar încetinește scrierile și ocupă spațiu",
+   "Accelerează și citirile, și scrierile, gratuit",
+   "Încetinește citirile",
+   "Elimină nevoia de chei primare"
+  ],
+  "answer": 0,
+  "explanation": "Fiecare INSERT/UPDATE trebuie să actualizeze și indexurile."
+ },
+ {
+  "id": "q50",
+  "category": "Baze de date",
+  "question": "Ce înseamnă A din ACID?",
+  "options": [
+   "Atomicitate",
+   "Autentificare",
+   "Agregare",
+   "Asincronism"
+  ],
+  "answer": 0,
+  "explanation": "O tranzacție se aplică fie complet, fie deloc; celelalte proprietăți sunt Consistența, Izolarea și Durabilitatea."
+ },
+ {
+  "id": "q51",
+  "category": "Securitate",
+  "question": "Ce este un atac CSRF?",
+  "options": [
+   "Un site străin face browserul victimei să trimită o cerere autentificată",
+   "Ghicirea parolei prin forță brută",
+   "Interceptarea traficului Wi-Fi",
+   "Supraîncărcarea serverului"
+  ],
+  "answer": 0,
+  "explanation": "Apărarea constă în token-uri anti-CSRF, cookie-uri SameSite sau autentificare prin antet (Bearer)."
+ },
+ {
+  "id": "q52",
+  "category": "Securitate",
+  "question": "Ce spune principiul celui mai mic privilegiu?",
+  "options": [
+   "Fiecare componentă primește doar permisiunile strict necesare",
+   "Toți utilizatorii sunt administratori",
+   "Parolele trebuie schimbate zilnic",
+   "Logurile se șterg periodic"
+  ],
+  "answer": 0,
+  "explanation": "Exemplu: aplicația rulează cu un utilizator dedicat, fără drepturi de root."
+ },
+ {
+  "id": "q53",
+  "category": "HTTP",
+  "question": "Care este diferența dintre 401 și 403?",
+  "options": [
+   "401 = neautentificat; 403 = autentificat, dar fără drepturi",
+   "Sunt identice",
+   "401 = server căzut; 403 = timeout",
+   "403 = neautentificat; 401 = interzis"
+  ],
+  "answer": 0,
+  "explanation": "La 401 clientul trebuie să se autentifice; la 403 reîncercarea cu aceleași credențiale nu ajută."
+ },
+ {
+  "id": "q54",
+  "category": "Web",
+  "question": "Ce valoare NU este validă în JSON standard?",
+  "options": [
+   "undefined",
+   "null",
+   "true",
+   "\"text\""
+  ],
+  "answer": 0,
+  "explanation": "JSON acceptă obiecte, liste, string-uri, numere, true/false și null."
+ },
+ {
+  "id": "q55",
+  "category": "Cloud",
+  "question": "Ce face un CDN?",
+  "options": [
+   "Servește conținutul din locații apropiate de utilizatori",
+   "Rulează baza de date",
+   "Compilează codul",
+   "Gestionează parolele"
+  ],
+  "answer": 0,
+  "explanation": "Cache-ul distribuit reduce latența și încărcarea serverului de origine."
+ },
+ {
+  "id": "q56",
+  "category": "Testare",
+  "question": "Ce verifică un test unitar?",
+  "options": [
+   "O unitate mică de cod, izolat de dependențe externe",
+   "Întreaga aplicație în producție",
+   "Doar interfața grafică",
+   "Performanța rețelei"
+  ],
+  "answer": 0,
+  "explanation": "Testele de integrare verifică apoi colaborarea componentelor reale (de exemplu cu baza de date)."
+ },
+ {
+  "id": "q57",
+  "category": "Testare",
+  "question": "Care este ciclul TDD?",
+  "options": [
+   "Red, Green, Refactor",
+   "Build, Deploy, Pray",
+   "Plan, Code, Ship",
+   "Test, Delete, Retry"
+  ],
+  "answer": 0,
+  "explanation": "Scrii un test care pică, scrii codul minim care îl trece, apoi faci refactorizare cu testele verzi."
+ },
+ {
+  "id": "q58",
+  "category": "Algoritmi",
+  "question": "Ce complexitate au două bucle imbricate peste n elemente?",
+  "options": [
+   "O(n²)",
+   "O(n)",
+   "O(2n)",
+   "O(log n)"
+  ],
+  "answer": 0,
+  "explanation": "Pentru fiecare dintre cele n elemente se parcurg din nou n elemente."
+ },
+ {
+  "id": "q59",
+  "category": "SQL",
+  "question": "Ce proprietăți are o PRIMARY KEY?",
+  "options": [
+   "Valori unice și nenule",
+   "Poate conține duplicate",
+   "Acceptă NULL",
+   "Este mereu de tip text"
+  ],
+  "answer": 0,
+  "explanation": "O tabelă are o singură cheie primară, care poate fi compusă din mai multe coloane."
+ },
+ {
+  "id": "q60",
+  "category": "Java",
+  "question": "La ce folosește Optional<T> în Java?",
+  "options": [
+   "Exprimă explicit lipsa unei valori, fără a returna null",
+   "Face câmpurile opționale în JPA",
+   "Accelerează colecțiile",
+   "Înlocuiește excepțiile"
+  ],
+  "answer": 0,
+  "explanation": "Metode ca orElse, map și orElseThrow obligă apelantul să trateze cazul gol."
+ }
+]

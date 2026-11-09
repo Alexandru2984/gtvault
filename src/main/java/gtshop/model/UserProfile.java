@@ -1,16 +1,12 @@
 package gtshop.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -50,18 +46,15 @@ public class UserProfile {
     @Column(name = "last_free_spin_date", length = 16)
     private String lastFreeSpinDate;
 
+    @Column(name = "guild_changed_at")
+    private Instant guildChangedAt;
+
     @JsonIgnore
     private String email;
     @JsonIgnore
     private String password;
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "user", cascade = {CascadeType.ALL}, orphanRemoval = true)
-    private List<CartItem> cartItems = new ArrayList<>();
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "user", cascade = {CascadeType.ALL}, orphanRemoval = true)
-    private List<PurchaseRecord> purchases = new ArrayList<>();
 
     public UserProfile() {
     }
@@ -114,12 +107,6 @@ public class UserProfile {
     public String getPassword() { return this.password; }
     public void setPassword(String password) { this.password = password; }
 
-    public List<CartItem> getCartItems() { return this.cartItems; }
-    public void setCartItems(List<CartItem> cartItems) { this.cartItems = cartItems; }
-
-    public List<PurchaseRecord> getPurchases() { return this.purchases; }
-    public void setPurchases(List<PurchaseRecord> purchases) { this.purchases = purchases; }
-
     public String getReferralCode() { return this.referralCode; }
     public void setReferralCode(String referralCode) { this.referralCode = referralCode; }
 
@@ -150,6 +137,8 @@ public class UserProfile {
     public int getLongestStreak() { return longestStreak; }
     public void setLongestStreak(int longestStreak) { this.longestStreak = longestStreak; }
 
+    public Instant getGuildChangedAt() { return guildChangedAt; }
+    public void setGuildChangedAt(Instant guildChangedAt) { this.guildChangedAt = guildChangedAt; }
     public int getStreakFreezes() { return streakFreezes; }
     public void setStreakFreezes(int streakFreezes) { this.streakFreezes = streakFreezes; }
 

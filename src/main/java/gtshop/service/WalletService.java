@@ -7,6 +7,8 @@ import gtshop.repository.PointTransactionRepository;
 import gtshop.repository.UserRepository;
 import gtshop.util.Ids;
 import gtshop.web.ApiException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -27,6 +29,9 @@ public class WalletService {
     private final PointTransactionRepository transactionRepository;
     private final TimeService time;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     public WalletService(UserRepository userRepository, PointTransactionRepository transactionRepository, TimeService time) {
         this.userRepository = userRepository;
         this.transactionRepository = transactionRepository;
@@ -37,6 +42,9 @@ public class WalletService {
     public UserProfile lock(String userId) {
         UserProfile user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> ApiException.unauthorized("Contul nu mai există."));
+        // Daca entitatea era deja in contextul de persistenta (citita inainte de blocare), Hibernate
+        // o returneaza cu starea veche; dupa ce detinem blocarea, reincarcam starea curenta din DB.
+        entityManager.refresh(user);
         if (user.isBanned()) {
             throw ApiException.forbidden("Contul este suspendat.");
         }

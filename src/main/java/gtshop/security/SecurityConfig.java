@@ -72,7 +72,7 @@ public class SecurityConfig {
                         "/api/guilds",
                         "/api/community/**",
                         "/api/users/*",
-                        "/api/proposals",
+                        "/api/proposals", "/api/proposals/categories",
                         "/api/meta/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated())

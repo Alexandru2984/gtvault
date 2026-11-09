@@ -1,52 +1,47 @@
 package gtshop.controller;
 
-import gtshop.model.UserProfile;
+import gtshop.security.CurrentUser;
+import gtshop.security.RateLimit;
 import gtshop.service.GuildService;
-import gtshop.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/guilds")
-@Tag(name = "Community Guilds", description = "Track factions, guild wars, and leaderboard")
+@Tag(name = "Guilds", description = "Ghilde și războiul săptămânal al ghildelor")
 public class GuildController {
+    private final GuildService guilds;
+    private final CurrentUser currentUser;
 
-    private final GuildService guildService;
-    private final UserService userService;
-
-    public GuildController(GuildService guildService, UserService userService) {
-        this.guildService = guildService;
-        this.userService = userService;
+    public GuildController(GuildService guilds, CurrentUser currentUser) {
+        this.guilds = guilds;
+        this.currentUser = currentUser;
     }
 
+    public record GuildChoice(String guildId) {}
+
     @GetMapping
-    @Operation(summary = "Get community track guilds leaderboard and stats")
-    public List<Map<String, Object>> getGuilds() {
-        return guildService.getGuildsOverview();
+    @Operation(summary = "Clasamentul ghildelor pentru săptămâna curentă")
+    public Map<String, Object> overview() {
+        return guilds.overview();
     }
 
     @GetMapping("/me")
-    @Operation(summary = "Get current user guild")
-    public Map<String, Object> getMyGuild() {
-        UserProfile user = userService.getCurrentUser();
-        return guildService.getUserGuild(user);
+    @Operation(summary = "Ghilda utilizatorului curent")
+    public Map<String, Object> mine() {
+        return guilds.mine(currentUser.requireId());
     }
 
     @PostMapping("/select")
-    @Operation(summary = "Select or switch user track guild")
-    public ResponseEntity<Map<String, Object>> selectGuild(@RequestBody Map<String, String> body) {
-        UserProfile user = userService.getCurrentUser();
-        String guildId = body.get("guildId");
-        try {
-            Map<String, Object> result = guildService.selectGuild(user, guildId);
-            return ResponseEntity.ok(result);
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", ex.getMessage()));
-        }
+    @RateLimit(name = "guild-select", limit = 10, windowSeconds = 60)
+    @Operation(summary = "Alătură-te unei ghilde (cooldown 7 zile)")
+    public Map<String, Object> select(@RequestBody GuildChoice body) {
+        return guilds.select(currentUser.requireId(), body.guildId());
     }
 }

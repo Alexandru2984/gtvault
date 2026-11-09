@@ -40,4 +40,27 @@ public interface UserRepository extends JpaRepository<UserProfile, String> {
     List<UserProfile> findTopByStreak(Pageable pageable);
 
     List<UserProfile> findByEmailIn(List<String> emails);
+
+    List<UserProfile> findTop20ByReferredByOrderByCreatedAtDesc(String referredBy);
+
+    List<UserProfile> findByReferralCodeIsNull();
+
+    @Query("select u.guildId, count(u), coalesce(sum(u.totalPointsEarned), 0) from UserProfile u where u.banned = false group by u.guildId")
+    List<Object[]> guildTotals();
+
+    @Query("select u from UserProfile u where u.banned = false and u.guildId = :guildId order by u.totalPointsEarned desc, u.createdAt asc")
+    List<UserProfile> findTopInGuild(@Param("guildId") String guildId, Pageable pageable);
+
+    /** Streak „viu”: ultima revendicare este ieri/azi sau zilele ratate sunt acoperite de freeze-uri. */
+    String ALIVE_STREAK = """
+            u.banned = false and u.streak_days > 0
+            and u.last_daily_claim_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+            and to_date(u.last_daily_claim_date, 'YYYY-MM-DD') >= CAST(:today AS date) - 1 - u.streak_freezes""";
+
+    @Query(value = "select u.* from users u where " + ALIVE_STREAK
+            + " order by u.streak_days desc, u.longest_streak desc, u.created_at asc limit :limit", nativeQuery = true)
+    List<UserProfile> findTopAliveStreaks(@Param("today") String today, @Param("limit") int limit);
+
+    @Query(value = "select count(*) from users u where " + ALIVE_STREAK + " and u.streak_days > :value", nativeQuery = true)
+    long countAliveStreaksAbove(@Param("today") String today, @Param("value") int value);
 }

@@ -1,0 +1,146 @@
+[
+ {
+  "id": "f01",
+  "quote": "Talk is cheap. Show me the code.",
+  "author": "Linus Torvalds",
+  "tip": "Un prototip funcțional convinge mai mult decât orice prezentare."
+ },
+ {
+  "id": "f02",
+  "quote": "Any fool can write code that a computer can understand. Good programmers write code that humans can understand.",
+  "author": "Martin Fowler",
+  "tip": "Alege nume clare; codul se citește de zece ori mai des decât se scrie."
+ },
+ {
+  "id": "f03",
+  "quote": "Simplicity is prerequisite for reliability.",
+  "author": "Edsger W. Dijkstra",
+  "tip": "Fiecare strat în plus este un loc nou în care se pot ascunde bug-uri."
+ },
+ {
+  "id": "f04",
+  "quote": "Premature optimization is the root of all evil.",
+  "author": "Donald Knuth",
+  "tip": "Măsoară întâi cu un profiler, abia apoi optimizează."
+ },
+ {
+  "id": "f05",
+  "quote": "Programs must be written for people to read, and only incidentally for machines to execute.",
+  "author": "Harold Abelson",
+  "tip": "Codul tău de azi este documentația colegului de mâine."
+ },
+ {
+  "id": "f06",
+  "quote": "First, solve the problem. Then, write the code.",
+  "author": "John Johnson",
+  "tip": "Zece minute de schiță pe hârtie pot economisi o zi de refactorizare."
+ },
+ {
+  "id": "f07",
+  "quote": "Make it work, make it right, make it fast.",
+  "author": "Kent Beck",
+  "tip": "Ordinea contează: corectitudinea vine înaintea vitezei."
+ },
+ {
+  "id": "f08",
+  "quote": "There are only two hard things in Computer Science: cache invalidation and naming things.",
+  "author": "Phil Karlton",
+  "tip": "Când nu găsești un nume bun, probabil funcția face prea multe."
+ },
+ {
+  "id": "f09",
+  "quote": "Program testing can be used to show the presence of bugs, but never to show their absence!",
+  "author": "Edsger W. Dijkstra",
+  "tip": "Testele cresc încrederea, dar nu înlocuiesc code review-ul."
+ },
+ {
+  "id": "f10",
+  "quote": "Code is like humor. When you have to explain it, it's bad.",
+  "author": "Cory House",
+  "tip": "Dacă ai nevoie de un comentariu lung, încearcă întâi să simplifici codul."
+ },
+ {
+  "id": "f11",
+  "quote": "The best way to predict the future is to invent it.",
+  "author": "Alan Kay",
+  "tip": "Proiectele personale sunt cel mai bun CV."
+ },
+ {
+  "id": "f12",
+  "quote": "Walking on water and developing software from a specification are easy if both are frozen.",
+  "author": "Edward V. Berard",
+  "tip": "Construiește în iterații scurte: cerințele se vor schimba oricum."
+ },
+ {
+  "id": "f13",
+  "quote": "Measuring programming progress by lines of code is like measuring aircraft building progress by weight.",
+  "author": "Bill Gates",
+  "tip": "Uneori cel mai bun commit este cel care șterge cod."
+ },
+ {
+  "id": "f14",
+  "quote": "Debugging is twice as hard as writing the code in the first place.",
+  "author": "Brian Kernighan",
+  "tip": "Nu scrie cod mai „deștept” decât poți depana la 2 noaptea."
+ },
+ {
+  "id": "f15",
+  "quote": "Controlling complexity is the essence of computer programming.",
+  "author": "Brian Kernighan",
+  "tip": "Împarte problemele mari în module mici, cu responsabilități clare."
+ },
+ {
+  "id": "f16",
+  "quote": "Truth can only be found in one place: the code.",
+  "author": "Robert C. Martin",
+  "tip": "Ține documentația aproape de cod, ca să nu se desincronizeze."
+ },
+ {
+  "id": "f17",
+  "quote": "We can only see a short distance ahead, but we can see plenty there that needs to be done.",
+  "author": "Alan Turing",
+  "tip": "Alege următorul pas mic și livrează-l azi."
+ },
+ {
+  "id": "f18",
+  "quote": "Java is to JavaScript what car is to carpet.",
+  "author": "Chris Heilmann",
+  "tip": "Numele seamănă, conceptele nu; învață fiecare limbaj în stilul lui."
+ },
+ {
+  "id": "f19",
+  "quote": "Weeks of coding can save you hours of planning.",
+  "author": "Anonim",
+  "tip": "Ironic, dar adevărat: planificarea scurtă economisește săptămâni."
+ },
+ {
+  "id": "f20",
+  "quote": "Software is like entropy: it is difficult to grasp, weighs nothing, and obeys the second law of thermodynamics; i.e., it always increases.",
+  "author": "Norman Augustine",
+  "tip": "Programează periodic sesiuni de curățenie a codului."
+ },
+ {
+  "id": "f21",
+  "quote": "The function of good software is to make the complex appear to be simple.",
+  "author": "Grady Booch",
+  "tip": "Ascunde complexitatea în spatele unor interfețe simple."
+ },
+ {
+  "id": "f22",
+  "quote": "Always code as if the guy who ends up maintaining your code will be a violent psychopath who knows where you live.",
+  "author": "John Woods",
+  "tip": "Scrie cod pe care l-ai citi cu plăcere peste un an."
+ },
+ {
+  "id": "f23",
+  "quote": "If you think good architecture is expensive, try bad architecture.",
+  "author": "Brian Foote",
+  "tip": "Deciziile structurale costă puțin la început și enorm mai târziu."
+ },
+ {
+  "id": "f24",
+  "quote": "Fix the cause, not the symptom.",
+  "author": "Steve Maguire",
+  "tip": "Înainte de patch, întreabă-te de ce a apărut bug-ul."
+ }
+]

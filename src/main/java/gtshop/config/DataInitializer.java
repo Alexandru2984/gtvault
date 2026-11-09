@@ -51,6 +51,16 @@ public class DataInitializer {
             log.info("{} rewards initialized", rewards.size());
         }
 
+        // Conturile vechi fara cod de recomandare primesc unul (necesar pentru cadouri si invitatii)
+        for (gtshop.model.UserProfile u : userRepository.findByReferralCodeIsNull()) {
+            String code;
+            do {
+                code = "GT-" + gtshop.util.Ids.code(6);
+            } while (userRepository.existsByReferralCode(code));
+            u.setReferralCode(code);
+            userRepository.saveAndFlush(u);
+        }
+
         if (!props.getAdminEmails().isEmpty()) {
             userRepository.findByEmailIn(props.getAdminEmails()).forEach(u -> {
                 if (!u.isAdmin()) {
