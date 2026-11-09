@@ -44,6 +44,21 @@ public class NotificationService {
     }
 
     @Transactional
+    public void markRead(String userId, String id) {
+        Notification n = repository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> gtshop.web.ApiException.notFound("Notificarea nu a fost găsită."));
+        n.setRead(true);
+        repository.save(n);
+    }
+
+    @Transactional
+    public void delete(String userId, String id) {
+        Notification n = repository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> gtshop.web.ApiException.notFound("Notificarea nu a fost găsită."));
+        repository.delete(n);
+    }
+
+    @Transactional
     public void clear(String userId) {
         repository.deleteAllForUser(userId);
     }

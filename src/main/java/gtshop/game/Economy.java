@@ -71,6 +71,22 @@ public final class Economy {
     /** XP minim (castigat prin activitate, nu bonusul de bun venit) pentru a putea trimite cadouri. */
     public static final int GIFT_MIN_XP = 300;
 
+    // ---------------------------------------------------------------- recenzii
+    /** Recompensa pentru prima recenzie verificata a unui produs (o singura data per produs). */
+    public static final int REVIEW_REWARD = 30;
+    public static final int MAX_REWARDED_REVIEWS_PER_DAY = 3;
+    public static final int REVIEW_MIN_LENGTH = 10;
+    public static final int REVIEW_MAX_LENGTH = 1000;
+
+    // ---------------------------------------------------------------- Tech Wordle
+    public static final int WORDLE_LENGTH = 5;
+    public static final int WORDLE_MAX_GUESSES = 6;
+    /** Recompensa in functie de numarul de incercari folosite (1..6). */
+    public static final List<Integer> WORDLE_REWARDS = List.of(150, 120, 90, 70, 50, 30);
+
+    // ---------------------------------------------------------------- wishlist
+    public static final int WISHLIST_MAX = 100;
+
     // ---------------------------------------------------------------- ghilde
     public static final int GUILD_SWITCH_COOLDOWN_DAYS = 7;
 
@@ -107,6 +123,9 @@ public final class Economy {
                 "voteReward", VOTE_REWARD, "maxRewardedVotesPerDay", MAX_REWARDED_VOTES_PER_DAY));
         cfg.put("gifts", Map.of("min", GIFT_MIN, "max", GIFT_MAX, "dailyAmount", GIFT_DAILY_AMOUNT,
                 "dailyCount", GIFT_DAILY_COUNT, "minAccountAgeDays", GIFT_MIN_ACCOUNT_AGE_DAYS, "minXp", GIFT_MIN_XP));
+        cfg.put("reviews", Map.of("reward", REVIEW_REWARD, "maxRewardedPerDay", MAX_REWARDED_REVIEWS_PER_DAY,
+                "minLength", REVIEW_MIN_LENGTH, "maxLength", REVIEW_MAX_LENGTH));
+        cfg.put("wordle", Map.of("length", WORDLE_LENGTH, "maxGuesses", WORDLE_MAX_GUESSES, "rewards", WORDLE_REWARDS));
         cfg.put("guilds", Map.of("switchCooldownDays", GUILD_SWITCH_COOLDOWN_DAYS));
         cfg.put("tiers", Tiers.ALL);
         return cfg;

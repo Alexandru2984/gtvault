@@ -24,7 +24,8 @@ public final class QuestCatalog {
             new QuestDef(Action.OPEN_CRATE, "🎁 Vânător de cufere", "Deschide un Cufăr Misterios.", 40, 1),
             new QuestDef(Action.VOTE_PROPOSAL, "🗳️ Vocea comunității", "Votează o propunere de recompensă.", 25, 1),
             new QuestDef(Action.SEND_GIFT, "💝 Gest frumos", "Trimite un cadou în AP unui prieten.", 30, 1),
-            new QuestDef(Action.CORRECT_QUIZ, "🎯 Răspuns perfect", "Răspunde corect la quiz-ul zilei.", 50, 1));
+            new QuestDef(Action.CORRECT_QUIZ, "🎯 Răspuns perfect", "Răspunde corect la quiz-ul zilei.", 50, 1),
+            new QuestDef(Action.PLAY_WORDLE, "🔤 Cuvântul zilei", "Termină o rundă de Tech Wordle.", 30, 1));
 
     /** Din acest bazin se aleg saptamanal 3 misiuni. */
     public static final List<QuestDef> WEEKLY_POOL = List.of(
@@ -33,7 +34,8 @@ public final class QuestCatalog {
             new QuestDef(Action.OPEN_CRATE, "🗝️ Colecționar de cufere", "Deschide 3 cufere.", 120, 3),
             new QuestDef(Action.VOTE_PROPOSAL, "📣 Implicat în comunitate", "Votează 5 propuneri.", 100, 5),
             new QuestDef(Action.PLACE_ORDER, "🛍️ Răsfăță-te", "Plasează o comandă în magazin.", 200, 1),
-            new QuestDef(Action.SPIN_WHEEL, "🎰 Învârtitor de profesie", "Învârte roata de 5 ori.", 100, 5));
+            new QuestDef(Action.SPIN_WHEEL, "🎰 Învârtitor de profesie", "Învârte roata de 5 ori.", 100, 5),
+            new QuestDef(Action.PLAY_WORDLE, "📚 Vocabular tehnic", "Termină Tech Wordle în 4 zile diferite.", 140, 4));
 
     public static final int DAILY_EXTRA = 3;
     public static final int WEEKLY_COUNT = 3;

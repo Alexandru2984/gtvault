@@ -1,29 +1,26 @@
 package gtshop.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.time.Instant;
 
+/**
+ * Recenzia unui produs. Autorul (nume, avatar) se citeste mereu din profil, deci recenzia nu mai
+ * afiseaza un nume vechi dupa ce utilizatorul si-l schimba. O singura recenzie per utilizator si produs.
+ */
 @Entity
 @Table(name = "product_reviews")
 public class ProductReview {
     @Id
     private String id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reward_id", nullable = false)
-    @JsonIgnore
-    private Reward reward;
+    @Column(name = "reward_id", nullable = false)
+    private String rewardId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnore
-    private UserProfile user;
-
-    @Column(nullable = false)
-    private String userName;
-
-    private String userAvatar;
+    @Column(name = "user_id", nullable = false)
+    private String userId;
 
     @Column(nullable = false)
     private int rating;
@@ -31,83 +28,41 @@ public class ProductReview {
     @Column(length = 1000, nullable = false)
     private String comment;
 
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    public ProductReview() {
+    @Column(name = "updated_at")
+    private Instant updatedAt;
+
+    @Column(name = "helpful_count", nullable = false)
+    private int helpfulCount;
+
+    @Column(nullable = false)
+    private boolean hidden;
+
+    protected ProductReview() {
     }
 
-    public ProductReview(String id, Reward reward, UserProfile user, String userName, String userAvatar, int rating, String comment) {
+    public ProductReview(String id, String rewardId, String userId, int rating, String comment, Instant createdAt) {
         this.id = id;
-        this.reward = reward;
-        this.user = user;
-        this.userName = userName;
-        this.userAvatar = userAvatar;
+        this.rewardId = rewardId;
+        this.userId = userId;
         this.rating = rating;
         this.comment = comment;
-        this.createdAt = Instant.now();
-    }
-
-    public String getId() {
-        return this.id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public Reward getReward() {
-        return this.reward;
-    }
-
-    public void setReward(Reward reward) {
-        this.reward = reward;
-    }
-
-    public UserProfile getUser() {
-        return this.user;
-    }
-
-    public void setUser(UserProfile user) {
-        this.user = user;
-    }
-
-    public String getUserName() {
-        return this.userName;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-
-    public String getUserAvatar() {
-        return this.userAvatar;
-    }
-
-    public void setUserAvatar(String userAvatar) {
-        this.userAvatar = userAvatar;
-    }
-
-    public int getRating() {
-        return this.rating;
-    }
-
-    public void setRating(int rating) {
-        this.rating = rating;
-    }
-
-    public String getComment() {
-        return this.comment;
-    }
-
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
-
-    public Instant getCreatedAt() {
-        return this.createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
+
+    public String getId() { return id; }
+    public String getRewardId() { return rewardId; }
+    public String getUserId() { return userId; }
+    public int getRating() { return rating; }
+    public void setRating(int rating) { this.rating = rating; }
+    public String getComment() { return comment; }
+    public void setComment(String comment) { this.comment = comment; }
+    public Instant getCreatedAt() { return createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+    public int getHelpfulCount() { return helpfulCount; }
+    public boolean isHidden() { return hidden; }
+    public void setHidden(boolean hidden) { this.hidden = hidden; }
 }

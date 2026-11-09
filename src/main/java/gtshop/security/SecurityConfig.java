@@ -68,6 +68,7 @@ public class SecurityConfig {
                         "/api/leaderboard", "/api/leaderboard/**",
                         "/api/gamification/leaderboard",
                         "/api/gamification/quiz",
+                        "/api/games/wordle",
                         "/api/gamification/config",
                         "/api/guilds",
                         "/api/community/**",

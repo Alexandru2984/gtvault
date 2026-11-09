@@ -19,25 +19,42 @@ import org.springframework.transaction.annotation.Transactional;
 /** Catalogul public de recompense: cautare (fara diacritice), filtre, sortari si oferta flash activa. */
 @Service
 public class CatalogService {
-    public static final List<String> SORTS = List.of("featured", "price_asc", "price_desc", "new", "popular");
+    public static final List<String> SORTS = List.of("featured", "price_asc", "price_desc", "new", "popular", "rating");
     private static final Pattern DIACRITICS = Pattern.compile("\\p{M}+");
     static final int LOW_STOCK = 10;
 
     private final RewardRepository rewards;
     private final FlashDealService flashDeals;
+    private final CatalogStats stats;
     private final TimeService time;
 
-    public CatalogService(RewardRepository rewards, FlashDealService flashDeals, TimeService time) {
+    public CatalogService(RewardRepository rewards, FlashDealService flashDeals, CatalogStats stats, TimeService time) {
         this.rewards = rewards;
         this.flashDeals = flashDeals;
+        this.stats = stats;
         this.time = time;
+    }
+
+    /** Datele agregate necesare pentru a construi vederile din catalog (o singura citire per cerere). */
+    public record Snapshot(Map<String, FlashDeal> deals, Map<String, Long> sold, Map<String, CatalogStats.Rating> ratings,
+                           Map<String, Long> wishlists) {
+        public RewardView view(Reward r) {
+            return CatalogService.view(r, deals.get(r.getId()), sold.getOrDefault(r.getId(), 0L),
+                    ratings.get(r.getId()), wishlists.getOrDefault(r.getId(), 0L));
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public Snapshot snapshot() {
+        return new Snapshot(flashDeals.activeByReward(), soldLast30Days(), stats.ratings(), stats.wishlistCounts());
     }
 
     public record Deal(String id, int dealPrice, int discountPercent, java.time.Instant endsAt, int remaining, int perUserLimit) {}
 
     public record RewardView(String id, String name, String description, String fullDescription, int price, String image,
                              String category, boolean inStock, int stockCount, boolean lowStock, boolean isNew,
-                             String fulfillment, int maxPerOrder, String minTier, Deal deal, long soldLast30Days) {}
+                             String fulfillment, int maxPerOrder, String minTier, Deal deal, long soldLast30Days,
+                             Double rating, long reviewCount, long wishlistCount) {}
 
     static String fold(String s) {
         if (s == null) {
@@ -47,7 +64,12 @@ public class CatalogService {
     }
 
     public Map<String, Object> list(String q, String category, String sort, boolean onlyInStock) {
-        flashDeals.ensureDailyDeals();
+        try {
+            flashDeals.ensureDailyDeals();
+        } catch (RuntimeException e) {
+            // Ofertele zilei sunt un bonus: catalogul trebuie sa se incarce oricum
+            org.slf4j.LoggerFactory.getLogger(CatalogService.class).warn("Ofertele zilei indisponibile: {}", e.getMessage());
+        }
         return listInternal(q, category, sort, onlyInStock);
     }
 
@@ -60,14 +82,13 @@ public class CatalogService {
         if (query.length() > 60) {
             throw ApiException.badRequest("Termenul de căutare este prea lung.");
         }
-        Map<String, FlashDeal> deals = flashDeals.activeByReward();
-        Map<String, Long> sold = soldLast30Days();
+        Snapshot snap = snapshot();
         List<RewardView> items = rewards.findActive().stream()
                 .filter(r -> category == null || category.isBlank() || category.trim().equalsIgnoreCase(r.getCategory()))
                 .filter(r -> !onlyInStock || r.getStockCount() > 0)
                 .filter(r -> query.isEmpty() || fold(r.getName() + " " + r.getDescription() + " " + r.getFullDescription()
                         + " " + r.getCategory()).contains(query))
-                .map(r -> view(r, deals.get(r.getId()), sold.getOrDefault(r.getId(), 0L)))
+                .map(snap::view)
                 .sorted(comparator(s))
                 .toList();
         Map<String, Object> res = new LinkedHashMap<>();
@@ -82,15 +103,14 @@ public class CatalogService {
     public Map<String, Object> get(String id) {
         Reward r = rewards.findById(id).filter(Reward::isActive)
                 .orElseThrow(() -> ApiException.notFound("Produsul nu a fost găsit."));
-        Map<String, FlashDeal> deals = flashDeals.activeByReward();
-        Map<String, Long> sold = soldLast30Days();
+        Snapshot snap = snapshot();
         List<RewardView> related = rewards.findActive().stream()
                 .filter(o -> !o.getId().equals(r.getId()) && o.getCategory() != null && o.getCategory().equals(r.getCategory()))
                 .limit(4)
-                .map(o -> view(o, deals.get(o.getId()), sold.getOrDefault(o.getId(), 0L)))
+                .map(snap::view)
                 .toList();
         Map<String, Object> res = new LinkedHashMap<>();
-        res.put("reward", view(r, deals.get(r.getId()), sold.getOrDefault(r.getId(), 0L)));
+        res.put("reward", snap.view(r));
         res.put("related", related);
         return res;
     }
@@ -109,13 +129,16 @@ public class CatalogService {
             case "price_desc" -> Comparator.comparingInt(RewardView::price).reversed().thenComparing(RewardView::id);
             case "new" -> Comparator.comparing(RewardView::isNew).reversed().thenComparing(RewardView::id);
             case "popular" -> Comparator.comparingLong(RewardView::soldLast30Days).reversed().thenComparing(RewardView::id);
+            case "rating" -> Comparator.comparingDouble((RewardView v) -> v.rating() == null ? -1 : v.rating()).reversed()
+                    .thenComparing(Comparator.comparingLong(RewardView::reviewCount).reversed())
+                    .thenComparing(RewardView::id);
             default -> Comparator.comparing((RewardView v) -> v.deal() == null)
                     .thenComparing(v -> v.category() == null ? "" : v.category())
                     .thenComparingInt(RewardView::price);
         };
     }
 
-    static RewardView view(Reward r, FlashDeal d, long sold) {
+    static RewardView view(Reward r, FlashDeal d, long sold, CatalogStats.Rating rating, long wishlists) {
         Deal deal = null;
         if (d != null && r.getStockCount() > 0) {
             deal = new Deal(d.getId(), d.dealPrice(r.getPrice()), d.getDiscountPercent(), d.getEndsAt(),
@@ -124,6 +147,7 @@ public class CatalogService {
         return new RewardView(r.getId(), r.getName(), r.getDescription(), r.getFullDescription(), r.getPrice(),
                 r.getImage(), r.getCategory(), r.getStockCount() > 0, r.getStockCount(),
                 r.getStockCount() > 0 && r.getStockCount() <= LOW_STOCK, r.isNew(), r.getFulfillment(),
-                r.getMaxPerOrder(), r.getMinTier(), deal, sold);
+                r.getMaxPerOrder(), r.getMinTier(), deal, sold, rating == null ? null : rating.average(),
+                rating == null ? 0 : rating.count(), wishlists);
     }
 }

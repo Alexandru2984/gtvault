@@ -18,11 +18,14 @@ public record UserSummary(
         String guildId,
         String referralCode,
         String role,
-        Instant createdAt) {
+        Instant createdAt,
+        boolean publicProfile,
+        String bio) {
 
     public static UserSummary of(UserProfile u) {
         return new UserSummary(u.getId(), u.getName(), u.getEmail(), AvatarCatalog.safe(u.getAvatar()),
                 u.getActivityPoints(), u.getTotalPointsEarned(), u.getStreakDays(), u.getLongestStreak(),
-                u.getStreakFreezes(), u.getGuildId(), u.getReferralCode(), u.getRole(), u.getCreatedAt());
+                u.getStreakFreezes(), u.getGuildId(), u.getReferralCode(), u.getRole(), u.getCreatedAt(),
+                u.isPublicProfile(), u.getBio());
     }
 }

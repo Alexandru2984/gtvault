@@ -24,7 +24,9 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
     @ValueSource(strings = {
             "/api/user/gift", "/api/gamification/spin-wheel", "/api/gamification/daily-claim",
             "/api/gamification/open-crate", "/api/checkout", "/api/cart/add", "/api/user/profile",
-            "/api/gamification/fortune-cookie", "/api/proposals", "/api/guilds/select"})
+            "/api/gamification/fortune-cookie", "/api/proposals", "/api/guilds/select",
+            "/api/games/wordle/guess", "/api/rewards/rew-mouse/reviews", "/api/reviews/rev-x/helpful",
+            "/api/reviews/rev-x/report", "/api/notifications/read-all", "/api/user/account/delete"})
     void anonymousMutationsAreRejected(String url) throws Exception {
         mvc.perform(post(url).contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isUnauthorized())
@@ -34,13 +36,16 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
 
     @ParameterizedTest(name = "anonim GET {0} -> 401")
     @ValueSource(strings = {"/api/user/me", "/api/user/profile", "/api/user/transactions", "/api/cart",
-            "/api/gamification/status", "/api/gamification/badges", "/api/quests", "/api/user/referrals"})
+            "/api/gamification/status", "/api/gamification/badges", "/api/quests", "/api/user/referrals",
+            "/api/wishlist", "/api/wishlist/ids", "/api/notifications", "/api/notifications/unread-count",
+            "/api/user/export", "/api/user/reviews", "/api/user/reviews/pending"})
     void anonymousPrivateReadsAreRejected(String url) throws Exception {
         mvc.perform(get(url)).andExpect(status().isUnauthorized());
     }
 
     @ParameterizedTest(name = "public GET {0} -> 200")
-    @ValueSource(strings = {"/api/rewards", "/api/gamification/leaderboard", "/api/guilds", "/api/community/activity"})
+    @ValueSource(strings = {"/api/rewards", "/api/gamification/leaderboard", "/api/guilds", "/api/community/activity",
+            "/api/community/stats", "/api/games/wordle", "/api/rewards/rew-mouse/reviews", "/api/gamification/config"})
     void publicReadsWork(String url) throws Exception {
         mvc.perform(get(url)).andExpect(status().isOk());
     }

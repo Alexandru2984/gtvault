@@ -49,6 +49,12 @@ public class UserProfile {
     @Column(name = "guild_changed_at")
     private Instant guildChangedAt;
 
+    @Column(name = "public_profile", nullable = false)
+    private boolean publicProfile = true;
+
+    @Column(length = 160)
+    private String bio;
+
     @JsonIgnore
     private String email;
     @JsonIgnore
@@ -139,6 +145,10 @@ public class UserProfile {
 
     public Instant getGuildChangedAt() { return guildChangedAt; }
     public void setGuildChangedAt(Instant guildChangedAt) { this.guildChangedAt = guildChangedAt; }
+    public boolean isPublicProfile() { return publicProfile; }
+    public void setPublicProfile(boolean publicProfile) { this.publicProfile = publicProfile; }
+    public String getBio() { return bio; }
+    public void setBio(String bio) { this.bio = bio; }
     public int getStreakFreezes() { return streakFreezes; }
     public void setStreakFreezes(int streakFreezes) { this.streakFreezes = streakFreezes; }
 

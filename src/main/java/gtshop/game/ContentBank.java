@@ -5,11 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
@@ -27,27 +32,58 @@ public class ContentBank {
 
     public record Fortune(String id, String quote, String author, String tip) {}
 
+    /** Un cuvant din Tech Wordle: tema (indiciu dupa 3 incercari) si explicatia afisata la final. */
+    public record WordleWord(String word, String topic, String hint) {}
+
     /** Intrebarea zilei pentru un utilizator, cu variantele deja amestecate. */
     public record DailyQuestion(QuizQuestion source, List<String> options, int correctIndex) {}
 
+    private static final Logger log = LoggerFactory.getLogger(ContentBank.class);
+
     private final List<QuizQuestion> quiz;
     private final List<Fortune> fortunes;
+    private final List<WordleWord> words;
 
     public ContentBank(ObjectMapper mapper) throws IOException {
-        this.quiz = List.copyOf(read(mapper, "content/quiz.json", new TypeReference<List<QuizQuestion>>() {}));
-        this.fortunes = List.copyOf(read(mapper, "content/fortunes.json", new TypeReference<List<Fortune>>() {}));
+        this(mapper, "");
+    }
+
+    @Autowired
+    public ContentBank(ObjectMapper mapper, gtshop.config.AppProperties props) throws IOException {
+        this(mapper, props.getContentDir());
+    }
+
+    private ContentBank(ObjectMapper mapper, String contentDir) throws IOException {
+        this.quiz = List.copyOf(read(mapper, contentDir, "quiz.json", new TypeReference<List<QuizQuestion>>() {}));
+        this.fortunes = List.copyOf(read(mapper, contentDir, "fortunes.json", new TypeReference<List<Fortune>>() {}));
+        this.words = List.copyOf(read(mapper, contentDir, "wordle.json", new TypeReference<List<WordleWord>>() {}));
         validate();
     }
 
-    private static <T> T read(ObjectMapper mapper, String path, TypeReference<T> type) throws IOException {
-        try (InputStream in = new ClassPathResource(path).getInputStream()) {
+    /** Fisierul din directorul privat are prioritate; altfel se foloseste continutul implicit din aplicatie. */
+    private static <T> T read(ObjectMapper mapper, String contentDir, String name, TypeReference<T> type) throws IOException {
+        if (contentDir != null && !contentDir.isBlank()) {
+            Path external = Path.of(contentDir, name);
+            if (Files.isRegularFile(external)) {
+                log.info("Continut incarcat din {}", external);
+                return mapper.readValue(Files.readString(external, StandardCharsets.UTF_8), type);
+            }
+        }
+        try (InputStream in = new ClassPathResource("content/" + name).getInputStream()) {
             return mapper.readValue(new String(in.readAllBytes(), StandardCharsets.UTF_8), type);
         }
     }
 
     private void validate() {
-        if (quiz.isEmpty() || fortunes.isEmpty()) {
-            throw new IllegalStateException("Continutul pentru quiz/ravas lipseste");
+        if (quiz.isEmpty() || fortunes.isEmpty() || words.isEmpty()) {
+            throw new IllegalStateException("Continutul pentru quiz/ravas/wordle lipseste");
+        }
+        var wordSet = new HashSet<String>();
+        for (WordleWord w : words) {
+            if (Wordle.normalize(w.word()) == null || !w.word().equals(Wordle.normalize(w.word())) || !wordSet.add(w.word())
+                    || w.topic() == null || w.topic().isBlank() || w.hint() == null || w.hint().isBlank()) {
+                throw new IllegalStateException("Cuvant invalid in wordle.json: " + w.word());
+            }
         }
         var ids = new HashSet<String>();
         for (QuizQuestion q : quiz) {
@@ -61,6 +97,10 @@ public class ContentBank {
 
     public int quizSize() {
         return quiz.size();
+    }
+
+    public List<WordleWord> words() {
+        return words;
     }
 
     public DailyQuestion questionFor(String seedKey, LocalDate day) {

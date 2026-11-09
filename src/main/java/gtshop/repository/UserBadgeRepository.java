@@ -11,5 +11,4 @@ public interface UserBadgeRepository extends JpaRepository<UserBadge, String> {
     List<UserBadge> findByUserIdOrderByUnlockedAtDesc(String userId);
     Optional<UserBadge> findByUserIdAndBadgeCode(String userId, String badgeCode);
     boolean existsByUserIdAndBadgeCode(String userId, String badgeCode);
-    List<UserBadge> findTop10ByOrderByUnlockedAtDesc();
 }

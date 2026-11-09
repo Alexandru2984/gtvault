@@ -29,6 +29,15 @@ public class AppProperties {
      */
     private boolean trustProxyHeaders = true;
 
+    /**
+     * Director optional cu continut privat (quiz.json, fortunes.json, wordle.json). Repository-ul este public,
+     * deci in productie intrebarile si raspunsurile pot fi tinute in afara codului sursa.
+     */
+    private String contentDir = "";
+
+    /** Secretul pentru alegerea cuvantului zilei; daca lipseste se foloseste JWT_SECRET. */
+    private String gamesSecret = "";
+
     public String getTimezone() { return timezone; }
     public void setTimezone(String timezone) { this.timezone = timezone; }
 
@@ -53,6 +62,12 @@ public class AppProperties {
     public boolean isAdminEmail(String email) {
         return email != null && adminEmails.contains(email.trim().toLowerCase(Locale.ROOT));
     }
+
+    public String getContentDir() { return contentDir; }
+    public void setContentDir(String contentDir) { this.contentDir = contentDir == null ? "" : contentDir.trim(); }
+
+    public String getGamesSecret() { return gamesSecret; }
+    public void setGamesSecret(String gamesSecret) { this.gamesSecret = gamesSecret == null ? "" : gamesSecret; }
 
     public boolean isTrustProxyHeaders() { return trustProxyHeaders; }
     public void setTrustProxyHeaders(boolean trustProxyHeaders) { this.trustProxyHeaders = trustProxyHeaders; }

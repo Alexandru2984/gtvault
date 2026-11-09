@@ -51,11 +51,13 @@ public class OrderService {
     private final NotificationService notifications;
     private final TimeService time;
     private final gtshop.util.Locks locks;
+    private final WishlistAlerts wishlistAlerts;
 
     public OrderService(ShopOrderRepository orders, PurchaseRecordRepository purchases, RewardRepository rewards,
                         FlashDealRepository deals, PromoCodeRepository promos, PromoRedemptionRepository redemptions,
                         WalletService wallet, NotificationService notifications, TimeService time,
-                        gtshop.util.Locks locks) {
+                        gtshop.util.Locks locks, WishlistAlerts wishlistAlerts) {
+        this.wishlistAlerts = wishlistAlerts;
         this.orders = orders;
         this.purchases = purchases;
         this.rewards = rewards;
@@ -150,6 +152,8 @@ public class OrderService {
         for (String id : dealIds) {
             deals.findByIdForUpdate(id).ifPresent(d -> lockedDeals.put(id, locks.refresh(d)));
         }
+        Map<String, Integer> stockBefore = new LinkedHashMap<>();
+        locked.values().forEach(r -> stockBefore.put(r.getId(), r.getStockCount()));
         for (PurchaseRecord p : order.getItems()) {
             Reward r = p.getRewardId() == null ? null : locked.get(p.getRewardId());
             if (r != null) {
@@ -171,6 +175,11 @@ public class OrderService {
         });
         if (order.getTotal() > 0) {
             wallet.credit(lockedOwner, order.getTotal(), TxType.ORDER_REFUND, "Rambursare comanda " + order.getId());
+        }
+        for (Reward r : locked.values()) {
+            if (stockBefore.get(r.getId()) == 0 && r.getStockCount() > 0 && r.isActive()) {
+                wishlistAlerts.backInStock(r.getId(), r.getName());
+            }
         }
         order.setStatus(ShopOrder.CANCELLED);
         order.setAdminNote(reason);

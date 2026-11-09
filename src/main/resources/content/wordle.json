@@ -1,0 +1,797 @@
+[
+ {
+  "word": "ARRAY",
+  "topic": "Programare",
+  "hint": "Colecție de elemente de același tip, accesate prin index."
+ },
+ {
+  "word": "CACHE",
+  "topic": "Hardware",
+  "hint": "Memorie rapidă care păstrează datele folosite des."
+ },
+ {
+  "word": "CLASS",
+  "topic": "Programare",
+  "hint": "Șablonul din care se creează obiecte în programarea orientată pe obiecte."
+ },
+ {
+  "word": "DEBUG",
+  "topic": "Programare",
+  "hint": "Procesul de găsire și reparare a erorilor din cod."
+ },
+ {
+  "word": "FETCH",
+  "topic": "Web",
+  "hint": "API-ul JavaScript pentru cereri HTTP din browser."
+ },
+ {
+  "word": "QUERY",
+  "topic": "Baze de date",
+  "hint": "O interogare trimisă unei baze de date."
+ },
+ {
+  "word": "QUEUE",
+  "topic": "Programare",
+  "hint": "Coadă: structură de date FIFO – primul intrat, primul ieșit."
+ },
+ {
+  "word": "STACK",
+  "topic": "Programare",
+  "hint": "Stivă: structură LIFO, dar și zona de memorie pentru apelurile de funcții."
+ },
+ {
+  "word": "TOKEN",
+  "topic": "Securitate",
+  "hint": "Șir care dovedește identitatea, de exemplu un JWT."
+ },
+ {
+  "word": "PROXY",
+  "topic": "Rețele",
+  "hint": "Intermediar între client și server."
+ },
+ {
+  "word": "LINUX",
+  "topic": "Sisteme",
+  "hint": "Kernelul open-source creat de Linus Torvalds în 1991."
+ },
+ {
+  "word": "MERGE",
+  "topic": "DevOps",
+  "hint": "Comanda git care unește două ramuri."
+ },
+ {
+  "word": "PATCH",
+  "topic": "Web",
+  "hint": "Metoda HTTP pentru modificări parțiale; și o corecție de cod."
+ },
+ {
+  "word": "PIXEL",
+  "topic": "Grafică",
+  "hint": "Cel mai mic punct al unei imagini digitale."
+ },
+ {
+  "word": "REACT",
+  "topic": "Web",
+  "hint": "Biblioteca de interfețe bazată pe componente, creată la Meta."
+ },
+ {
+  "word": "REGEX",
+  "topic": "Programare",
+  "hint": "Expresie regulată pentru căutarea de tipare în text."
+ },
+ {
+  "word": "SHELL",
+  "topic": "Sisteme",
+  "hint": "Interpretorul de comenzi, ca bash sau zsh."
+ },
+ {
+  "word": "SCOPE",
+  "topic": "Programare",
+  "hint": "Zona din cod în care o variabilă este vizibilă."
+ },
+ {
+  "word": "ASYNC",
+  "topic": "Programare",
+  "hint": "Cuvântul cheie pentru funcții care rulează fără să blocheze."
+ },
+ {
+  "word": "AWAIT",
+  "topic": "Programare",
+  "hint": "Așteaptă rezultatul unei promisiuni fără să blocheze firul."
+ },
+ {
+  "word": "BYTES",
+  "topic": "Hardware",
+  "hint": "Unități de câte 8 biți."
+ },
+ {
+  "word": "CLOUD",
+  "topic": "DevOps",
+  "hint": "Servere închiriate la distanță, ca AWS, Azure sau GCP."
+ },
+ {
+  "word": "CRASH",
+  "topic": "Programare",
+  "hint": "Oprirea bruscă și neașteptată a unui program."
+ },
+ {
+  "word": "EVENT",
+  "topic": "Web",
+  "hint": "Ceva ce se întâmplă în pagină: click, scroll, tastare."
+ },
+ {
+  "word": "FLOAT",
+  "topic": "Programare",
+  "hint": "Tip numeric în virgulă mobilă."
+ },
+ {
+  "word": "FRAME",
+  "topic": "Grafică",
+  "hint": "Un singur cadru dintr-o animație sau dintr-un video."
+ },
+ {
+  "word": "GRAPH",
+  "topic": "Algoritmi",
+  "hint": "Graf: structură formată din noduri și muchii."
+ },
+ {
+  "word": "INDEX",
+  "topic": "Baze de date",
+  "hint": "Structură care accelerează căutările într-un tabel."
+ },
+ {
+  "word": "INPUT",
+  "topic": "Web",
+  "hint": "Câmpul de formular în care utilizatorul scrie."
+ },
+ {
+  "word": "LOGIC",
+  "topic": "Hardware",
+  "hint": "Porțile AND, OR și NOT stau la baza ei."
+ },
+ {
+  "word": "LOGIN",
+  "topic": "Securitate",
+  "hint": "Pasul în care îți introduci emailul și parola."
+ },
+ {
+  "word": "MACRO",
+  "topic": "Programare",
+  "hint": "Secvență de instrucțiuni expandată automat."
+ },
+ {
+  "word": "MODEL",
+  "topic": "Inteligență artificială",
+  "hint": "Ce se antrenează în machine learning."
+ },
+ {
+  "word": "MOUSE",
+  "topic": "Hardware",
+  "hint": "Perifericul cu care miști cursorul."
+ },
+ {
+  "word": "MUTEX",
+  "topic": "Programare",
+  "hint": "Lacăt care permite unui singur fir de execuție accesul la o resursă."
+ },
+ {
+  "word": "NODES",
+  "topic": "Algoritmi",
+  "hint": "Nodurile unui arbore sau ale unui graf."
+ },
+ {
+  "word": "PARSE",
+  "topic": "Programare",
+  "hint": "A analiza un text și a-l transforma într-o structură de date."
+ },
+ {
+  "word": "PRINT",
+  "topic": "Programare",
+  "hint": "Funcția clasică pentru afișarea unui mesaj în consolă."
+ },
+ {
+  "word": "QUBIT",
+  "topic": "Hardware",
+  "hint": "Unitatea de informație a calculatoarelor cuantice."
+ },
+ {
+  "word": "RESET",
+  "topic": "Hardware",
+  "hint": "Readucerea unui sistem la starea inițială."
+ },
+ {
+  "word": "ROUTE",
+  "topic": "Rețele",
+  "hint": "Drumul unui pachet prin rețea, sau o adresă într-o aplicație web."
+ },
+ {
+  "word": "SHARD",
+  "topic": "Baze de date",
+  "hint": "O partiție a unei baze de date distribuite."
+ },
+ {
+  "word": "SLICE",
+  "topic": "Programare",
+  "hint": "O porțiune dintr-o listă sau dintr-un șir."
+ },
+ {
+  "word": "SPAWN",
+  "topic": "Sisteme",
+  "hint": "A porni un proces sau un fir de execuție nou."
+ },
+ {
+  "word": "STATE",
+  "topic": "Web",
+  "hint": "Datele curente ale unei componente sau ale aplicației."
+ },
+ {
+  "word": "STYLE",
+  "topic": "Web",
+  "hint": "Atributul HTML pentru CSS scris direct pe element."
+ },
+ {
+  "word": "TABLE",
+  "topic": "Baze de date",
+  "hint": "Structura cu rânduri și coloane dintr-o bază relațională."
+ },
+ {
+  "word": "TRACE",
+  "topic": "Programare",
+  "hint": "Urma apelurilor afișată când apare o excepție (stack trace)."
+ },
+ {
+  "word": "TUPLE",
+  "topic": "Programare",
+  "hint": "Colecție ordonată și imutabilă, populară în Python."
+ },
+ {
+  "word": "VALUE",
+  "topic": "Programare",
+  "hint": "A doua jumătate dintr-o pereche cheie–valoare."
+ },
+ {
+  "word": "YIELD",
+  "topic": "Programare",
+  "hint": "Cuvântul cheie care produce valori dintr-un generator."
+ },
+ {
+  "word": "ADMIN",
+  "topic": "Securitate",
+  "hint": "Utilizatorul cu drepturi depline într-un sistem."
+ },
+ {
+  "word": "AGILE",
+  "topic": "Management",
+  "hint": "Metodologie de dezvoltare iterativă, pe sprinturi."
+ },
+ {
+  "word": "ALIAS",
+  "topic": "Sisteme",
+  "hint": "Nume alternativ pentru o comandă sau o coloană SQL."
+ },
+ {
+  "word": "AUDIT",
+  "topic": "Securitate",
+  "hint": "Verificare sistematică a securității unui sistem."
+ },
+ {
+  "word": "BATCH",
+  "topic": "Baze de date",
+  "hint": "Procesarea datelor în loturi."
+ },
+ {
+  "word": "BLOCK",
+  "topic": "Blockchain",
+  "hint": "Unitatea de date înlănțuită într-un blockchain."
+ },
+ {
+  "word": "BLOOM",
+  "topic": "Algoritmi",
+  "hint": "Filtru probabilistic care îți spune dacă un element „probabil” există."
+ },
+ {
+  "word": "BUILD",
+  "topic": "DevOps",
+  "hint": "Compilarea și împachetarea unei aplicații."
+ },
+ {
+  "word": "CATCH",
+  "topic": "Programare",
+  "hint": "Blocul care prinde excepțiile."
+ },
+ {
+  "word": "CHAIN",
+  "topic": "Blockchain",
+  "hint": "Lanțul de blocuri, sau o succesiune de apeluri înlănțuite."
+ },
+ {
+  "word": "CHART",
+  "topic": "Baze de date",
+  "hint": "Grafic care vizualizează date."
+ },
+ {
+  "word": "CHIPS",
+  "topic": "Hardware",
+  "hint": "Circuite integrate pe siliciu."
+ },
+ {
+  "word": "CLICK",
+  "topic": "Web",
+  "hint": "Cel mai comun eveniment de mouse."
+ },
+ {
+  "word": "CLONE",
+  "topic": "DevOps",
+  "hint": "Comanda git care copiază un repository."
+ },
+ {
+  "word": "CODEC",
+  "topic": "Multimedia",
+  "hint": "Algoritm de codare și decodare audio-video, ca H.264."
+ },
+ {
+  "word": "CODER",
+  "topic": "Comunitate",
+  "hint": "Persoana care scrie cod."
+ },
+ {
+  "word": "COUNT",
+  "topic": "Baze de date",
+  "hint": "Funcția SQL care numără rândurile."
+ },
+ {
+  "word": "CRAWL",
+  "topic": "Web",
+  "hint": "Ce face un robot de căutare când parcurge site-uri."
+ },
+ {
+  "word": "CYBER",
+  "topic": "Securitate",
+  "hint": "Prefix pentru tot ce ține de securitatea digitală."
+ },
+ {
+  "word": "DELAY",
+  "topic": "Rețele",
+  "hint": "Întârzierea unei operații sau a unui pachet."
+ },
+ {
+  "word": "DELTA",
+  "topic": "Algoritmi",
+  "hint": "Diferența dintre două stări sau valori."
+ },
+ {
+  "word": "DEPTH",
+  "topic": "Algoritmi",
+  "hint": "Adâncimea unui arbore; DFS o explorează prima."
+ },
+ {
+  "word": "DRIVE",
+  "topic": "Hardware",
+  "hint": "Unitatea de stocare: SSD sau HDD."
+ },
+ {
+  "word": "DRONE",
+  "topic": "Hardware",
+  "hint": "Aparat de zbor fără pilot, controlat de la distanță."
+ },
+ {
+  "word": "EMAIL",
+  "topic": "Rețele",
+  "hint": "Mesaj electronic trimis prin SMTP."
+ },
+ {
+  "word": "EMOJI",
+  "topic": "Web",
+  "hint": "Pictograme Unicode, ca 🚀."
+ },
+ {
+  "word": "ERROR",
+  "topic": "Programare",
+  "hint": "Ce apare în consolă când ceva merge prost."
+ },
+ {
+  "word": "FIBER",
+  "topic": "Rețele",
+  "hint": "Fibra optică: cablu pentru internet de mare viteză."
+ },
+ {
+  "word": "FIELD",
+  "topic": "Baze de date",
+  "hint": "O coloană dintr-un tabel sau un atribut al unui obiect."
+ },
+ {
+  "word": "FLAGS",
+  "topic": "Programare",
+  "hint": "Opțiuni de linie de comandă sau comutatoare de funcționalități."
+ },
+ {
+  "word": "FLASH",
+  "topic": "Hardware",
+  "hint": "Tipul de memorie din SSD-uri și stick-uri USB."
+ },
+ {
+  "word": "FLUSH",
+  "topic": "Baze de date",
+  "hint": "Scrierea forțată pe disc a datelor din buffer."
+ },
+ {
+  "word": "FONTS",
+  "topic": "Web",
+  "hint": "Familiile de caractere folosite pe un site."
+ },
+ {
+  "word": "FORKS",
+  "topic": "DevOps",
+  "hint": "Copii ale unui repository, făcute pe GitHub."
+ },
+ {
+  "word": "GUARD",
+  "topic": "Programare",
+  "hint": "Clauză care iese devreme dintr-o funcție."
+ },
+ {
+  "word": "HOOKS",
+  "topic": "Web",
+  "hint": "useState și useEffect sunt exemple din React."
+ },
+ {
+  "word": "HOSTS",
+  "topic": "Rețele",
+  "hint": "Fișierul care mapează local nume de domenii la adrese IP."
+ },
+ {
+  "word": "IMAGE",
+  "topic": "DevOps",
+  "hint": "Șablonul din care pornesc containerele Docker."
+ },
+ {
+  "word": "LABEL",
+  "topic": "Web",
+  "hint": "Elementul HTML care descrie un câmp de formular."
+ },
+ {
+  "word": "LASER",
+  "topic": "Hardware",
+  "hint": "Fascicul de lumină folosit în imprimante și fibra optică."
+ },
+ {
+  "word": "LAYER",
+  "topic": "Rețele",
+  "hint": "Un nivel din modelul OSI."
+ },
+ {
+  "word": "LEVEL",
+  "topic": "Jocuri",
+  "hint": "Nivelul la care ai ajuns într-un joc."
+ },
+ {
+  "word": "LINKS",
+  "topic": "Web",
+  "hint": "Legăturile care duc de la o pagină la alta."
+ },
+ {
+  "word": "LOCAL",
+  "topic": "Rețele",
+  "hint": "localhost, adică 127.0.0.1."
+ },
+ {
+  "word": "LOOPS",
+  "topic": "Programare",
+  "hint": "for și while sunt exemple."
+ },
+ {
+  "word": "MODEM",
+  "topic": "Rețele",
+  "hint": "Dispozitivul care convertește semnalul pentru conexiunea la internet."
+ },
+ {
+  "word": "MOUNT",
+  "topic": "Sisteme",
+  "hint": "Atașarea unui sistem de fișiere la un director."
+ },
+ {
+  "word": "OCTET",
+  "topic": "Rețele",
+  "hint": "Grup de 8 biți; o adresă IPv4 are patru."
+ },
+ {
+  "word": "PANEL",
+  "topic": "Web",
+  "hint": "O secțiune a interfeței, de exemplu într-un dashboard."
+ },
+ {
+  "word": "PATHS",
+  "topic": "Sisteme",
+  "hint": "Căile către fișiere și directoare."
+ },
+ {
+  "word": "POINT",
+  "topic": "Grafică",
+  "hint": "Un punct definit prin coordonatele x și y."
+ },
+ {
+  "word": "PORTS",
+  "topic": "Rețele",
+  "hint": "80 pentru HTTP, 443 pentru HTTPS."
+ },
+ {
+  "word": "POWER",
+  "topic": "Hardware",
+  "hint": "Sursa de alimentare a unui PC (PSU)."
+ },
+ {
+  "word": "RADIO",
+  "topic": "Rețele",
+  "hint": "Undele folosite de Wi-Fi și Bluetooth."
+ },
+ {
+  "word": "RANGE",
+  "topic": "Programare",
+  "hint": "Funcția Python care generează o secvență de numere."
+ },
+ {
+  "word": "REDIS",
+  "topic": "Baze de date",
+  "hint": "Bază de date cheie-valoare, în memorie, foarte rapidă."
+ },
+ {
+  "word": "ROBOT",
+  "topic": "Inteligență artificială",
+  "hint": "Mașină programabilă care execută sarcini singură."
+ },
+ {
+  "word": "SCALA",
+  "topic": "Programare",
+  "hint": "Limbaj funcțional care rulează pe JVM."
+ },
+ {
+  "word": "SCRUM",
+  "topic": "Management",
+  "hint": "Framework agil cu sprinturi și daily stand-up."
+ },
+ {
+  "word": "SOLID",
+  "topic": "Programare",
+  "hint": "Cinci principii de design orientat pe obiecte."
+ },
+ {
+  "word": "SPACE",
+  "topic": "Algoritmi",
+  "hint": "Complexitatea în memorie a unui algoritm (space complexity)."
+ },
+ {
+  "word": "SPLIT",
+  "topic": "Programare",
+  "hint": "Metoda care împarte un șir după un separator."
+ },
+ {
+  "word": "STORE",
+  "topic": "Web",
+  "hint": "Locul central pentru starea aplicației, ca în Redux."
+ },
+ {
+  "word": "SUPER",
+  "topic": "Programare",
+  "hint": "Cuvântul cheie care apelează clasa părinte."
+ },
+ {
+  "word": "SWIFT",
+  "topic": "Programare",
+  "hint": "Limbajul Apple pentru aplicații iOS."
+ },
+ {
+  "word": "TASKS",
+  "topic": "DevOps",
+  "hint": "Sarcinile dintr-un pipeline sau de pe un board."
+ },
+ {
+  "word": "TOOLS",
+  "topic": "DevOps",
+  "hint": "Uneltele de zi cu zi ale unui dezvoltator."
+ },
+ {
+  "word": "TRAIT",
+  "topic": "Programare",
+  "hint": "Set de comportamente partajate, ca în Rust sau Scala."
+ },
+ {
+  "word": "TREES",
+  "topic": "Algoritmi",
+  "hint": "Structuri ierarhice cu rădăcină și frunze."
+ },
+ {
+  "word": "TYPES",
+  "topic": "Programare",
+  "hint": "TypeScript le adaugă peste JavaScript."
+ },
+ {
+  "word": "UNITY",
+  "topic": "Jocuri",
+  "hint": "Motor popular pentru dezvoltarea de jocuri."
+ },
+ {
+  "word": "VIRUS",
+  "topic": "Securitate",
+  "hint": "Program malițios care se replică singur."
+ },
+ {
+  "word": "WIDTH",
+  "topic": "Web",
+  "hint": "Proprietatea CSS pentru lățime."
+ },
+ {
+  "word": "WRITE",
+  "topic": "Sisteme",
+  "hint": "Operația care salvează date pe disc."
+ },
+ {
+  "word": "ZONES",
+  "topic": "Rețele",
+  "hint": "Zonele DNS sau zonele de disponibilitate din cloud."
+ },
+ {
+  "word": "AGENT",
+  "topic": "Inteligență artificială",
+  "hint": "Program autonom care ia decizii și folosește unelte."
+ },
+ {
+  "word": "VIDEO",
+  "topic": "Multimedia",
+  "hint": "Secvență de cadre, de obicei cu sunet."
+ },
+ {
+  "word": "AUDIO",
+  "topic": "Multimedia",
+  "hint": "Semnalul de sunet în format digital."
+ },
+ {
+  "word": "SPOOF",
+  "topic": "Securitate",
+  "hint": "Falsificarea identității unui expeditor."
+ },
+ {
+  "word": "PHISH",
+  "topic": "Securitate",
+  "hint": "Atac prin mesaje false care îți cer parola."
+ },
+ {
+  "word": "CYCLE",
+  "topic": "Hardware",
+  "hint": "Un ciclu de ceas al procesorului."
+ },
+ {
+  "word": "CLOCK",
+  "topic": "Hardware",
+  "hint": "Frecvența procesorului, măsurată în GHz."
+ },
+ {
+  "word": "CORES",
+  "topic": "Hardware",
+  "hint": "Nucleele unui procesor."
+ },
+ {
+  "word": "ADDER",
+  "topic": "Hardware",
+  "hint": "Circuitul care adună biți."
+ },
+ {
+  "word": "ENUMS",
+  "topic": "Programare",
+  "hint": "Tipuri cu un set fix de constante."
+ },
+ {
+  "word": "CONST",
+  "topic": "Programare",
+  "hint": "Declarație pentru o valoare care nu poate fi reasignată."
+ },
+ {
+  "word": "WHILE",
+  "topic": "Programare",
+  "hint": "Buclă care rulează cât timp condiția este adevărată."
+ },
+ {
+  "word": "FALSE",
+  "topic": "Programare",
+  "hint": "Una dintre cele două valori booleene."
+ },
+ {
+  "word": "ASCII",
+  "topic": "Programare",
+  "hint": "Codificarea clasică a caracterelor pe 7 biți."
+ },
+ {
+  "word": "UNION",
+  "topic": "Baze de date",
+  "hint": "Operatorul SQL care combină rezultatele a două interogări."
+ },
+ {
+  "word": "WHERE",
+  "topic": "Baze de date",
+  "hint": "Clauza SQL care filtrează rândurile."
+ },
+ {
+  "word": "ORDER",
+  "topic": "Baze de date",
+  "hint": "ORDER BY sortează rezultatele unei interogări."
+ },
+ {
+  "word": "GROUP",
+  "topic": "Baze de date",
+  "hint": "GROUP BY grupează rândurile pentru agregări."
+ },
+ {
+  "word": "JOINS",
+  "topic": "Baze de date",
+  "hint": "Combină rânduri din mai multe tabele în SQL."
+ },
+ {
+  "word": "HTTPS",
+  "topic": "Web",
+  "hint": "Protocolul web securizat cu TLS."
+ },
+ {
+  "word": "NGINX",
+  "topic": "Web",
+  "hint": "Server web și reverse proxy foarte popular."
+ },
+ {
+  "word": "MYSQL",
+  "topic": "Baze de date",
+  "hint": "Baza de date relațională open-source din stiva LAMP."
+ },
+ {
+  "word": "EXCEL",
+  "topic": "Baze de date",
+  "hint": "Foaia de calcul de la Microsoft."
+ },
+ {
+  "word": "EMACS",
+  "topic": "Unelte",
+  "hint": "Editorul de text extensibil, rivalul etern al lui Vim."
+ },
+ {
+  "word": "TESTS",
+  "topic": "DevOps",
+  "hint": "Verificările automate ale codului."
+ },
+ {
+  "word": "MOCKS",
+  "topic": "Programare",
+  "hint": "Obiecte false folosite în teste."
+ },
+ {
+  "word": "SPECS",
+  "topic": "Programare",
+  "hint": "Specificațiile unui proiect sau ale unui test."
+ },
+ {
+  "word": "WATTS",
+  "topic": "Hardware",
+  "hint": "Unitatea de măsură a puterii consumate."
+ },
+ {
+  "word": "VOLTS",
+  "topic": "Hardware",
+  "hint": "Unitatea de măsură a tensiunii electrice."
+ },
+ {
+  "word": "BOOTS",
+  "topic": "Sisteme",
+  "hint": "Pornirile unui sistem de operare (boot)."
+ },
+ {
+  "word": "CRONS",
+  "topic": "DevOps",
+  "hint": "Sarcini programate să ruleze periodic."
+ },
+ {
+  "word": "DIGIT",
+  "topic": "Programare",
+  "hint": "O singură cifră, de la 0 la 9."
+ },
+ {
+  "word": "LOGIT",
+  "topic": "Inteligență artificială",
+  "hint": "Scorul brut al unui model, înainte de softmax."
+ }
+]
