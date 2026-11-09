@@ -1,7 +1,6 @@
 package gtshop.controller;
 
 import gtshop.dto.UserSummary;
-import gtshop.model.HistorySummary;
 import gtshop.model.UserProfile;
 import gtshop.repository.UserRepository;
 import gtshop.security.CurrentUser;
@@ -77,9 +76,4 @@ public class UserController {
         return Map.of("avatars", AvatarCatalog.paths(), "default", AvatarCatalog.DEFAULT);
     }
 
-    @GetMapping("/history/summary")
-    @Operation(summary = "Rezumatul istoricului de comenzi")
-    public HistorySummary getHistorySummary() {
-        return userService.getHistorySummary();
-    }
 }

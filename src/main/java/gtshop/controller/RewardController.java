@@ -1,33 +1,38 @@
 package gtshop.controller;
 
-import gtshop.service.RewardService;
+import gtshop.service.CatalogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping(value={"/api/rewards"})
-@Tag(name="Rewards", description="Reward catalog endpoints")
+@RequestMapping("/api/rewards")
+@Tag(name = "Rewards", description = "Catalogul public de recompense")
 public class RewardController {
-    private final RewardService rewardService;
+    private final CatalogService catalog;
 
-    public RewardController(RewardService rewardService) {
-        this.rewardService = rewardService;
+    public RewardController(CatalogService catalog) {
+        this.catalog = catalog;
     }
 
     @GetMapping
-    @Operation(summary="Get all rewards", description="Supports search and category filtering")
-    public Map<String, Object> getRewards(@RequestParam(value="search", required=false) String search, @RequestParam(value="category", required=false) String category) {
-        List list = search != null || category != null ? this.rewardService.searchRewards(search, category) : this.rewardService.getAllRewards();
-        HashMap<String, Object> resp = new HashMap<String, Object>();
-        resp.put("rewards", list);
-        return resp;
+    @Operation(summary = "Catalog: q (căutare), category, sort = featured | price_asc | price_desc | new | popular, inStock")
+    public Map<String, Object> list(@RequestParam(required = false) String q,
+                                    @RequestParam(required = false) String search,
+                                    @RequestParam(required = false) String category,
+                                    @RequestParam(defaultValue = "featured") String sort,
+                                    @RequestParam(defaultValue = "false") boolean inStock) {
+        return catalog.list(q != null ? q : search, category, sort, inStock);
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Detaliile unui produs și produse similare")
+    public Map<String, Object> get(@PathVariable String id) {
+        return catalog.get(id);
     }
 }
-

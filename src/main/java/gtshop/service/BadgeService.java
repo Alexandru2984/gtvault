@@ -92,6 +92,16 @@ public class BadgeService {
     /** Deblocheaza insigna daca nu exista deja. Utilizatorul trebuie sa fie blocat de apelant. */
     @Transactional(propagation = Propagation.MANDATORY)
     public boolean award(UserProfile lockedUser, Badge badge) {
+        return award(lockedUser, badge, badge != Badge.HERO);
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public boolean has(String userId, Badge badge) {
+        return badgeRepository.existsByUserIdAndBadgeCode(userId, badge.name());
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public boolean award(UserProfile lockedUser, Badge badge, boolean withPoints) {
         if (badgeRepository.existsByUserIdAndBadgeCode(lockedUser.getId(), badge.name())) {
             return false;
         }
@@ -99,10 +109,12 @@ public class BadgeService {
                 badge.description(), badge.icon());
         ub.setUnlockedAt(time.now());
         badgeRepository.save(ub);
-        int reward = badge.rarity().reward();
-        wallet.credit(lockedUser, reward, TxType.BADGE_REWARD, "Insignă deblocată: " + badge.title());
+        int reward = withPoints ? badge.rarity().reward() : 0;
+        if (reward > 0) {
+            wallet.credit(lockedUser, reward, TxType.BADGE_REWARD, "Insignă deblocată: " + badge.title());
+        }
         notifications.notify(lockedUser.getId(), "BADGE", "Insignă nouă: " + badge.title() + " " + badge.icon(),
-                badge.description() + " Ai primit +" + reward + " AP.", badge.icon(), "#/profil");
+                badge.description() + (reward > 0 ? " Ai primit +" + reward + " AP." : ""), badge.icon(), "#/profil");
         return true;
     }
 
@@ -144,7 +156,7 @@ public class BadgeService {
             boolean has = ub != null;
             long progress = has ? b.target() : Math.min(b.target(), stats.value(b));
             items.add(new BadgeView(b.name(), b.title(), b.description(), b.icon(), b.rarity().name(),
-                    b.rarity().reward(), has, has ? ub.getUnlockedAt() : null, progress, b.target()));
+                    b == Badge.HERO ? 0 : b.rarity().reward(), has, has ? ub.getUnlockedAt() : null, progress, b.target()));
             if (has) {
                 perRarity.merge(b.rarity(), 1, Integer::sum);
             }

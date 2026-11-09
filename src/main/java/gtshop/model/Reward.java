@@ -20,8 +20,37 @@ public class Reward {
     private String category;
     private boolean inStock;
     private int stockCount;
-    @Column(name="is_new")
+    @Column(name="is_new", nullable = false)
     private boolean isNew;
+
+    /** Produsele inactive nu apar in catalog si nu pot fi cumparate (istoricul ramane). */
+    @Column(nullable = false)
+    private boolean active = true;
+
+    /** PHYSICAL (cere adresa de livrare), DIGITAL (voucher) sau BADGE (insigna livrata in aplicatie). */
+    @Column(nullable = false, length = 16)
+    private String fulfillment = FULFILLMENT_DIGITAL;
+
+    @Column(name = "max_per_order", nullable = false)
+    private int maxPerOrder = 5;
+
+    /** Nivel minim (BRONZE..DIAMOND) necesar pentru a cumpara; null = oricine. */
+    @Column(name = "min_tier", length = 16)
+    private String minTier;
+
+    @Column(name = "created_at", nullable = false)
+    private java.time.Instant createdAt;
+
+    public static final String FULFILLMENT_PHYSICAL = "PHYSICAL";
+    public static final String FULFILLMENT_DIGITAL = "DIGITAL";
+    public static final String FULFILLMENT_BADGE = "BADGE";
+
+    @jakarta.persistence.PrePersist
+    void prePersist() {
+        if (createdAt == null) {
+            createdAt = java.time.Instant.now();
+        }
+    }
 
     public Reward() {
     }
@@ -118,5 +147,16 @@ public class Reward {
     public void setNew(boolean aNew) {
         this.isNew = aNew;
     }
-}
 
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
+    public String getFulfillment() { return fulfillment; }
+    public void setFulfillment(String fulfillment) { this.fulfillment = fulfillment; }
+    public int getMaxPerOrder() { return maxPerOrder; }
+    public void setMaxPerOrder(int maxPerOrder) { this.maxPerOrder = maxPerOrder; }
+    public String getMinTier() { return minTier; }
+    public void setMinTier(String minTier) { this.minTier = minTier; }
+    public java.time.Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(java.time.Instant createdAt) { this.createdAt = createdAt; }
+    public boolean isPhysical() { return FULFILLMENT_PHYSICAL.equals(fulfillment); }
+}

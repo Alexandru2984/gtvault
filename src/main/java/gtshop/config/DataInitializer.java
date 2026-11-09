@@ -47,6 +47,19 @@ public class DataInitializer {
                 new Reward("rew-lucky", "Lucky Crate", "Cu acest lucky crate îți poți testa norocul", "Șanse: 50% Lose, 15% CV Template, 15% Ghid ChatGPT, 10% Agendă GT, 5% Mouse G305, 5% Subscripție Udemy.", 2550, "", "Premii exclusive", true, 1000, true),
                 new Reward("rew-alltracks", "Acces la toate track-urile", "Acces la toate track-urile pentru 30 zile", "Acces 30 zile la toate track-urile (fără teme/questuri).", 3500, "", "Premii exclusive", true, 1000, false)
             );
+            for (Reward r : rewards) {
+                if ("Premii fizice".equals(r.getCategory())) {
+                    r.setFulfillment(Reward.FULFILLMENT_PHYSICAL);
+                }
+                if ("rew-badge".equals(r.getId())) {
+                    r.setFulfillment(Reward.FULFILLMENT_BADGE);
+                    r.setMaxPerOrder(1);
+                }
+                // Cutia cu premii aleatorii nu este implementata; cuferele reale sunt in Activitati
+                if ("rew-lucky".equals(r.getId())) {
+                    r.setActive(false);
+                }
+            }
             rewardRepository.saveAll(rewards);
             log.info("{} rewards initialized", rewards.size());
         }

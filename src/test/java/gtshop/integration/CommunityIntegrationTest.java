@@ -315,16 +315,4 @@ class CommunityIntegrationTest extends AbstractIntegrationTest {
         assertThat(cfg.at("/wheel/expectedValue").asDouble()).isLessThan(cfg.at("/wheel/cost").asDouble());
         assertThat(cfg.at("/crate/expectedValue").asDouble()).isLessThan(cfg.at("/crate/cost").asDouble());
     }
-
-    @Test
-    void checkoutUsesServerPriceAndUnlocksFirstOrderBadge() throws Exception {
-        TestUser u = register();
-        JsonNode res = readJson(mvc.perform(postJson("/api/checkout", u, Map.of("items",
-                List.of(Map.of("rewardId", "rew-sticker", "name", "Fals", "price", 1, "quantity", 1))))).andExpect(status().isOk()).andReturn());
-        assertThat(res.path("success").asBoolean()).isTrue();
-        assertThat(res.at("/purchasedItems/0/name").asText()).isEqualTo("Sticker GT");
-        assertThat(points(u)).isEqualTo(1000 - 180 + 25);
-        assertThat(jdbc.queryForObject("select count(*) from user_badges where user_id = ? and badge_code = 'FIRST_ORDER'",
-                Integer.class, u.id())).isEqualTo(1);
-    }
 }

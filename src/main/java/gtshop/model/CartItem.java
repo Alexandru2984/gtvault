@@ -1,7 +1,7 @@
 package gtshop.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import gtshop.model.UserProfile;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -10,78 +10,58 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.Instant;
 
+/**
+ * Linie din cosul de pe server. {@code name} si {@code price} sunt doar o fotografie informativa din
+ * momentul adaugarii: la afisare si la plata se folosesc mereu valorile curente din catalog.
+ */
 @Entity
-@Table(name="cart_items")
+@Table(name = "cart_items")
 public class CartItem {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "reward_id", nullable = false)
     private String rewardId;
+
     private String name;
+
+    @Column(nullable = false)
     private int price;
+
+    @Column(nullable = false)
     private int quantity;
-    @ManyToOne(fetch=FetchType.LAZY)
-    @JoinColumn(name="user_id")
+
+    @Column(name = "added_at", nullable = false)
+    private Instant addedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore
     private UserProfile user;
 
     public CartItem() {
     }
 
-    public CartItem(String rewardId, String name, int price, int quantity) {
-        this.rewardId = rewardId;
-        this.name = name;
-        this.price = price;
-        this.quantity = quantity;
-    }
-
-    public Long getId() {
-        return this.id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getRewardId() {
-        return this.rewardId;
-    }
-
-    public void setRewardId(String rewardId) {
-        this.rewardId = rewardId;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public int getPrice() {
-        return this.price;
-    }
-
-    public void setPrice(int price) {
-        this.price = price;
-    }
-
-    public int getQuantity() {
-        return this.quantity;
-    }
-
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
-    }
-
-    public UserProfile getUser() {
-        return this.user;
-    }
-
-    public void setUser(UserProfile user) {
+    public CartItem(UserProfile user, Reward reward, int quantity, Instant now) {
         this.user = user;
+        this.rewardId = reward.getId();
+        this.name = reward.getName();
+        this.price = reward.getPrice();
+        this.quantity = quantity;
+        this.addedAt = now;
     }
-}
 
+    public Long getId() { return id; }
+    public String getRewardId() { return rewardId; }
+    public String getName() { return name; }
+    public int getPrice() { return price; }
+    public void setPrice(int price) { this.price = price; }
+    public void setName(String name) { this.name = name; }
+    public int getQuantity() { return quantity; }
+    public void setQuantity(int quantity) { this.quantity = quantity; }
+    public Instant getAddedAt() { return addedAt; }
+    public UserProfile getUser() { return user; }
+}

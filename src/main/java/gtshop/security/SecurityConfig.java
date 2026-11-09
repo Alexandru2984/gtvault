@@ -64,7 +64,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
                 .requestMatchers(HttpMethod.GET,
                         "/api/rewards", "/api/rewards/**",
-                        "/api/flash-deals",
+                        "/api/flash-deals", "/api/vouchers/verify",
                         "/api/leaderboard", "/api/leaderboard/**",
                         "/api/gamification/leaderboard",
                         "/api/gamification/quiz",

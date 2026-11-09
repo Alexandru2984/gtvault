@@ -1,33 +1,34 @@
 package gtshop.controller;
 
-import gtshop.service.PromoCodeService;
+import gtshop.security.CurrentUser;
+import gtshop.security.RateLimit;
+import gtshop.service.CheckoutService;
+import gtshop.service.PricingService.Quote;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/promo")
-@Tag(name = "Promo", description = "Discount codes validation")
+@Tag(name = "Promo", description = "Validarea codurilor promoționale pe coșul curent")
 public class PromoCodeController {
-    private final PromoCodeService promoCodeService;
+    private final CheckoutService checkout;
+    private final CurrentUser currentUser;
 
-    public PromoCodeController(PromoCodeService promoCodeService) {
-        this.promoCodeService = promoCodeService;
+    public PromoCodeController(CheckoutService checkout, CurrentUser currentUser) {
+        this.checkout = checkout;
+        this.currentUser = currentUser;
     }
 
-    @PostMapping("/validate")
-    @Operation(summary = "Validate promo code for cart total")
-    public ResponseEntity<PromoCodeService.PromoValidationResult> validatePromo(@RequestBody Map<String, Object> body) {
-        String code = body.containsKey("code") ? String.valueOf(body.get("code")) : "";
-        int orderTotal = body.containsKey("orderTotal") ? ((Number) body.get("orderTotal")).intValue() : 0;
+    public record PromoRequest(String code) {}
 
-        PromoCodeService.PromoValidationResult result = this.promoCodeService.validatePromo(code, orderTotal);
-        if (!result.isValid()) {
-            return ResponseEntity.badRequest().body(result);
-        }
-        return ResponseEntity.ok(result);
+    @PostMapping("/validate")
+    @RateLimit(name = "promo-validate", limit = 20, windowSeconds = 60)
+    @Operation(summary = "Aplică (de probă) un cod promo pe coșul curent")
+    public Quote validate(@RequestBody PromoRequest body) {
+        return checkout.quote(currentUser.requireId(), body == null ? null : body.code());
     }
 }

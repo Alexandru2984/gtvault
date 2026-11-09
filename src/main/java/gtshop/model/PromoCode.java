@@ -23,6 +23,16 @@ public class PromoCode {
     private boolean isActive;
     private Instant expiresAt;
 
+    @jakarta.persistence.Column(length = 140)
+    private String description;
+
+    /** Plafon optional pentru reducerile procentuale. */
+    @jakarta.persistence.Column(name = "max_discount")
+    private Integer maxDiscount;
+
+    @jakarta.persistence.Column(name = "created_at", nullable = false)
+    private Instant createdAt = Instant.now();
+
     public PromoCode() {
     }
 
@@ -108,4 +118,11 @@ public class PromoCode {
     public void setExpiresAt(Instant expiresAt) {
         this.expiresAt = expiresAt;
     }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public Integer getMaxDiscount() { return maxDiscount; }
+    public void setMaxDiscount(Integer maxDiscount) { this.maxDiscount = maxDiscount; }
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 }

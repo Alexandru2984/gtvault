@@ -33,7 +33,9 @@ public enum Badge {
     QUEST_RUNNER("Maratonist", "Ai finalizat 10 misiuni.", "🎯", Rarity.RARE, Metric.TX_COUNT, TxType.QUEST_REWARD, 10),
     QUEST_LEGEND("Erou al misiunilor", "Ai finalizat 50 de misiuni.", "🛡️", Rarity.LEGENDARY, Metric.TX_COUNT, TxType.QUEST_REWARD, 50),
     CRITIC("Critic de încredere", "Ai scris prima recenzie verificată.", "⭐", Rarity.COMMON, Metric.TX_COUNT, TxType.REVIEW_REWARD, 1),
-    WORDSMITH("Wordsmith", "Ai ghicit 5 cuvinte în Tech Wordle.", "🔤", Rarity.RARE, Metric.TX_COUNT, TxType.WORDLE_REWARD, 5);
+    WORDSMITH("Wordsmith", "Ai ghicit 5 cuvinte în Tech Wordle.", "🔤", Rarity.RARE, Metric.TX_COUNT, TxType.WORDLE_REWARD, 5),
+    /** Se obtine doar cumparand „Badge Hero” din magazin (fara recompensa in AP). */
+    HERO("Hero", "Insigna exclusivă Hero, afișată pe profil.", "🦸", Rarity.LEGENDARY, Metric.EVENT, null, 1);
 
     public enum Rarity {
         COMMON(25), RARE(75), EPIC(150), LEGENDARY(300);
