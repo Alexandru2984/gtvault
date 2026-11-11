@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="badgeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffd700" stop-opacity="1" />
+      <stop offset="100%" stop-color="#ffa500" stop-opacity="1" />
+    </linearGradient>
+    <filter id="badgeGlow">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="#ffa500" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+  
+  <!-- Badge circle -->
+  <circle cx="50" cy="50" r="30" fill="url(#badgeGradient)" stroke="#e68900" stroke-width="3" filter="url(#badgeGlow)"/>
+  
+  <!-- Inner circle -->
+  <circle cx="50" cy="50" r="22" fill="none" stroke="#e68900" stroke-width="2"/>
+  
+  <!-- Star in center -->
+  <polygon points="50,30 52,40 62,40 54,47 57,57 50,51 43,57 46,47 38,40 48,40" fill="#fff" stroke="#e68900" stroke-width="1"/>
+  
+  <!-- Ribbon -->
+  <rect x="40" y="75" width="20" height="15" fill="#c53030"/>
+  <polygon points="40,90 50,85 60,90 60,95 50,88 40,95" fill="#c53030"/>
+  
+  <!-- Decorative elements -->
+  <circle cx="35" cy="35" r="2" fill="#fff" opacity="0.8"/>
+  <circle cx="65" cy="35" r="2" fill="#fff" opacity="0.8"/>
+  <circle cx="35" cy="65" r="2" fill="#fff" opacity="0.8"/>
+  <circle cx="65" cy="65" r="2" fill="#fff" opacity="0.8"/>
+  
+  <!-- Achievement text -->
+  <text x="50" y="45" text-anchor="middle" font-family="Arial, sans-serif" font-size="6" fill="#2d3748" font-weight="bold">GT</text>
+  <text x="50" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="5" fill="#2d3748" font-weight="bold">EXPERT</text>
+  
+  <!-- Sparkles around badge -->
+  <polygon points="25,25 26,27 28,26 27,28 29,29 27,30 28,32 26,31 25,33 24,31 22,32 23,30 21,29 23,28 22,26 24,27" fill="#ffd700" opacity="0.7"/>
+  <polygon points="75,20 76,22 78,21 77,23 79,24 77,25 78,27 76,26 75,28 74,26 72,27 73,25 71,24 73,23 72,21 74,22" fill="#ffd700" opacity="0.7"/>
+  <polygon points="20,75 21,77 23,76 22,78 24,79 22,80 23,82 21,81 20,83 19,81 17,82 18,80 16,79 18,78 17,76 19,77" fill="#ffd700" opacity="0.7"/>
+  <polygon points="80,75 81,77 83,76 82,78 84,79 82,80 83,82 81,81 80,83 79,81 77,82 78,80 76,79 78,78 77,76 79,77" fill="#ffd700" opacity="0.7"/>
+  
+  <!-- Title -->
+  <text x="50" y="95" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#2d3748" font-weight="bold">ACHIEVEMENT</text>
+</svg>
