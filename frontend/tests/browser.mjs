@@ -62,6 +62,12 @@ try {
   assert.ok(initialHtml.includes('<title>Template CV · RewardHub</title>'));
   assert.ok(initialHtml.includes('href="https://shop.micutu.com/produs/rew-templatecv"'));
   assert.ok(initialHtml.includes('"@type":"Product"'));
+  const refreshedProduct = await context.request.get(origin + '/produs/rew-templatecv', {
+    headers: { 'If-Modified-Since': initialProduct.headers()['last-modified'] },
+  });
+  assert.equal(refreshedProduct.status(), 200);
+  assert.notEqual(refreshedProduct.headers()['content-security-policy'], initialProduct.headers()['content-security-policy']);
+  assert.match(refreshedProduct.headers()['content-security-policy'], /'nonce-[a-f0-9]{32}'/);
   assert.ok((await (await context.request.get(origin + '/sitemap.xml')).text()).includes('/produs/rew-templatecv'));
   assert.equal((await context.request.get(origin + '/js/missing.js')).status(), 404);
   assert.match((await context.request.get(origin + '/admin')).headers()['x-robots-tag'], /noindex/);
