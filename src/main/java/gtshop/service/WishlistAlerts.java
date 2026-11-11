@@ -16,6 +16,7 @@ public class WishlistAlerts {
             INSERT INTO notifications (id, user_id, type, title, body, icon, link, is_read, created_at)
             SELECT 'ntf-' || replace(gen_random_uuid()::text, '-', ''), w.user_id, 'WISHLIST', ?, ?, ?, ?, false, ?
             FROM wishlist_items w JOIN users u ON u.id = w.user_id
+            LEFT JOIN notification_preferences p ON p.user_id = w.user_id
             WHERE w.reward_id = ? AND NOT u.banned""";
 
     private final JdbcTemplate jdbc;
@@ -28,14 +29,14 @@ public class WishlistAlerts {
 
     @Transactional(propagation = Propagation.MANDATORY)
     public int dealStarted(String rewardId, String rewardName, int discountPercent) {
-        return jdbc.update(INSERT, truncate("⚡ -" + discountPercent + "% la " + rewardName, 140),
+        return jdbc.update(INSERT + " AND coalesce(p.wishlist_sales, true)", truncate("⚡ -" + discountPercent + "% la " + rewardName, 140),
                 "Un produs din wishlist-ul tău e în oferta zilei. Stoc limitat!", "⚡",
                 "#/produs/" + rewardId, Timestamp.from(time.now()), rewardId);
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
     public int backInStock(String rewardId, String rewardName) {
-        return jdbc.update(INSERT, truncate("📦 " + rewardName + " e din nou în stoc", 140),
+        return jdbc.update(INSERT + " AND coalesce(p.wishlist_stock, true)", truncate("📦 " + rewardName + " e din nou în stoc", 140),
                 "Produsul din wishlist-ul tău poate fi comandat din nou.", "📦",
                 "#/produs/" + rewardId, Timestamp.from(time.now()), rewardId);
     }

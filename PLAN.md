@@ -40,6 +40,8 @@ Noua aplicație a fost publicată pe `shop.micutu.com` la 11 noiembrie 2026, dup
 - Export CSV pentru întregul istoric, cu escaparea textului introdus de utilizatori.
 - Verificator public de vouchere care trimite codul în corpul cererii.
 - Instalare PWA și pagină de recuperare când conexiunea lipsește.
+- Sesiuni active pe server, cu dispozitiv estimat, ultima utilizare și revocare individuală.
+- Preferințe sincronizate pentru reduceri, reveniri în stoc, progres, comunitate și anunțuri.
 
 Comparația, exportul CSV și verificatorul public au fost adăugate în această etapă. Frontendul aflat deja în lucru a fost completat și integrat cu API-urile existente.
 
@@ -67,7 +69,7 @@ Serviciul de email și regulile pentru acordarea premiilor vor fi alese înainte
 | Explicații după quiz | Rezultatul, motivul răspunsului și resurse ale autorilor |
 | Istoric Wordle | Statistici personale și distribuire care păstrează secret cuvântul |
 | Provocări de breaslă | Țintă comună și contribuții personale verificabile |
-| Preferințe de notificare | Selectarea alertelor utile și frecvenței lor |
+| Preferințe de notificare | Implementată selectarea a cinci categorii de alerte în aplicație. Agregarea periodică rămâne de evaluat |
 | Colecții de premii | Liste tematice și recomandări explicate prin preferințe explicite |
 | Alerte de obiectiv | Notificări când premiul țintă revine în stoc sau intră în ofertă |
 

@@ -316,6 +316,7 @@ async function setari({ body, signal, alive, rerender }) {
     <section class="card card-pad stack" aria-labelledby="ap-h">
       <h2 class="card-title" id="ap-h">${icon('sun')} Aspect</h2>
       <label class="switch"><input type="checkbox" data-theme-switch ${currentTheme() === 'dark' ? 'checked' : ''}> Temă întunecată</label>
+      <a class="btn btn-secondary" href="/notificari?preferinte=1">${icon('bell')} Preferințe de notificare</a>
     </section>
     <section class="card card-pad stack" aria-labelledby="gd-h">
       <h2 class="card-title" id="gd-h">${icon('shield')} Datele tale</h2>
@@ -360,7 +361,9 @@ async function setari({ body, signal, alive, rerender }) {
       if (problem) { err.textContent = problem; err.hidden = false; return; }
       await busy(qs('[type=submit]', form), async () => {
         try {
+          const token = state.token;
           const r = await post('/auth/password', { currentPassword: cur, newPassword: next });
+          if (!alive() || state.token !== token) return;
           startSession(r);
           form.reset();
           toastOk(r.message, { icon: '🔐' });
@@ -372,7 +375,9 @@ async function setari({ body, signal, alive, rerender }) {
       if (!(await confirmDialog({ title: 'Deconectezi celelalte dispozitive?', body: 'Rămâi conectat doar aici. Pe celelalte dispozitive va trebui să intri din nou.', confirmText: 'Deconectează' }))) return;
       await busy(b, async () => {
         try {
+          const token = state.token;
           const r = await post('/auth/logout-all');
+          if (!alive() || state.token !== token) return;
           startSession(r);
           toastOk(r.message, { icon: '🔐' });
           await sessions.refresh();

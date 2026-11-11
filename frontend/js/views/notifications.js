@@ -4,16 +4,19 @@ import { icon } from '../icons.js';
 import { timeAgo, plural } from '../format.js';
 import { emptyState, skeletonPage } from '../components.js';
 import { setMeta } from '../seo.js';
-import { setUnread } from '../store.js';
+import { state, setUnread } from '../store.js';
 import { busy, confirmDialog, handleError } from '../ui.js';
+import { notificationSettings } from '../notification-settings.js';
 
-export default async function notifications({ root, signal, alive }) {
+export default async function notifications({ root, query, signal, alive }) {
   setMeta({ title: 'Notificări', noindex: true });
   mount(root, skeletonPage());
+  const token = state.token;
+  const active = () => alive() && state.token === token;
   let data;
   async function load() {
     data = await get('/notifications?limit=50', { signal });
-    setUnread(data.unread);
+    if (active()) setUnread(data.unread);
   }
   try {
     await load();
@@ -21,11 +24,13 @@ export default async function notifications({ root, signal, alive }) {
     if (isAbort(err)) return;
     throw err;
   }
-  if (!alive()) return;
+  if (!active()) return;
 
+  mount(root, html`<div class="page stack-lg"><div data-notification-feed></div><div data-notification-options></div></div>`);
+  const feed = root.querySelector('[data-notification-feed]');
   function render() {
     const items = data.items || [];
-    mount(root, html`<div class="page">
+    mount(feed, html`<div class="stack">
       <div class="page-head">
         <div><h1>Notificări</h1><p>${data.unread ? plural(data.unread, 'notificare necitită', 'notificări necitite') : 'Ești la zi cu tot. 👌'}</p></div>
         ${items.length ? html`<div class="row">
@@ -52,6 +57,10 @@ export default async function notifications({ root, signal, alive }) {
 
   render();
 
+  const preferencesReady = notificationSettings(root.querySelector('[data-notification-options]'), {
+    signal, alive: active, open: query.preferinte === '1',
+  });
+
   const offs = [
     on(root, 'click', '[data-open]', (e, a) => {
       const n = data.items.find((x) => x.id === a.dataset.open);
@@ -67,6 +76,7 @@ export default async function notifications({ root, signal, alive }) {
     on(root, 'click', '[data-delete]', async (e, b) => busy(b, async () => {
       try {
         await del(`/notifications/${enc(b.dataset.delete)}`);
+        if (!active()) return;
         const n = data.items.find((x) => x.id === b.dataset.delete);
         if (n && !n.read) data.unread = Math.max(0, data.unread - 1);
         data.items = data.items.filter((x) => x.id !== b.dataset.delete);
@@ -77,6 +87,7 @@ export default async function notifications({ root, signal, alive }) {
     on(root, 'click', '[data-all-read]', (e, b) => busy(b, async () => {
       try {
         await post('/notifications/read-all');
+        if (!active()) return;
         data.items.forEach((x) => { x.read = true; });
         data.unread = 0;
         setUnread(0);
@@ -88,6 +99,7 @@ export default async function notifications({ root, signal, alive }) {
       await busy(b, async () => {
         try {
           await del('/notifications');
+          if (!active()) return;
           data = { unread: 0, items: [] };
           setUnread(0);
           render();
@@ -95,5 +107,5 @@ export default async function notifications({ root, signal, alive }) {
       });
     }),
   ];
-  return () => offs.forEach((off) => off());
+  return () => { preferencesReady.then((cleanup) => cleanup()); offs.forEach((off) => off()); };
 }

@@ -58,6 +58,12 @@ Secretul JWT, parola bazei și restul setărilor private se citesc din configura
 
 Fișierul `rewardhub-site.conf` depinde de variabila `$from_cloudflare_origin`, definită de configurația de încredere Cloudflare deja prezentă pe VPS. Aceasta verifică peer-ul conexiunii înainte de rescrierea IP-ului real. Testul izolat definește propria regulă numai pentru loopback. Buildul setează accesul de citire și traversare pentru procesul nginx, inclusiv când este executat cu umask restrictiv.
 
+## Actualizări în directorul existent
+
+La cererea operatorului, actualizările ulterioare reutilizează directorul release-ului și `/var/backups/gtshop`. Păstrează un singur set de fișiere de revenire pentru actualizarea curentă, fără directoare suplimentare de backup. Cu serviciul oprit, înlocuiește JAR-ul prin rename al unui fișier nou, păstrând copia versiunii precedente în directorul de backup. Păstrează frontendul precedent într-o singură arhivă protejată și publică buildul complet verificat, cu directoare 0755 și fișiere 0644.
+
+Pentru V7–V8, registrul de sesiuni și preferințele sunt tabele noi. Înainte de publicare verifică restaurarea dumpului curent și păstrarea conturilor, soldurilor, comenzilor și catalogului. Închide scrierile API pe durata înlocuirii și migrării. Verifică health, inventarul Flyway, hashurile și accesul public înainte de a considera actualizarea încheiată.
+
 ## Revenire în caz de eșec
 
 Pentru un eșec înainte de redeschiderea API-ului, păstrează mentenanța, oprește aplicația nouă și restaurează baza, unitatea și vhost-ul din același punct de backup. Verifică aplicația precedentă înainte de redeschidere.

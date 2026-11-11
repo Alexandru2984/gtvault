@@ -23,6 +23,7 @@ export function legalContent(privacy) {
         <p>Poți seta vizibilitatea profilului din setări. Recenziile, propunerile și clasamentele pot afișa numele de afișare separat de pagina de profil.</p>
         <h2>Opțiunile contului</h2>
         <p>Din <a href="/profil?tab=setari">setări</a> poți descărca datele contului, gestiona sesiunile și cere ștergerea contului.</p>
+        <p>Poți alege categoriile de alerte opționale din <a href="/notificari?preferinte=1">preferințele de notificare</a>. Alegerea se păstrează în cont și se aplică notificărilor viitoare. Mesajele despre cont, comenzi și moderare rămân active.</p>
         <h2>Stocarea în browser</h2>
         <p>Aplicația păstrează local sesiunea de autentificare, preferințele de afișare și selecția pentru comparație. Deconectarea elimină sesiunea salvată pe dispozitiv și solicită revocarea ei pe server. Dacă revocarea nu poate fi confirmată, aplicația te anunță.</p>
         <h2>Solicitări privind datele</h2>

@@ -1024,3 +1024,7 @@ a.feed-item:hover .feed-title { color: var(--brand); }
 .grid-2 > .span-2 { grid-column: 1 / -1; }
 .account-settings .btn { white-space: normal; padding-block: 10px; }
 .profile-head a svg { width: 1em; height: 1em; vertical-align: middle; }
+.notification-options summary { cursor: pointer; font-weight: 700; }
+.preference-options { border: 0; padding: 0; min-width: 0; }
+.preference-options .hint { display: block; margin-top: 3px; color: var(--muted); font-size: 0.8rem; font-weight: 400; }
+.notification-options .btn { white-space: normal; padding-block: 10px; }

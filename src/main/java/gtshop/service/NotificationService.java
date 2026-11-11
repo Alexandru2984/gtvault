@@ -15,14 +15,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class NotificationService {
     private final NotificationRepository repository;
     private final TimeService time;
+    private final NotificationPreferencesService preferences;
 
-    public NotificationService(NotificationRepository repository, TimeService time) {
+    public NotificationService(NotificationRepository repository, TimeService time, NotificationPreferencesService preferences) {
         this.repository = repository;
         this.time = time;
+        this.preferences = preferences;
     }
 
     @Transactional
     public void notify(String userId, String type, String title, String body, String icon, String link) {
+        if (!preferences.allows(userId, type)) return;
         repository.save(new Notification(Ids.prefixed("ntf-"), userId, type,
                 truncate(title, 140), truncate(body, 500), truncate(icon, 16), truncate(link, 255), time.now()));
     }

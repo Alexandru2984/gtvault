@@ -157,6 +157,33 @@ try {
     headers: { Authorization: `Bearer ${secondSession}` },
   })).status(), 401);
 
+  await page.getByRole('link', { name: 'Preferințe de notificare', exact: true }).click();
+  const salesAlert = page.getByRole('checkbox', { name: /Reduceri la favorite/ });
+  const progressAlert = page.getByRole('checkbox', { name: /Progres și realizări/ });
+  await salesAlert.waitFor();
+  await salesAlert.uncheck();
+  await progressAlert.uncheck();
+  const readAll = page.locator('[data-all-read]');
+  if (await readAll.isVisible()) {
+    const read = page.waitForResponse((r) => r.url().endsWith('/notifications/read-all'));
+    await readAll.click();
+    assert.equal((await read).status(), 200);
+    assert.equal(await salesAlert.isChecked(), false, 'feed updates preserve unsaved preferences');
+  }
+  await page.getByRole('button', { name: 'Salvează preferințele', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Preferințele au fost salvate.' }).waitFor();
+  await page.reload();
+  await salesAlert.waitFor();
+  assert.equal(await salesAlert.isChecked(), false);
+  assert.equal(await progressAlert.isChecked(), false);
+  assert.equal(await page.getByRole('checkbox', { name: /Reveniri în stoc/ }).isChecked(), true);
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 844 });
+    await noOverflow(page, `notification preferences at ${width}`);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'test-results/browser/notifications-mobile.png', fullPage: true });
+
   const adminContext = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
   const admin = await adminContext.newPage();
   observe(admin);
@@ -194,16 +221,29 @@ try {
   await context.setOffline(false);
   await page.getByRole('link', { name: 'Încearcă din nou' }).click();
   await page.locator('h1').waitFor();
+  await page.goto(origin + '/profil?tab=setari');
+  await page.getByRole('heading', { name: 'Sesiuni active', exact: true }).waitFor();
+  await page.locator('[data-logout-all]').click();
+  const rotated = page.waitForResponse((r) => r.url().endsWith('/auth/logout-all'));
+  await page.getByRole('dialog').getByRole('button', { name: 'Deconectează', exact: true }).click();
+  const rotatedResponse = await rotated;
+  assert.equal(rotatedResponse.status(), 200);
+  const rotatedToken = (await rotatedResponse.json()).token;
+  assert.notEqual(rotatedToken, sessionToken);
+  await page.waitForFunction((token) => JSON.parse(localStorage.getItem('gt.session')).token === token, rotatedToken);
+  assert.equal((await context.request.get(origin + '/RewardHub/api/user/me', {
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  })).status(), 401);
   await page.getByRole('button', { name: 'Meniul contului', exact: true }).click();
   const loggedOut = page.waitForResponse((r) => r.url().endsWith('/auth/logout'));
   await page.locator('[data-logout]').click();
   assert.equal((await loggedOut).status(), 200);
   await page.waitForFunction(() => localStorage.getItem('gt.session') === null);
   assert.equal((await context.request.get(origin + '/RewardHub/api/user/me', {
-    headers: { Authorization: `Bearer ${sessionToken}` },
+    headers: { Authorization: `Bearer ${rotatedToken}` },
   })).status(), 401);
   assert.deepEqual(errors, []);
-  console.log('Browser checks passed for responsive navigation, registration, comparison, wishlist, checkout, vouchers, CSV, daily rewards, sessions, admin and offline recovery.');
+  console.log('Browser checks passed for responsive navigation, registration, comparison, wishlist, checkout, vouchers, CSV, daily rewards, sessions, notification preferences, admin and offline recovery.');
 } catch (error) {
   if (errors.length) console.error('Browser HTTP or script errors', errors);
   throw error;

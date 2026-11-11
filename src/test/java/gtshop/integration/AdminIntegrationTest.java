@@ -295,10 +295,11 @@ class AdminIntegrationTest extends AbstractIntegrationTest {
         assertThat(mineReported).isNotNull();
         assertThat(mineReported.path("reports").asInt()).isEqualTo(2);
 
+        jdbc.update("INSERT INTO notification_preferences (user_id, community, updated_at) VALUES (?, false, now())", author.id());
         adminPost("/api/admin/reviews/" + reviewId + "/moderate", Map.of("hidden", true, "reason", "Limbaj nepotrivit"))
                 .andExpect(status().isOk());
         assertThat(readJson(mvc.perform(getAs("/api/rewards/rew-mentorat/reviews", null)).andReturn()).toString()).doesNotContain(reviewId);
-        assertThat(notifications(author, "REVIEW")).isEqualTo(1);
+        assertThat(notifications(author, "MODERATION")).isEqualTo(1);
         adminPost("/api/admin/reviews/" + reviewId + "/moderate", Map.of("hidden", false)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.reportsDismissed").value(2));
         assertThat(readJson(mvc.perform(getAs("/api/rewards/rew-mentorat/reviews", null)).andReturn()).toString()).contains(reviewId);
@@ -309,7 +310,7 @@ class AdminIntegrationTest extends AbstractIntegrationTest {
         adminPost("/api/admin/proposals/" + proposalId + "/status", Map.of("status", "MAYBE")).andExpect(status().isBadRequest());
         adminPost("/api/admin/proposals/" + proposalId + "/status", Map.of("status", "approved", "note", "O adăugăm luna viitoare"))
                 .andExpect(status().isOk());
-        assertThat(notifications(author, "PROPOSAL")).isEqualTo(1);
+        assertThat(notifications(author, "MODERATION")).isEqualTo(2);
         JsonNode pub = readJson(mvc.perform(getAs("/api/proposals", null)).andReturn());
         assertThat(pub.toString()).contains("O adăugăm luna viitoare");
         assertThat(readJson(mvc.perform(getAs("/api/admin/proposals?status=APPROVED", admin)).andReturn()).toString()).contains(proposalId);
@@ -319,13 +320,16 @@ class AdminIntegrationTest extends AbstractIntegrationTest {
     void broadcastReachesActiveMembersOnly() throws Exception {
         TestUser active = register();
         TestUser banned = register();
+        TestUser optedOut = register();
         jdbc.update("update users set banned = true where id = ?", banned.id());
+        jdbc.update("INSERT INTO notification_preferences (user_id, announcements, updated_at) VALUES (?, false, now())", optedOut.id());
         adminPost("/api/admin/notifications/broadcast", Map.of("title", "Salut", "link", "https://evil.example"))
                 .andExpect(status().isBadRequest());
         adminPost("/api/admin/notifications/broadcast", Map.of("title", "Magazin nou!", "body", "Am adăugat produse noi.",
                 "link", "#/magazin")).andExpect(status().isOk()).andExpect(jsonPath("$.recipients").isNumber());
         assertThat(notifications(active, "ANNOUNCEMENT")).isEqualTo(1);
         assertThat(notifications(banned, "ANNOUNCEMENT")).isZero();
+        assertThat(notifications(optedOut, "ANNOUNCEMENT")).isZero();
     }
 
     // ------------------------------------------------------------------ utilizatori

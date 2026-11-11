@@ -72,7 +72,7 @@ public class AdminCommunityService {
                 case "REJECTED" -> "Propunerea ta nu a fost aprobată";
                 default -> "Propunerea ta este din nou în analiză";
             };
-            notifications.notify(p.getUser().getId(), "PROPOSAL", title,
+            notifications.notify(p.getUser().getId(), "MODERATION", title,
                     "„" + p.getTitle() + "”" + (adminNote != null ? " – " + adminNote : ""), "💡", "#/comunitate");
         }
         audit.record("PROPOSAL_STATUS", "PROPOSAL", p.getId(), previous + " -> " + st + (adminNote != null ? ": " + adminNote : ""));
@@ -116,7 +116,7 @@ public class AdminCommunityService {
             dismissed = jdbc.update("DELETE FROM review_reports WHERE review_id = ?", reviewId);
         }
         if (hide && !wasHidden) {
-            notifications.notify((String) row.get("user_id"), "REVIEW", "Recenzia ta a fost ascunsă de un moderator",
+            notifications.notify((String) row.get("user_id"), "MODERATION", "Recenzia ta a fost ascunsă de un moderator",
                     "Recenzia pentru „" + row.get("reward_name") + "” nu respectă regulile comunității"
                             + (why != null ? ": " + why : "."), "🛡️", "#/produs/" + row.get("reward_id"));
         }
@@ -138,8 +138,9 @@ public class AdminCommunityService {
         }
         int sent = jdbc.update("""
                 INSERT INTO notifications (id, user_id, type, title, body, icon, link, is_read, created_at)
-                SELECT 'ntf-' || replace(gen_random_uuid()::text, '-', ''), id, 'ANNOUNCEMENT', ?, ?, '📣', ?, false, ?
-                FROM users WHERE NOT banned""", title, body, link, Timestamp.from(time.now()));
+                SELECT 'ntf-' || replace(gen_random_uuid()::text, '-', ''), u.id, 'ANNOUNCEMENT', ?, ?, '📣', ?, false, ?
+                FROM users u LEFT JOIN notification_preferences p ON p.user_id = u.id
+                WHERE NOT u.banned AND coalesce(p.announcements, true)""", title, body, link, Timestamp.from(time.now()));
         audit.record("BROADCAST", "NOTIFICATION", null, title + " → " + sent + " membri");
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("success", true);
