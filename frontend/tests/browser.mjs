@@ -18,7 +18,7 @@ function observe(page) {
     if (entry.type() === 'error' && /content security policy|mime type|module script/i.test(entry.text())) errors.push(entry.text());
   });
   page.on('response', (response) => {
-    if (response.status() >= 500) errors.push(`${response.status()} ${new URL(response.url()).pathname}`);
+    if (response.status() >= 429) errors.push(`${response.status()} ${new URL(response.url()).pathname}`);
   });
 }
 
@@ -111,11 +111,12 @@ try {
     ['/ajutor', 'Întrebări frecvente'], ['/confidentialitate', 'Confidențialitate'], ['/termeni', 'Reguli de utilizare'],
     ['/wordle', /Tech Wordle/], ['/clasament', 'Clasament'], ['/activitati', 'Activități'], ['/comunitate', 'Comunitate'],
   ]) {
-    await page.goto(origin + route);
+    assert.equal((await context.request.get(origin + route)).status(), 200);
+    await page.locator(`a[href="${route}"]:visible`).first().click();
     await page.getByRole('heading', { name: heading, level: 1 }).waitFor();
     await noOverflow(page, route);
   }
-  await page.goto(origin + '/activitati');
+  await page.locator('.site-footer a[href="/activitati"]').click();
   const claim = page.locator('[data-claim]');
   await claim.waitFor();
   await claim.click();
@@ -129,8 +130,10 @@ try {
   await admin.getByLabel('Parolă', { exact: true }).fill('Parola-Release-123');
   await admin.getByRole('button', { name: 'Intră în cont', exact: true }).click();
   await admin.waitForURL(origin + '/');
+  await admin.goto(origin + '/admin');
+  await admin.locator('.admin-main h1').waitFor();
   for (const section of ['orders', 'users', 'rewards', 'audit']) {
-    await admin.goto(origin + '/admin/' + section);
+    await admin.locator(`.admin-nav a[href="/admin/${section}"]`).click();
     await admin.locator('.admin-main h1').waitFor();
     if (['orders', 'users'].includes(section)) {
       await admin.locator('.admin-item a').first().click();
@@ -158,6 +161,9 @@ try {
   await page.locator('h1').waitFor();
   assert.deepEqual(errors, []);
   console.log('Browser checks passed for responsive navigation, registration, comparison, wishlist, checkout, vouchers, CSV, daily rewards, admin and offline recovery.');
+} catch (error) {
+  if (errors.length) console.error('Browser HTTP or script errors', errors);
+  throw error;
 } finally {
   await browser.close();
 }
