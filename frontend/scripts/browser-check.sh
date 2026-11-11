@@ -58,6 +58,7 @@ done
 if test "$preview_healthy" != true; then tail -40 "$preview_dir/backend.log"; exit 1; fi
 
 REWARDHUB_CATALOG_URL="http://127.0.0.1:$preview_api_port/RewardHub/api/rewards" npm run build:frontend
+node frontend/scripts/check-build.mjs
 
 sed "s/127.0.0.1:8087/127.0.0.1:$preview_api_port/" deploy/nginx/rewardhub-http.conf > "$preview_dir/http.conf"
 cat > "$preview_dir/nginx.conf" <<EOF

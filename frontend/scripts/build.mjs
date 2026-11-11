@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { chmod, cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { esc, productImage } from '../js/dom.js';
 import { SITE } from '../js/seo.js';
@@ -84,4 +84,9 @@ const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://w
   .map((pathname) => `<url><loc>${esc(SITE.origin + pathname)}</loc></url>`).join('')}</urlset>\n`;
 await writeFile(path.join(output, 'sitemap.xml'), sitemap);
 await writeFile(path.join(output, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /RewardHub/\nSitemap: ${SITE.origin}/sitemap.xml\n`);
+await chmod(output, 0o755);
+for (const entry of await readdir(output, { recursive: true, withFileTypes: true })) {
+  const file = path.join(entry.parentPath, entry.name);
+  await chmod(file, entry.isDirectory() ? 0o755 : 0o644);
+}
 console.log(`Built target/frontend with ${rewards.length} product pages and a sitemap.`);
