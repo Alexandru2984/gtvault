@@ -52,6 +52,9 @@ const PRODUCT_IMAGES = {
 /** Caile de imagini din API sunt relative ("images/..."); le validam si le facem absolute. */
 export function imgSrc(path, fallback = PLACEHOLDER_IMG) {
   const p = String(path ?? '').trim();
+  if (/^images\/(agenda|badge|chatgpt|cv|lucky|meet|mentorat|mouse|sticker|tracks|tricou|udemy)\.svg$/.test(p)) {
+    return `/${p.replace('images/', 'images/products/')}`;
+  }
   return IMG_PATH.test(p) ? `/${p}` : fallback;
 }
 
