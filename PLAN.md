@@ -8,6 +8,8 @@ Backendul folosește Java și Spring Boot, PostgreSQL și Flyway. Frontendul mod
 
 Noua aplicație a fost publicată pe `shop.micutu.com` la 11 noiembrie 2026, după confirmarea proprietarului și trecerea CI pe Java 21 și 25. Migrarea V2–V6, cele 3 conturi, cele 16 achiziții și soldurile existente au fost verificate. Filtrarea originii, interfața și API-ul funcționează în producție.
 
+Actualizarea următoare a publicat sesiunile revocabile și preferințele de notificare, cu migrările V7–V8. Datele celor 22 de tabele existente au fost comparate integral înainte și după pornire. Dumpul curent a fost restaurat într-un PostgreSQL fără acces la rețea. CI a trecut pe Java 21 și 25, iar domeniul public a fost verificat din nou în browser. S-a reutilizat directorul release-ului și un singur set de fișiere de revenire în directorul de backup existent.
+
 ## Etapa 1 · Securitate și funcționare
 
 | Lucrare | Stare | Criteriu de acceptare |
@@ -50,7 +52,7 @@ Comparația, exportul CSV și verificatorul public au fost adăugate în aceast�
 1. Confirmarea adresei de email cu token cu expirare și utilizare unică.
 2. Resetarea parolei cu răspuns uniform, limite de încercări și invalidarea sesiunilor.
 3. MFA pentru administratori, cu coduri de recuperare și jurnal de modificări.
-4. Listă de sesiuni și revocare individuală, inclusiv data ultimei utilizări — implementate, în verificare pentru publicare. Logout-ul revocă tokenul pe server. Maximum 10 sesiuni active per cont.
+4. Listă de sesiuni și revocare individuală, inclusiv data ultimei utilizări — publicate și verificate. Logout-ul revocă tokenul pe server. Maximum 10 sesiuni active per cont.
 5. Sesiune în cookie HttpOnly, împreună cu protecția CSRF și reguli explicite SameSite.
 6. Verificarea eligibilității pentru premii costisitoare și recomandări, după activitate reală.
 7. Invitații cu limite configurabile și istoric de acordare a bonusurilor.

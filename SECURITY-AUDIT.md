@@ -30,7 +30,7 @@ Au fost găsite 3 conturi și 16 achiziții în baza live la verificarea iniția
 | SEC-14 | P2 | Nu a fost confirmat un program complet de backup și alertare pentru acest proiect | Backup complet și restaurare izolată executate. Automatizarea, retenția și copia externă rămân de configurat |
 | SEC-15 | P2 | JavaScript-ul vechi, imaginile și service workerul nu corespundeau noii interfețe | Resurse locale completate, iconuri PWA valide și fallback offline. API-urile și datele personale sunt excluse din cache-ul workerului |
 | SEC-16 | P2 | CI verifica numai sintaxa fișierului JavaScript vechi | Verificări de module, rute, browser, dependențe și secrete pregătite în workflow |
-| SEC-17 | P1 | Logout-ul din interfață elimina numai copia locală, iar tokenul copiat rămânea utilizabil | Sesiuni server-side legate de JWT, revocare individuală și logout server-side implementate. Verificate cu PostgreSQL izolat, în curs de publicare |
+| SEC-17 | P1 | Logout-ul din interfață elimina numai copia locală, iar tokenul copiat rămânea utilizabil | Sesiuni server-side legate de JWT, revocare individuală și logout server-side publicate. Verificate cu PostgreSQL izolat și în CI |
 
 Riscurile de bibliotecă sunt analizate după configurația aplicației. De exemplu, remediile Tomcat pentru HTTP/2, AJP sau WebSocket au condiții proprii de exploatare. Inventarul de versiuni identifică pachetele care necesită actualizare, iar atingerea unui endpoint vulnerabil se evaluează separat. [Buletine Apache Tomcat](https://tomcat.apache.org/security-10.html)
 
@@ -84,12 +84,15 @@ Furnizorii observați sunt Cloudflare, găzduirea VPS și GitHub pentru surse/CI
 
 ## Rezultate și limite
 
-- Suita backend completă a trecut 145 de teste după actualizarea Tomcat. Pentru endpointul nou de voucher au fost rulate suplimentar testele de comerț și securitate.
+- Suita backend completă a trecut 159 de teste pe Java 21 și 25, atât local, cât și în GitHub Actions, inclusiv sesiunile și preferințele de notificare.
 - Testele frontend acoperă escapare, linkuri, CSV și concurența dintre adăugare și citirea coșului.
 - Browserul verifică fluxuri reale prin nginx și PostgreSQL izolat, inclusiv CSP, rutare, acces, administrare și offline.
 - Gitleaks a scanat istoricul Git disponibil. Cele 14 potriviri inițiale erau parole sintetice din teste. Excepția este restrânsă la acele valori și căi de test.
 - Inventarul runtime a fost verificat prin OSV. Excepțiile documentate se referă numai la condițiile Spring MVC descrise mai sus.
 - Backupul complet realizat înaintea publicării a fost restaurat într-un container eliminat la final. Cele 3 conturi, 16 achiziții și 12 premii au fost verificate. Fișierul este accesibil numai root în `/var/backups/gtshop/gtshop-predeploy.dump`. Copia se află pe același VPS.
 - CI a trecut pe GitHub pentru Java 21 și 25, inclusiv testele de browser și scanările. După publicare, domeniul a fost verificat în Chromium. O permisiune prea restrictivă a directorului frontend și integrarea nonce-urilor Cloudflare au fost corectate în timpul verificării publicării.
+- Actualizarea V7–V8 a păstrat integral datele existente în 22 de tabele. Dumpul curent a fost restaurat și comparat înainte de migrare. Au rămas 3 conturi, 16 achiziții, 16 comenzi și 12 premii. Directorul de backup existent a fost reutilizat fără subdirectoare noi.
+- Parserul inventarului Maven elimină secvențele ANSI înainte de scanare și are două teste de regresie. OSV verifică 95 de biblioteci runtime. Două avertizări condiționale rămân documentate, fără constatări noi nerevizuite.
+- Extinderea testului de browser a produs răspunsuri 429 pe runnerul rapid. Testul navighează prin interfață și își limitează cererile automate la un ritm sub plafonul nginx. Limitele aplicației au rămas active. Verificarea ulterioară a trecut integral în CI.
 
 Testele de încărcare și extinderea auditului la celelalte aplicații de pe VPS rămân de planificat. Prioritățile restante sunt protecția identității, backupurile periodice și alertarea.
