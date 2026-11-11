@@ -23,7 +23,14 @@ function observe(page) {
 }
 
 async function noOverflow(page, label) {
-  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), label);
+  const fits = await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
+  if (!fits) {
+    await page.screenshot({ path: 'test-results/browser/overflow.png', fullPage: true });
+    console.error(label, await page.locator('body *').evaluateAll((nodes) => nodes
+      .filter((n) => n.getBoundingClientRect().right > innerWidth + 1 && n.getBoundingClientRect().width > 0)
+      .slice(0, 12).map((n) => ({ tag: n.tagName, class: n.className, text: n.textContent.slice(0, 80) }))));
+  }
+  assert.ok(fits, label);
 }
 
 try {
@@ -128,6 +135,28 @@ try {
   await claim.click();
   await page.waitForFunction(() => !document.querySelector('[data-claim]') || document.querySelector('[data-claim]').disabled);
 
+  const sessionToken = await page.evaluate(() => JSON.parse(localStorage.getItem('gt.session')).token);
+  const secondLogin = await context.request.post(origin + '/RewardHub/api/auth/login', {
+    data: { email, password: 'Parola-Release-123' },
+  });
+  assert.equal(secondLogin.status(), 200);
+  const secondSession = (await secondLogin.json()).token;
+  await page.goto(origin + '/profil?tab=setari');
+  await page.getByRole('heading', { name: 'Sesiuni active', exact: true }).waitFor();
+  assert.equal(await page.locator('[data-revoke-session]').count(), 1);
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 844 });
+    await noOverflow(page, `session settings at ${width}`);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'test-results/browser/sessions-mobile.png', fullPage: true });
+  await page.locator('[data-revoke-session]').click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Deconectează', exact: true }).click();
+  await page.waitForFunction(() => document.querySelectorAll('[data-revoke-session]').length === 0);
+  assert.equal((await context.request.get(origin + '/RewardHub/api/user/me', {
+    headers: { Authorization: `Bearer ${secondSession}` },
+  })).status(), 401);
+
   const adminContext = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
   const admin = await adminContext.newPage();
   observe(admin);
@@ -165,8 +194,16 @@ try {
   await context.setOffline(false);
   await page.getByRole('link', { name: 'Încearcă din nou' }).click();
   await page.locator('h1').waitFor();
+  await page.getByRole('button', { name: 'Meniul contului', exact: true }).click();
+  const loggedOut = page.waitForResponse((r) => r.url().endsWith('/auth/logout'));
+  await page.locator('[data-logout]').click();
+  assert.equal((await loggedOut).status(), 200);
+  await page.waitForFunction(() => localStorage.getItem('gt.session') === null);
+  assert.equal((await context.request.get(origin + '/RewardHub/api/user/me', {
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  })).status(), 401);
   assert.deepEqual(errors, []);
-  console.log('Browser checks passed for responsive navigation, registration, comparison, wishlist, checkout, vouchers, CSV, daily rewards, admin and offline recovery.');
+  console.log('Browser checks passed for responsive navigation, registration, comparison, wishlist, checkout, vouchers, CSV, daily rewards, sessions, admin and offline recovery.');
 } catch (error) {
   if (errors.length) console.error('Browser HTTP or script errors', errors);
   throw error;

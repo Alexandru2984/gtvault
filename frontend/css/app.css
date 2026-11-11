@@ -1022,3 +1022,5 @@ a.feed-item:hover .feed-title { color: var(--brand); }
 .toast-action { display: inline-block; margin-top: 4px; color: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
 @media (max-width: 399.98px) { .brand-name { display: none; } .ap-pill { padding-right: 10px; } }
 .grid-2 > .span-2 { grid-column: 1 / -1; }
+.account-settings .btn { white-space: normal; padding-block: 10px; }
+.profile-head a svg { width: 1em; height: 1em; vertical-align: middle; }

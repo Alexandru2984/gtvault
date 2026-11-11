@@ -68,8 +68,24 @@ export async function toggleWish(btn, rewardId) {
   }
 }
 
-export function logout() {
+let logoutPending = false;
+
+export async function logout() {
+  if (logoutPending) return;
+  logoutPending = true;
+  const token = state.token;
+  let revoked = false;
+  try {
+    if (token) await post('/auth/logout');
+    revoked = true;
+  } catch (err) {
+    // Un 401 înseamnă că tokenul nu mai oferă deja acces.
+    revoked = err.status === 401;
+  } finally {
+    logoutPending = false;
+  }
+  if (state.token && state.token !== token) return;
   endSession();
-  toast('Te-ai deconectat. Pe curând! 👋');
+  toast(revoked ? 'Te-ai deconectat. Pe curând! 👋' : 'Ai ieșit de pe acest dispozitiv. Revocarea pe server nu a fost confirmată.', { timeout: revoked ? 3500 : 7000 });
   navigate('/');
 }

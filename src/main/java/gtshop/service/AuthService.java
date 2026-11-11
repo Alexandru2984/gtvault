@@ -6,7 +6,6 @@ import gtshop.dto.UserSummary;
 import gtshop.model.TxType;
 import gtshop.model.UserProfile;
 import gtshop.repository.UserRepository;
-import gtshop.security.JwtTokenProvider;
 import gtshop.util.AvatarCatalog;
 import gtshop.util.Ids;
 import gtshop.util.InputSanitizer;
@@ -30,19 +29,19 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtTokenProvider tokenProvider;
+    private final SessionService sessions;
     private final WalletService wallet;
     private final NotificationService notifications;
     private final BadgeService badges;
     /** Hash folosit cand email-ul nu exista, ca timpul de raspuns sa nu dezvaluie conturile. */
     private final String dummyHash;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider,
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, SessionService sessions,
                        WalletService wallet, NotificationService notifications,
                        BadgeService badges) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.tokenProvider = tokenProvider;
+        this.sessions = sessions;
         this.wallet = wallet;
         this.notifications = notifications;
         this.badges = badges;
@@ -62,7 +61,7 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse register(String rawEmail, String password, String rawName, String rawReferral) {
+    public AuthResponse register(String rawEmail, String password, String rawName, String rawReferral, String userAgent) {
         String email = InputSanitizer.normalizeEmail(rawEmail);
         String name = InputSanitizer.cleanName(rawName);
         validateNewPassword(password);
@@ -106,7 +105,7 @@ public class AuthService {
             rewardReferrer(referrer.getId(), name);
         }
 
-        var issued = tokenProvider.generateToken(locked.getId(), locked.getTokenVersion());
+        var issued = sessions.issue(locked, userAgent);
         return AuthResponse.ok("Cont creat cu succes!", issued.token(), issued.expiresAt(), UserSummary.of(locked));
     }
 
@@ -137,7 +136,7 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse login(String rawEmail, String password) {
+    public AuthResponse login(String rawEmail, String password, String userAgent) {
         String email;
         try {
             email = InputSanitizer.normalizeEmail(rawEmail);
@@ -150,28 +149,32 @@ public class AuthService {
             passwordEncoder.matches(password == null ? "" : password, dummyHash);
             throw invalidCredentials();
         }
+        // Reîncărcăm sub blocare înainte de verificare, inclusiv pentru conturile suspendate.
+        // Astfel o schimbare concurentă de parolă nu permite emiterea unei sesiuni cu parola veche.
+        user = wallet.lockForAdmin(user.getId());
         if (!passwordEncoder.matches(password == null ? "" : password, user.getPassword())) {
             throw invalidCredentials();
         }
         if (user.isBanned()) {
             throw ApiException.forbidden("Contul este suspendat. Contactează echipa Generația Tech.");
         }
-        var issued = tokenProvider.generateToken(user.getId(), user.getTokenVersion());
+        var issued = sessions.issue(user, userAgent);
         return AuthResponse.ok("Autentificare reușită!", issued.token(), issued.expiresAt(), UserSummary.of(user));
     }
 
     /** Invalideaza toate token-urile emise anterior pentru acest cont. */
     @Transactional
-    public AuthResponse logoutEverywhere(String userId) {
+    public AuthResponse logoutEverywhere(String userId, String userAgent) {
         UserProfile user = wallet.lock(userId);
         user.setTokenVersion(user.getTokenVersion() + 1);
         userRepository.save(user);
-        var issued = tokenProvider.generateToken(user.getId(), user.getTokenVersion());
+        sessions.revokeAll(userId);
+        var issued = sessions.issue(user, userAgent);
         return AuthResponse.ok("Toate celelalte sesiuni au fost deconectate.", issued.token(), issued.expiresAt(), UserSummary.of(user));
     }
 
     @Transactional
-    public AuthResponse changePassword(String userId, String currentPassword, String newPassword) {
+    public AuthResponse changePassword(String userId, String currentPassword, String newPassword, String userAgent) {
         UserProfile user = wallet.lock(userId);
         if (user.getPassword() == null || !passwordEncoder.matches(currentPassword == null ? "" : currentPassword, user.getPassword())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "WRONG_PASSWORD", "Parola curentă nu este corectă.");
@@ -183,7 +186,8 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setTokenVersion(user.getTokenVersion() + 1);
         userRepository.save(user);
-        var issued = tokenProvider.generateToken(user.getId(), user.getTokenVersion());
+        sessions.revokeAll(userId);
+        var issued = sessions.issue(user, userAgent);
         return AuthResponse.ok("Parola a fost schimbată. Celelalte sesiuni au fost deconectate.",
                 issued.token(), issued.expiresAt(), UserSummary.of(user));
     }

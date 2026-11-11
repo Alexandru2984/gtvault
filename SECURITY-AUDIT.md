@@ -30,6 +30,7 @@ Au fost găsite 3 conturi și 16 achiziții în baza live la verificarea iniția
 | SEC-14 | P2 | Nu a fost confirmat un program complet de backup și alertare pentru acest proiect | Backup complet și restaurare izolată executate. Automatizarea, retenția și copia externă rămân de configurat |
 | SEC-15 | P2 | JavaScript-ul vechi, imaginile și service workerul nu corespundeau noii interfețe | Resurse locale completate, iconuri PWA valide și fallback offline. API-urile și datele personale sunt excluse din cache-ul workerului |
 | SEC-16 | P2 | CI verifica numai sintaxa fișierului JavaScript vechi | Verificări de module, rute, browser, dependențe și secrete pregătite în workflow |
+| SEC-17 | P1 | Logout-ul din interfață elimina numai copia locală, iar tokenul copiat rămânea utilizabil | Sesiuni server-side legate de JWT, revocare individuală și logout server-side implementate. Verificate cu PostgreSQL izolat, în curs de publicare |
 
 Riscurile de bibliotecă sunt analizate după configurația aplicației. De exemplu, remediile Tomcat pentru HTTP/2, AJP sau WebSocket au condiții proprii de exploatare. Inventarul de versiuni identifică pachetele care necesită actualizare, iar atingerea unui endpoint vulnerabil se evaluează separat. [Buletine Apache Tomcat](https://tomcat.apache.org/security-10.html)
 
@@ -42,6 +43,8 @@ Un compromis al contului de administrator poate afecta catalogul, inventarul, so
 Rolul PostgreSQL al aplicației nu este superuser și nu poate crea roluri sau baze. Serviciul live folosește un utilizator dedicat, `NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome` și `PrivateTmp`. Portul backendului este legat de loopback.
 
 API-ul nou are autorizare implicită, validează utilizatorul și versiunea tokenului la fiecare cerere și calculează prețurile pe server. Cererile de checkout folosesc idempotency key. Aceste controale sunt acoperite de testele de integrare, inclusiv acces între conturi, stoc, revocare și roluri. În producție, accesul anonim la API-ul de administrare răspunde cu 401.
+
+Etapa de sesiuni adaugă verificarea identificatorului JWT în baza de date. Sunt stocate numai identificatorul aleatoriu și metadate minime despre dispozitiv, fără token Bearer, IP sau user-agent complet. Blocarea contului serializează emiterea sesiunilor și verificarea parolei față de schimbările concurente. Limita de 10 sesiuni a fost verificată prin autentificări simultane. Revocarea oprește cererile autentificate ulterior, fără a anula o operație deja autorizată și aflată în curs. Migrarea V7 cere reautentificarea tokenurilor emise înaintea acestei etape.
 
 CSP permite scripturile proprii, nonce-uri generate per răspuns și beaconul Cloudflare deja folosit pe domeniu. Paginile HTML răspund cu un document proaspăt pentru a păstra potrivirea dintre nonce și scripturile inserate de Cloudflare. Reîncărcarea paginilor a fost verificată în browser. [Integrarea CSP cu JavaScript Detections](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/)
 

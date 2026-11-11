@@ -2,6 +2,7 @@ package gtshop.security;
 
 import gtshop.model.UserProfile;
 import gtshop.repository.UserRepository;
+import gtshop.service.SessionService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,10 +26,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
+    private final SessionService sessions;
 
-    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, UserRepository userRepository) {
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, UserRepository userRepository, SessionService sessions) {
         this.tokenProvider = tokenProvider;
         this.userRepository = userRepository;
+        this.sessions = sessions;
     }
 
     @Override
@@ -38,8 +41,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (header != null && header.startsWith("Bearer ")) {
             tokenProvider.parse(header.substring(7).trim()).ifPresent(claims -> {
                 UserProfile user = userRepository.findById(claims.userId()).orElse(null);
-                if (user != null && !user.isBanned() && user.getTokenVersion() == claims.tokenVersion()) {
-                    AuthUser principal = new AuthUser(user.getId(), user.getRole());
+                if (user != null && !user.isBanned() && user.getTokenVersion() == claims.tokenVersion()
+                        && sessions.accepts(claims)) {
+                    AuthUser principal = new AuthUser(user.getId(), user.getRole(), claims.sessionId());
                     var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()));
                     var auth = new UsernamePasswordAuthenticationToken(principal, null, authorities);
                     SecurityContextHolder.getContext().setAuthentication(auth);

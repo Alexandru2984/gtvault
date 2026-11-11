@@ -9,6 +9,7 @@ import { state, setUser, startSession, endSession, refreshUser } from '../store.
 import { busy, celebrate, confirmDialog, copyText, downloadBlob, handleError, modal, shareLink, toastOk } from '../ui.js';
 import { toggleTheme, currentTheme } from '../theme-toggle.js';
 import { passwordProblem } from './auth.js';
+import { sessionSettings } from '../session-settings.js';
 
 const TABS = {
   general: 'General',
@@ -35,6 +36,7 @@ export default async function profile({ root, query, signal, alive }) {
 
   const offs = [];
   let tabCleanup = null;
+  let tabGeneration = 0;
 
   function shell() {
     const u = state.user || {};
@@ -62,14 +64,18 @@ export default async function profile({ root, query, signal, alive }) {
   }
 
   async function showTab() {
+    const generation = ++tabGeneration;
     if (typeof tabCleanup === 'function') tabCleanup();
     tabCleanup = null;
     const body = qs('#tab-body', root);
     mount(body, html`<div class="skel skel-block"></div>`);
     try {
-      tabCleanup = await TAB_VIEWS[tab]({ body, stats, signal, alive, rerender: () => { shell(); showTab(); } });
+      const tabAlive = () => alive() && generation === tabGeneration;
+      const cleanup = await TAB_VIEWS[tab]({ body, stats, signal, alive: tabAlive, rerender: () => { shell(); showTab(); } });
+      if (tabAlive()) tabCleanup = cleanup;
+      else if (typeof cleanup === 'function') cleanup();
     } catch (err) {
-      if (!isAbort(err)) mount(body, emptyState({ icon: '🔌', title: 'Nu am putut încărca secțiunea', text: err.message }));
+      if (alive() && generation === tabGeneration && !isAbort(err)) mount(body, emptyState({ icon: '🔌', title: 'Nu am putut încărca secțiunea', text: err.message }));
     }
   }
 
@@ -90,6 +96,7 @@ export default async function profile({ root, query, signal, alive }) {
   offs.push(on(root, 'click', '[data-avatar]', () => avatarPicker(() => { shell(); showTab(); })));
 
   return () => {
+    tabGeneration++;
     if (typeof tabCleanup === 'function') tabCleanup();
     offs.forEach((off) => off());
   };
@@ -278,10 +285,10 @@ async function cadou({ body, signal, alive }) {
   return () => offs.forEach((off) => off());
 }
 
-async function setari({ body, alive, rerender }) {
+async function setari({ body, signal, alive, rerender }) {
   const u = state.user || {};
   if (!alive()) return undefined;
-  mount(body, html`<div class="grid-2">
+  mount(body, html`<div class="grid-2 account-settings">
     <section class="card card-pad stack" aria-labelledby="pf-h">
       <h2 class="card-title" id="pf-h">${icon('user')} Profil</h2>
       <form class="stack" id="profile-form" novalidate>
@@ -305,6 +312,7 @@ async function setari({ body, alive, rerender }) {
       <p class="small muted">Ai uitat contul deschis pe alt dispozitiv? Deconectează toate celelalte sesiuni.</p>
       <button class="btn btn-ghost" type="button" data-logout-all>${icon('logout')} Deconectează celelalte dispozitive</button>
     </section>
+    <section class="card card-pad stack" data-session-panel aria-label="Sesiuni active"></section>
     <section class="card card-pad stack" aria-labelledby="ap-h">
       <h2 class="card-title" id="ap-h">${icon('sun')} Aspect</h2>
       <label class="switch"><input type="checkbox" data-theme-switch ${currentTheme() === 'dark' ? 'checked' : ''}> Temă întunecată</label>
@@ -321,6 +329,7 @@ async function setari({ body, alive, rerender }) {
     </section>
   </div>`);
 
+  const sessions = await sessionSettings(qs('[data-session-panel]', body), { signal, alive });
   const offs = [
     on(body, 'submit', '#profile-form', async (e, form) => {
       e.preventDefault();
@@ -355,6 +364,7 @@ async function setari({ body, alive, rerender }) {
           startSession(r);
           form.reset();
           toastOk(r.message, { icon: '🔐' });
+          await sessions.refresh();
         } catch (e2) { err.textContent = e2.message; err.hidden = false; }
       });
     }),
@@ -365,6 +375,7 @@ async function setari({ body, alive, rerender }) {
           const r = await post('/auth/logout-all');
           startSession(r);
           toastOk(r.message, { icon: '🔐' });
+          await sessions.refresh();
         } catch (e2) { handleError(e2); }
       });
     }),
@@ -379,7 +390,7 @@ async function setari({ body, alive, rerender }) {
     })),
     on(body, 'click', '[data-delete-account]', () => deleteAccount()),
   ];
-  return () => offs.forEach((off) => off());
+  return () => { sessions.cleanup(); offs.forEach((off) => off()); };
 }
 
 function deleteAccount() {

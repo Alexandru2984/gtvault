@@ -38,6 +38,7 @@ public class PrivacyService {
         TABLES.put("order_items", "SELECT id, order_id, reward_id, reward_name, quantity, unit_price, points_spent, status, voucher_code, purchase_date, redeemed_at FROM purchase_records WHERE user_id = ? ORDER BY purchase_date");
         TABLES.put("cart_items", "SELECT reward_id, quantity, added_at FROM cart_items WHERE user_id = ?");
         TABLES.put("wishlist", "SELECT reward_id, added_at FROM wishlist_items WHERE user_id = ? ORDER BY added_at");
+        TABLES.put("sessions", "SELECT device, created_at, last_seen_at, expires_at FROM user_sessions WHERE user_id = ? ORDER BY created_at");
         TABLES.put("reviews", "SELECT id, reward_id, rating, comment, created_at, updated_at, helpful_count, hidden FROM product_reviews WHERE user_id = ? ORDER BY created_at");
         TABLES.put("review_votes", "SELECT review_id, created_at FROM review_votes WHERE user_id = ?");
         TABLES.put("review_reports", "SELECT review_id, reason, created_at FROM review_reports WHERE user_id = ?");

@@ -26,7 +26,7 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
             "/api/gamification/open-crate", "/api/checkout", "/api/cart/add", "/api/user/profile",
             "/api/gamification/fortune-cookie", "/api/proposals", "/api/guilds/select",
             "/api/games/wordle/guess", "/api/rewards/rew-mouse/reviews", "/api/reviews/rev-x/helpful",
-            "/api/reviews/rev-x/report", "/api/notifications/read-all", "/api/user/account/delete"})
+            "/api/reviews/rev-x/report", "/api/notifications/read-all", "/api/user/account/delete", "/api/auth/logout"})
     void anonymousMutationsAreRejected(String url) throws Exception {
         mvc.perform(post(url).contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isUnauthorized())
@@ -38,7 +38,7 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
     @ValueSource(strings = {"/api/user/me", "/api/user/profile", "/api/user/transactions", "/api/cart",
             "/api/gamification/status", "/api/gamification/badges", "/api/quests", "/api/user/referrals",
             "/api/wishlist", "/api/wishlist/ids", "/api/notifications", "/api/notifications/unread-count",
-            "/api/user/export", "/api/user/reviews", "/api/user/reviews/pending"})
+            "/api/user/export", "/api/user/reviews", "/api/user/reviews/pending", "/api/auth/sessions"})
     void anonymousPrivateReadsAreRejected(String url) throws Exception {
         mvc.perform(get(url)).andExpect(status().isUnauthorized());
     }

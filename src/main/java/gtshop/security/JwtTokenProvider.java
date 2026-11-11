@@ -49,15 +49,16 @@ public class JwtTokenProvider {
         this.signingKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public record IssuedToken(String token, Instant expiresAt) {}
+    public record IssuedToken(String token, Instant expiresAt, String id, Instant issuedAt) {}
 
-    public record TokenClaims(String userId, int tokenVersion) {}
+    public record TokenClaims(String userId, int tokenVersion, String sessionId) {}
 
     public IssuedToken generateToken(String userId, int tokenVersion) {
         Instant now = Instant.now();
         Instant expiry = now.plusMillis(jwtExpirationMs);
+        String id = UUID.randomUUID().toString();
         String token = Jwts.builder()
-                .id(UUID.randomUUID().toString())
+                .id(id)
                 .issuer(issuer)
                 .subject(userId)
                 .claim(CLAIM_TOKEN_VERSION, tokenVersion)
@@ -65,7 +66,7 @@ public class JwtTokenProvider {
                 .expiration(Date.from(expiry))
                 .signWith(signingKey)
                 .compact();
-        return new IssuedToken(token, expiry);
+        return new IssuedToken(token, expiry, id, now);
     }
 
     public Optional<TokenClaims> parse(String token) {
@@ -81,11 +82,12 @@ public class JwtTokenProvider {
                     .parseSignedClaims(token)
                     .getPayload();
             String subject = claims.getSubject();
-            if (subject == null || subject.isBlank()) {
+            String id = claims.getId();
+            if (subject == null || subject.isBlank() || id == null || !id.matches("[a-f0-9-]{36}")) {
                 return Optional.empty();
             }
             Number tv = claims.get(CLAIM_TOKEN_VERSION, Number.class);
-            return Optional.of(new TokenClaims(subject, tv == null ? 0 : tv.intValue()));
+            return Optional.of(new TokenClaims(subject, tv == null ? 0 : tv.intValue(), id));
         } catch (JwtException | IllegalArgumentException e) {
             return Optional.empty();
         }

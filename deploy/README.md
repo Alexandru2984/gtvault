@@ -68,6 +68,12 @@ După reluarea scrierilor, restaurarea unui dump vechi poate pierde comenzi sau 
 
 Înregistrarea creează un cont USER. După verificarea identității persoanei și a contului exact, operatorul poate acorda rolul printr-o sesiune administrativă PostgreSQL. În aceeași intervenție se incrementează `token_version` și se consemnează motivul și identificatorul contului. Revocarea folosește aceeași procedură. Emailul declarat la înscriere nu acordă privilegii.
 
+## Sesiuni revocabile
+
+Migrarea V7 adaugă registrul de sesiuni. JWT-urile emise anterior nu au o intrare în registru și necesită autentificare nouă după publicare. Fiecare cont poate avea maximum 10 sesiuni active. O autentificare suplimentară o închide pe cea mai veche. Din setările contului se pot verifica dispozitivul estimat, ultima utilizare și expirarea, apoi închide individual celelalte sesiuni.
+
+Logout-ul confirmat revocă sesiunea curentă în baza de date. Schimbarea parolei și deconectarea celorlalte dispozitive invalidează toate tokenurile anterioare și emit o sesiune nouă pentru dispozitivul curent. O cerere deja autorizată înaintea revocării poate încă termina operația în curs. Metadatele sesiunilor expirate sunt eliminate zilnic. Lista nu păstrează IP-uri sau user-agent complet.
+
 ## Răspuns la incident
 
 1. Notează momentul constatării, simptomele, versiunea și operațiile cunoscute. Conservă logurile și copiile existente cu acces restrâns.

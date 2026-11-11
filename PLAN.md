@@ -48,7 +48,7 @@ Comparația, exportul CSV și verificatorul public au fost adăugate în aceast�
 1. Confirmarea adresei de email cu token cu expirare și utilizare unică.
 2. Resetarea parolei cu răspuns uniform, limite de încercări și invalidarea sesiunilor.
 3. MFA pentru administratori, cu coduri de recuperare și jurnal de modificări.
-4. Listă de sesiuni și revocare individuală, inclusiv data ultimei utilizări.
+4. Listă de sesiuni și revocare individuală, inclusiv data ultimei utilizări — implementate, în verificare pentru publicare. Logout-ul revocă tokenul pe server. Maximum 10 sesiuni active per cont.
 5. Sesiune în cookie HttpOnly, împreună cu protecția CSRF și reguli explicite SameSite.
 6. Verificarea eligibilității pentru premii costisitoare și recomandări, după activitate reală.
 7. Invitații cu limite configurabile și istoric de acordare a bonusurilor.

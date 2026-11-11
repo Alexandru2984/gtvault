@@ -17,13 +17,14 @@ export function legalContent(privacy) {
       <section class="card card-pad stack">
         <h2>Date folosite în RewardHub</h2>
         <p>Contul include adresa de email, numele de afișare și activitatea din aplicație. Pentru comenzile fizice sunt necesare date de livrare.</p>
+        <p>Sesiunile active păstrează browserul și sistemul estimate, data autentificării, ultima utilizare și expirarea. Nu păstrăm IP-ul sau user-agentul complet în lista de sesiuni. Sesiunile expirate sunt eliminate automat zilnic, iar deconectarea confirmată de server elimină sesiunea respectivă.</p>
         <p>Folosim aceste informații pentru autentificare, evidența punctelor, procesarea comenzilor și funcționarea comunității. Traficul trece prin Cloudflare și serverul de găzduire, care procesează date tehnice pentru livrarea și securizarea site-ului.</p>
         <h2>Profil și activitate publică</h2>
         <p>Poți seta vizibilitatea profilului din setări. Recenziile, propunerile și clasamentele pot afișa numele de afișare separat de pagina de profil.</p>
         <h2>Opțiunile contului</h2>
         <p>Din <a href="/profil?tab=setari">setări</a> poți descărca datele contului, gestiona sesiunile și cere ștergerea contului.</p>
         <h2>Stocarea în browser</h2>
-        <p>Aplicația păstrează local sesiunea de autentificare, preferințele de afișare și selecția pentru comparație. Deconectarea elimină sesiunea salvată pe dispozitiv.</p>
+        <p>Aplicația păstrează local sesiunea de autentificare, preferințele de afișare și selecția pentru comparație. Deconectarea elimină sesiunea salvată pe dispozitiv și solicită revocarea ei pe server. Dacă revocarea nu poate fi confirmată, aplicația te anunță.</p>
         <h2>Solicitări privind datele</h2>
         <p>Poți cere accesul la date, corectarea informațiilor și ștergerea contului la adresa operatorului. Datele asociate comenzilor în curs necesită finalizarea sau anularea acestora înainte de ștergerea din aplicație.</p>
       </section>` : html`
