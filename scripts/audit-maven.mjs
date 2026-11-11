@@ -1,15 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { runtimeQueries } from './maven-dependencies.mjs';
 
 const source = await readFile(process.argv[2] || 'target/runtime-dependencies.txt', 'utf8');
-const queries = [];
-for (const line of source.split('\n')) {
-  const coordinate = line.trim().split(' -- ')[0].split(':');
-  if (coordinate.length < 5 || !['compile', 'runtime'].includes(coordinate.at(-1))) continue;
-  const [group, artifact] = coordinate;
-  queries.push({ package: { ecosystem: 'Maven', name: `${group}:${artifact}` }, version: coordinate.at(-2) });
-}
-assert.ok(queries.length > 0, 'Runtime dependency list is empty.');
+const queries = runtimeQueries(source);
 const response = await fetch('https://api.osv.dev/v1/querybatch', {
   method: 'POST', headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ queries }), signal: AbortSignal.timeout(30_000),

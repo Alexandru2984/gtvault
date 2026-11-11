@@ -11,6 +11,7 @@ mvn -B verify
 npm ci --ignore-scripts
 npm run check:frontend
 npm run test:frontend
+npm run test:tooling
 npx playwright install chromium
 bash frontend/scripts/browser-check.sh
 ```

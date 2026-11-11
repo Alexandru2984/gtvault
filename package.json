@@ -5,6 +5,7 @@
   "scripts": {
     "check:frontend": "node frontend/scripts/check.mjs",
     "test:frontend": "node --test frontend/tests/*.test.mjs",
+    "test:tooling": "node --test scripts/*.test.mjs",
     "test:browser": "node frontend/tests/browser.mjs",
     "build:frontend": "node frontend/scripts/build.mjs"
   },

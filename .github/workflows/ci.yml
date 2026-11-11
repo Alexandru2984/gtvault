@@ -43,6 +43,7 @@ jobs:
           npm ci --ignore-scripts
           npm run check:frontend
           npm run test:frontend
+          npm run test:tooling
           npm audit --audit-level=high
       - name: Runtime Maven dependency audit
         if: matrix.java == '25'
