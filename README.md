@@ -23,7 +23,7 @@ Versiunea pregătită are frontendul în `frontend/`, iar publicarea folosește 
          │
          ▼  Reverse Proxy
 [ Nginx (127.0.0.1:443 / SSL) ]
-   ├── /var/www/gtshop/             ──> [ Frontend Static: HTML5 / Modern CSS / Vanilla JS ]
+   ├── /opt/gtshop/releases/.../frontend/ ──> [ Frontend Static: HTML5 / Modern CSS / Vanilla JS ]
    └── /RewardHub/api/ (Proxy Pass) ──> [ Spring Boot 3.5.16 (Java 21/25) on Port 8087 ]
                                                 │
                                                 ▼  JPA / Hibernate (DDL validate)

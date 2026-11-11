@@ -6,7 +6,7 @@ Actualizat la 11 noiembrie 2026.
 
 Backendul folosește Java și Spring Boot, PostgreSQL și Flyway. Frontendul modular este în `frontend/`. Domeniul public trece prin Cloudflare și vhost-ul nginx `gtshop`.
 
-Versiunea publicată este anterioară modificărilor din repo. În această etapă, filtrarea accesului direct la origine a fost aplicată și verificată în producție. Noua aplicație și migrarea bazei au fost verificate într-un mediu izolat. Publicarea întregii versiuni necesită coordonarea backendului, migrărilor și frontendului.
+Noua aplicație a fost publicată pe `shop.micutu.com` la 11 noiembrie 2026, după confirmarea proprietarului și trecerea CI pe Java 21 și 25. Migrarea V2–V6, cele 3 conturi, cele 16 achiziții și soldurile existente au fost verificate. Filtrarea originii, interfața și API-ul funcționează în producție.
 
 ## Etapa 1 · Securitate și funcționare
 
@@ -20,7 +20,7 @@ Versiunea publicată este anterioară modificărilor din repo. În această etap
 | Coș sincronizat cu operațiile în curs | Implementată | Adăugarea urmată imediat de deschiderea coșului afișează produsul |
 | Rute pentru administrare, ajutor și erori | Implementate | Paginile se încarcă prin navigare și acces direct |
 | Migrare de la schema live | Verificată cu date sintetice | V2–V6 pornesc din schema exportată și păstrează o achiziție veche de test |
-| Publicarea coordonată a aplicației noi | De executat | Backup restaurabil, migrare, health, smoke și verificări publice |
+| Publicarea coordonată a aplicației noi | Executată | Backup restaurabil, migrare, health și verificări publice trecute |
 | Backup complet și restaurare cu date reale | Verificate | 3 conturi, 16 achiziții și 12 premii restaurate într-un PostgreSQL izolat |
 | Copii de siguranță periodice și retenție | De configurat | Copii protejate, copie externă VPS-ului și verificări automate de restaurare |
 

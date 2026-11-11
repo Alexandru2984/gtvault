@@ -6,7 +6,7 @@ Evaluare din 11 noiembrie 2026. Operator confirmat de proprietar — Dragne Alex
 
 Au fost inspectate codul, migrările, testele, istoricul Git, artefactul publicat, vhost-ul proiectului, configurația de încredere Cloudflare, izolarea systemd și metadatele PostgreSQL. Cererile către producție au verificat pagini și răspunsuri publice. Înscrierile, comenzile și celelalte operații de test au folosit baze izolate.
 
-Artefactul live identificat în `/opt/gtshop` folosește Spring Boot 3.4.1, Spring Security 6.4.2 și Tomcat 10.1.34. Repo-ul conține generația nouă a aplicației. La începutul evaluării, `/magazin` răspundea cu 404, iar `/RewardHub/api/gamification/config` cu 500.
+La începutul evaluării, artefactul live identificat în `/opt/gtshop` folosea Spring Boot 3.4.1, Spring Security 6.4.2 și Tomcat 10.1.34. `/magazin` răspundea cu 404, iar `/RewardHub/api/gamification/config` cu 500. Versiunea nouă a fost ulterior publicată cu Spring Boot 3.5.16, Tomcat 10.1.61 și remediile de biblioteci din repo.
 
 Au fost găsite 3 conturi și 16 achiziții în baza live la verificarea inițială. S-a exportat schema, apoi s-au executat V2–V6 într-un PostgreSQL izolat cu un cont și o achiziție sintetice. Proprietarul aplicației avea drept de CREATE în schemă, însă 7 tabele aparțineau rolului `postgres`. Scriptul existent pentru transferul proprietății a fost inclus în exercițiul de migrare.
 
@@ -14,7 +14,7 @@ Au fost găsite 3 conturi și 16 achiziții în baza live la verificarea iniția
 
 | ID | Prioritate | Constatare | Stare |
 | --- | --- | --- | --- |
-| SEC-01 | P0 | Versiunea live este mult în urma controalelor de acces și migrărilor din repo | Release nou verificat izolat, publicarea completă este restantă |
+| SEC-01 | P0 | Versiunea live era mult în urma controalelor de acces și migrărilor din repo | Release nou publicat și verificat pe domeniu |
 | SEC-02 | P0 | Înregistrarea cu un email configurat putea acorda ADMIN fără dovada deținerii emailului | Promovarea automată eliminată din înregistrare, login și inițializare. Regresie verificată |
 | SEC-03 | P1 | Originea HTTPS putea fi accesată direct prin IP, ocolind Cloudflare | Filtrul bazat pe peer-ul de origine aplicat live în vhost. Domeniul public răspunde, conexiunea directă este respinsă |
 | SEC-04 | P1 | Rate limiterul putea depăși capacitatea, iar curățarea după fereastra altei rute putea elimina limite zilnice active | Capacitate strictă, ceas monotonic, ferestre păstrate per cheie și test de regresie |
@@ -25,7 +25,7 @@ Au fost găsite 3 conturi și 16 achiziții în baza live la verificarea iniția
 | SEC-09 | P2 | Redirecționările și linkurile interne puteau accepta ambiguități cu slash-uri și backslash-uri | Validare de origine și cale normalizată, teste pentru formele periculoase |
 | SEC-10 | P2 | Răspunsurile întârziate ale unei sesiuni puteau actualiza indicatorii contului următor | Actualizări condiționate de tokenul cererii, resetarea stării la schimbarea contului |
 | SEC-11 | P2 | Pagina de coș putea citi starea înainte de încheierea adăugării | Citirile așteaptă modificările aceleiași sesiuni. Regresie unitară și browser |
-| SEC-12 | P2 | CSP live permite scripturi inline | Configurația nouă folosește scripturi locale și reguli restrictive. Necesită publicarea vhost-ului complet |
+| SEC-12 | P2 | CSP live permitea scripturi inline fără nonce | CSP publicată cu nonce per răspuns și surse explicite pentru integrarea Cloudflare |
 | SEC-13 | P2 | Verificarea legacy a voucherului trimite codul în query string | Interfața nouă folosește POST. GET este păstrat pentru compatibilitate, iar logarea parametrilor vechi trebuie urmărită |
 | SEC-14 | P2 | Nu a fost confirmat un program complet de backup și alertare pentru acest proiect | Backup complet și restaurare izolată executate. Automatizarea, retenția și copia externă rămân de configurat |
 | SEC-15 | P2 | JavaScript-ul vechi, imaginile și service workerul nu corespundeau noii interfețe | Resurse locale completate, iconuri PWA valide și fallback offline. API-urile și datele personale sunt excluse din cache-ul workerului |
@@ -41,7 +41,9 @@ Un compromis al contului de administrator poate afecta catalogul, inventarul, so
 
 Rolul PostgreSQL al aplicației nu este superuser și nu poate crea roluri sau baze. Serviciul live folosește un utilizator dedicat, `NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome` și `PrivateTmp`. Portul backendului este legat de loopback.
 
-API-ul nou are autorizare implicită, validează utilizatorul și versiunea tokenului la fiecare cerere și calculează prețurile pe server. Cererile de checkout folosesc idempotency key. Aceste controale sunt acoperite de testele de integrare, inclusiv acces între conturi, stoc, revocare și roluri.
+API-ul nou are autorizare implicită, validează utilizatorul și versiunea tokenului la fiecare cerere și calculează prețurile pe server. Cererile de checkout folosesc idempotency key. Aceste controale sunt acoperite de testele de integrare, inclusiv acces între conturi, stoc, revocare și roluri. În producție, accesul anonim la API-ul de administrare răspunde cu 401.
+
+CSP permite scripturile proprii, nonce-uri generate per răspuns și beaconul Cloudflare deja folosit pe domeniu. Paginile HTML răspund cu un document proaspăt pentru a păstra potrivirea dintre nonce și scripturile inserate de Cloudflare. Reîncărcarea paginilor a fost verificată în browser. [Integrarea CSP cu JavaScript Detections](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/)
 
 ## Model de amenințări
 
@@ -82,7 +84,7 @@ Furnizorii observați sunt Cloudflare, găzduirea VPS și GitHub pentru surse/CI
 - Browserul verifică fluxuri reale prin nginx și PostgreSQL izolat, inclusiv CSP, rutare, acces, administrare și offline.
 - Gitleaks a scanat istoricul Git disponibil. Cele 14 potriviri inițiale erau parole sintetice din teste. Excepția este restrânsă la acele valori și căi de test.
 - Inventarul runtime a fost verificat prin OSV. Excepțiile documentate se referă numai la condițiile Spring MVC descrise mai sus.
-- Backupul complet din 11 noiembrie, ora 02.29 UTC, a fost restaurat într-un container eliminat la final. Numărul de conturi, achiziții și premii a coincis cu verificările live dinainte și de după dump. Fișierul este accesibil numai root în `/var/backups/gtshop/gtshop-predeploy.dump`. Copia se află pe același VPS.
-- Au fost verificate Chromium și mediul Java local. Workflow-ul pregătit trebuie executat și pe GitHub după publicarea commiturilor.
+- Backupul complet realizat înaintea publicării a fost restaurat într-un container eliminat la final. Cele 3 conturi, 16 achiziții și 12 premii au fost verificate. Fișierul este accesibil numai root în `/var/backups/gtshop/gtshop-predeploy.dump`. Copia se află pe același VPS.
+- CI a trecut pe GitHub pentru Java 21 și 25, inclusiv testele de browser și scanările. După publicare, domeniul a fost verificat în Chromium. O permisiune prea restrictivă a directorului frontend și integrarea nonce-urilor Cloudflare au fost corectate în timpul verificării publicării.
 
-Testele de încărcare și extinderea auditului la celelalte aplicații de pe VPS rămân de planificat. Prioritățile restante sunt publicarea versiunii verificate, protecția identității, backupurile și alertarea.
+Testele de încărcare și extinderea auditului la celelalte aplicații de pe VPS rămân de planificat. Prioritățile restante sunt protecția identității, backupurile periodice și alertarea.

@@ -1,6 +1,6 @@
 # Publicarea și operarea RewardHub
 
-Versiunea pregătită folosește `target/gt-shop-3.0.0.jar` și frontendul generat în `target/frontend/`. Păstrează fiecare release într-un director propriu, cu JAR-ul și resursele sale.
+Versiunea publicată folosește JAR-ul și frontendul din `/opt/gtshop/releases/rewardhub-20261111T023316Z-930f404/`. Sursele generează `target/gt-shop-3.0.0.jar` și `target/frontend/`. Directorul existent `/var/backups/gtshop` conține fișierele de revenire ale aplicației.
 
 ## Verificare izolată
 
@@ -34,6 +34,7 @@ După verificare, `bash deploy/package-release.sh` creează un pachet în `targe
 | Serviciu | `gtshop.service`, utilizator `gtshopapp` |
 | Configurație privată | `/etc/gtshop/app.env`, acces root și grupul serviciului |
 | JAR publicat anterior | `/opt/gtshop/gt-shop-2.0.0.jar` |
+| Release activ | `/opt/gtshop/releases/rewardhub-20261111T023316Z-930f404/` |
 | Frontend publicat anterior | `/var/www/gtshop` |
 | Vhost | `/etc/nginx/sites-available/gtshop` |
 | API | `127.0.0.1:8087`, context `/RewardHub` |
@@ -55,7 +56,7 @@ Secretul JWT, parola bazei și restul setărilor private se citesc din configura
 
 În serviciul actual există un `ReadOnlyPaths=/opt/gtshop`. Dacă release-ul este instalat în alt director, ajustează și calea disponibilă serviciului. Directorul `frontend/` din surse poate servi pentru dezvoltare, iar publicarea folosește directorul generat pentru metadatele HTML.
 
-Fișierul `rewardhub-site.conf` depinde de variabila `$from_cloudflare_origin`, definită de configurația de încredere Cloudflare deja prezentă pe VPS. Aceasta verifică peer-ul conexiunii înainte de rescrierea IP-ului real. Testul izolat definește propria regulă numai pentru loopback.
+Fișierul `rewardhub-site.conf` depinde de variabila `$from_cloudflare_origin`, definită de configurația de încredere Cloudflare deja prezentă pe VPS. Aceasta verifică peer-ul conexiunii înainte de rescrierea IP-ului real. Testul izolat definește propria regulă numai pentru loopback. Buildul setează accesul de citire și traversare pentru procesul nginx, inclusiv când este executat cu umask restrictiv.
 
 ## Revenire în caz de eșec
 
