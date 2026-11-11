@@ -3,6 +3,7 @@ import { html, raw, productImage, avatarSrc, vars, join } from './dom.js';
 import { icon, coin } from './icons.js';
 import { num, rating as fmtRating, plural } from './format.js';
 import { state, isAuthed } from './store.js';
+import { comparedIds } from './compare.js';
 
 export const apAmount = (n, cls = '') => html`<span class="ap ${cls}">${coin()}${num(n)}<span class="sr-only"> AP</span></span>`;
 
@@ -86,8 +87,13 @@ export function productCard(r) {
           ? html`<button class="btn btn-secondary btn-sm btn-icon" type="button" data-add-cart="${r.id}" aria-label="Adaugă „${r.name}” în coș">${icon('plus')}</button>`
           : ''}
       </div>
+      ${compareButton(r)}
     </div>
   </article>`;
+}
+
+export function compareButton(reward) {
+  return html`<button class="btn btn-ghost btn-sm" type="button" data-compare="${reward.id}" aria-pressed="${comparedIds().includes(reward.id)}" aria-label="Compară ${reward.name}">${icon('sliders')} Compară</button>`;
 }
 
 export const productGrid = (list) => html`<div class="products">${join(list, productCard)}</div>`;

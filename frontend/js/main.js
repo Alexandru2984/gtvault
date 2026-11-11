@@ -13,6 +13,7 @@ import { num, countdown, timeAgo } from './format.js';
 import { avatar, emptyState } from './components.js';
 import { setMeta } from './seo.js';
 import { toggleTheme, currentTheme } from './theme-toggle.js';
+import { toggleCompared, compareLink } from './compare.js';
 
 // ------------------------------------------------------------------ rute
 
@@ -20,6 +21,7 @@ const v = (name) => () => import(`./views/${name}.js`);
 
 route('/', v('home'));
 route('/magazin', v('shop'));
+route('/compara', v('compare'));
 route('/produs/:id', v('product'));
 route('/cos', v('cart'), { auth: true });
 route('/finalizare', v('checkout'), { auth: true });
@@ -192,6 +194,18 @@ async function renderNotifMenu() {
 let installPrompt = null;
 
 function bindGlobal() {
+  on(document, 'click', '[data-compare]', (event, button) => {
+    event.preventDefault();
+    const ids = toggleCompared(button.dataset.compare);
+    if (!ids) {
+      toast('Poți compara până la 3 premii. Scoate unul pentru a adăuga altul.', { action: { label: 'Vezi comparația', href: compareLink() } });
+      return;
+    }
+    const added = ids.includes(button.dataset.compare);
+    toast(added ? 'Premiu adăugat la comparație.' : 'Premiu scos din comparație.', {
+      action: ids.length ? { label: `Compară ${ids.length} premii`, href: compareLink(ids) } : null,
+    });
+  });
   on(document, 'click', '[data-add-cart]', (e, btn) => {
     e.preventDefault();
     addToCart(btn, btn.dataset.addCart, Number(btn.dataset.qty || 1));
@@ -271,6 +285,13 @@ function tickCountdowns() {
 // ------------------------------------------------------------------ pornire
 
 function bindStore() {
+  onStore('compare', (ids) => {
+    for (const button of qsa('[data-compare]')) button.setAttribute('aria-pressed', String(ids.includes(button.dataset.compare)));
+    for (const link of qsa('[data-compare-link]')) {
+      link.href = compareLink(ids);
+      link.textContent = `Compară (${ids.length})`;
+    }
+  });
   onStore('user', renderHeader);
   onStore('cart', renderHeader);
   onStore('unread', renderHeader);

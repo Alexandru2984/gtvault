@@ -4,7 +4,7 @@ import { icon, coin } from '../icons.js';
 import { num, date, rating as fmtRating, plural, percent } from '../format.js';
 import {
   productBadges, wishButton, stars, apAmount, FULFILLMENT, tierName, productGrid, skeletonPage, avatar, countdownEl,
-  emptyState, loginPrompt, progress,
+  emptyState, loginPrompt, progress, compareButton,
 } from '../components.js';
 import { setMeta, SITE } from '../seo.js';
 import { isAuthed, state } from '../store.js';
@@ -104,6 +104,7 @@ export default async function product({ root, params, signal, alive }) {
           : html`<div class="callout is-danger">${icon('alert')}<span><strong>Stoc epuizat.</strong> Salvează premiul la favorite și te anunțăm când revine în stoc.</span></div>
             <button class="btn btn-secondary" type="button" data-wish="${r.id}" aria-pressed="${state.wishlist.has(r.id)}">${icon('heart')} Anunță-mă</button>`}
           <div class="row small muted">
+            ${compareButton(r)}
             <button class="btn btn-ghost btn-sm" type="button" data-share>${icon('share')} Distribuie</button>
             ${r.wishlistCount ? html`<span>❤️ ${plural(r.wishlistCount, 'membru îl are', 'membri îl au')} la favorite</span>` : ''}
           </div>

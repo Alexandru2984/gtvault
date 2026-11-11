@@ -6,6 +6,7 @@ import { productGrid, skeletonGrid, emptyState } from '../components.js';
 import { setMeta } from '../seo.js';
 import { setQuery } from '../router.js';
 import { handleError } from '../ui.js';
+import { comparedIds, compareLink } from '../compare.js';
 
 const SORT_LABELS = {
   featured: 'Recomandate',
@@ -35,6 +36,7 @@ export default async function shop({ root, query: q0, signal, alive }) {
         <h1>Magazin</h1>
         <p>Transformă punctele de activitate în premii. Prețurile includ automat ofertele flash active.</p>
       </div>
+      <a class="btn btn-secondary" href="${compareLink()}" data-compare-link>Compară (${comparedIds().length})</a>
     </div>
     <div class="shop-tools">
       <form class="shop-search" role="search" data-shop-search>
