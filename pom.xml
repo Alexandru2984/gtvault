@@ -24,6 +24,8 @@
     <jjwt.version>0.12.7</jjwt.version>
     <springdoc.version>2.8.17</springdoc.version>
     <jacoco.version>0.8.14</jacoco.version>
+    <!-- Actualizare de securitate in aceeasi generatie Servlet, verificata cu API-ul existent. -->
+    <tomcat.version>10.1.61</tomcat.version>
   </properties>
 
   <dependencies>
