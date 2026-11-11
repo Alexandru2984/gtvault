@@ -1,13 +1,15 @@
 # 🛍️ RewardHub — Magazin & Comunitate Generația Tech
 
 [![Java](https://img.shields.io/badge/Java-21-orange.svg?style=flat-square&logo=openjdk)](https://openjdk.org/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.1-brightgreen.svg?style=flat-square&logo=springboot)](https://spring.io/projects/spring-boot)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.16-brightgreen.svg?style=flat-square&logo=springboot)](https://spring.io/projects/spring-boot)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-blue.svg?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
 [![Maven](https://img.shields.io/badge/Maven-3.9-red.svg?style=flat-square&logo=apachemaven)](https://maven.apache.org/)
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-blueviolet.svg?style=flat-square&logo=githubactions)](https://github.com/Alexandru2984/gtvault/actions)
 [![Production](https://img.shields.io/badge/Production-shop.micutu.com-success.svg?style=flat-square)](https://shop.micutu.com)
 
 **RewardHub** este platforma oficială de gamification și recompense a comunității **Generația Tech**. Utilizatorii și cursanții își pot valorifica punctele de activitate (AP) obținute prin participare, rezolvarea de quiz-uri zilnice și menținerea unui daily streak activ, transformându-le în premii fizice, cursuri și vouchere digitale exclusive.
+
+Versiunea pregătită are frontendul în `frontend/`, iar publicarea folosește HTML-ul și resursele generate în `target/frontend/`. Planul etapizat, starea auditului și procedura de operare sunt disponibile în [PLAN.md](PLAN.md), [SECURITY-AUDIT.md](SECURITY-AUDIT.md) și [deploy/README.md](deploy/README.md). Regulile curente pentru puncte sunt furnizate de `/RewardHub/api/gamification/config`.
 
 ---
 
@@ -22,16 +24,16 @@
          ▼  Reverse Proxy
 [ Nginx (127.0.0.1:443 / SSL) ]
    ├── /var/www/gtshop/             ──> [ Frontend Static: HTML5 / Modern CSS / Vanilla JS ]
-   └── /RewardHub/api/ (Proxy Pass) ──> [ Spring Boot 3.4.1 (Java 21) on Port 8087 ]
+   └── /RewardHub/api/ (Proxy Pass) ──> [ Spring Boot 3.5.16 (Java 21/25) on Port 8087 ]
                                                 │
                                                 ▼  JPA / Hibernate (DDL validate)
-                                       [ PostgreSQL Database `gtshop` ]
+                                       [ PostgreSQL 18 Database `gtshop` + Flyway ]
 ```
 
 ### Stack Tehnic
-- **Backend:** Java 21 LTS, Spring Boot 3.4.1, Spring Data JPA, Spring Security, JWT (RFC 7519), OpenAPI 3 / Swagger.
-- **Bază de date:** PostgreSQL 16 (tranzacții atomice, pessimistic locks `SELECT FOR UPDATE`).
-- **Frontend:** Vanilla JavaScript (ES6+ modular, zero framework bloat), Canvas Confetti, SweetAlert2, CSS3 Flexbox & CSS Grid, Mobile Bottom Navigation bar.
+- **Backend:** Java 21/25, Spring Boot 3.5.16, Spring Data JPA, Spring Security, JWT (RFC 7519), OpenAPI 3 / Swagger dezactivat implicit.
+- **Bază de date:** PostgreSQL 18 (tranzacții atomice, pessimistic locks `SELECT FOR UPDATE`, migrări Flyway).
+- **Frontend:** JavaScript modular, History API, CSS Grid/Flexbox, dialoguri native, navigare mobilă și PWA.
 - **Infrastructură:** Ubuntu Linux VPS, Systemd (`gtshop.service`), Nginx cu proxy loopback, Cloudflare Tunnels (`cloudflared`).
 - **CI / CD & Calitate:** Maven 3.9, JUnit 5, Mockito, GitHub Actions CI Pipeline.
 
@@ -274,7 +276,7 @@ Creați baza de date în PostgreSQL:
 ```sql
 CREATE DATABASE gtshop;
 CREATE USER gtshop_user WITH ENCRYPTED PASSWORD 'parola_secreta';
-GRANT ALL PRIVILEGES ON DATABASE gtshop TO gtshop_user;
+ALTER DATABASE gtshop OWNER TO gtshop_user;
 ```
 
 Setați variabilele de mediu sau editați `src/main/resources/application.properties`:
@@ -283,44 +285,32 @@ export DATABASE_URL=jdbc:postgresql://localhost:5432/gtshop
 export DATABASE_USER=gtshop_user
 export DATABASE_PASSWORD=parola_secreta
 export SERVER_PORT=8087
+export JWT_SECRET="$(openssl rand -hex 32)"
 ```
 
 ### 3. Rulare Teste Automate
-Suita completă de teste unitare și de integrare (JUnit 5 + Mockito + H2):
+Suita de teste folosește JUnit și PostgreSQL 18 prin Testcontainers. Docker trebuie să fie disponibil.
 ```bash
-mvn clean test
+mvn verify
+npm ci --ignore-scripts
+npm run check:frontend
+npm run test:frontend
 ```
 
 ### 4. Pornire Server Local
 ```bash
 mvn spring-boot:run
 ```
-Accesați în browser: `http://localhost:8087/RewardHub/gtshop.html`
+Backendul este disponibil pe `http://127.0.0.1:8087/RewardHub/api`. Pentru verificarea completă în browser, instalează nginx și Chromium prin Playwright, apoi rulează `bash frontend/scripts/browser-check.sh`. Procedura pornește propriul mediu izolat.
 
 ---
 
 ## 🛠️ Deployment în Producție
 
-Pe serverul VPS de producție:
-```bash
-# 1. Build JAR de producție
-mvn clean package -DskipTests
-
-# 2. Copiere JAR în directorul de serviciu
-sudo cp target/gt-shop-2.0.0.jar /opt/gtshop/gt-shop-2.0.0.jar
-
-# 3. Copiere fișiere statice frontend
-sudo cp gtshop.html app.js styles.css /var/www/gtshop/
-
-# 4. Restart serviciu backend
-sudo systemctl restart gtshop.service
-
-# 5. Verificare stare
-sudo systemctl status gtshop.service
-```
+Publicarea folosește un release cu JAR și frontend generate împreună, backup restaurabil și migrări Flyway. Urmează pașii verificați și condițiile de revenire din [deploy/README.md](deploy/README.md).
 
 ---
 
 ## 👤 Autor
 - **Dragne Alexandru Mihai** ([@Alexandru2984](https://github.com/Alexandru2984))
-  - Email: `alex_mihai984@yahoo.com`
+  - Email public: `984.alexmihai@proton.me`

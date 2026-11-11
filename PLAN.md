@@ -1,0 +1,109 @@
+# Plan de produs RewardHub
+
+Actualizat la 11 noiembrie 2026.
+
+## Starea verificată
+
+Backendul folosește Java și Spring Boot, PostgreSQL și Flyway. Frontendul modular este în `frontend/`. Domeniul public trece prin Cloudflare și vhost-ul nginx `gtshop`.
+
+Versiunea publicată este anterioară modificărilor din repo. În această etapă, filtrarea accesului direct la origine a fost aplicată și verificată în producție. Noua aplicație și migrarea bazei au fost verificate într-un mediu izolat. Publicarea întregii versiuni necesită coordonarea backendului, migrărilor și frontendului.
+
+## Etapa 1 · Securitate și funcționare
+
+| Lucrare | Stare | Criteriu de acceptare |
+| --- | --- | --- |
+| Eliminarea promovării la ADMIN pe baza emailului declarat | Implementată | Înscrierea și autentificarea păstrează rolul USER. Rolurile se modifică explicit de operator |
+| Limitarea memoriei pentru rate limiting | Implementată | Număr finit de chei, ferestre separate și teste de regresie |
+| Actualizarea Tomcat și a bibliotecilor cu remedieri disponibile | Implementată | Build verificat și inventar Maven scanat |
+| Închiderea accesului direct la origine | Aplicată live | Cloudflare răspunde cu 200, conexiunea directă este respinsă |
+| Interfață modulară responsive | Implementată | Navigare funcțională la 320, 390, 768, 1023, 1024 și 1440 px |
+| Coș sincronizat cu operațiile în curs | Implementată | Adăugarea urmată imediat de deschiderea coșului afișează produsul |
+| Rute pentru administrare, ajutor și erori | Implementate | Paginile se încarcă prin navigare și acces direct |
+| Migrare de la schema live | Verificată cu date sintetice | V2–V6 pornesc din schema exportată și păstrează o achiziție veche de test |
+| Publicarea coordonată a aplicației noi | De executat | Backup restaurabil, migrare, health, smoke și verificări publice |
+| Backup complet și restaurare cu date reale | Verificate | 3 conturi, 16 achiziții și 12 premii restaurate într-un PostgreSQL izolat |
+| Copii de siguranță periodice și retenție | De configurat | Copii protejate, copie externă VPS-ului și verificări automate de restaurare |
+
+## Etapa 2 · Funcții disponibile în versiunea pregătită
+
+- Catalog cu căutare, categorii, sortare, stoc și oferte flash.
+- Pagini de produs, recenzii verificate, voturi utile și raportare.
+- Favorite pe server cu alerte pentru preț și disponibilitate.
+- Coș, cote de preț server-side, reduceri de nivel și coduri promo.
+- Checkout cu adresă de livrare, verificarea totalului și idempotency key.
+- Istoric de comenzi, vouchere, copiere, anulare eligibilă și rambursare.
+- Streak, freeze, quiz, Wordle, roată, cufere, misiuni și insigne.
+- Bresle, clasamente, propuneri, voturi, notificări și recomandări.
+- Profil, vizibilitate publică, schimbare parolă, export de date și ștergere de cont.
+- Administrare pentru comenzi, membri, ajustări de puncte, stoc și jurnal.
+- Comparație pentru maximum trei premii, cu link care păstrează selecția.
+- Export CSV pentru întregul istoric, cu escaparea textului introdus de utilizatori.
+- Verificator public de vouchere care trimite codul în corpul cererii.
+- Instalare PWA și pagină de recuperare când conexiunea lipsește.
+
+Comparația, exportul CSV și verificatorul public au fost adăugate în această etapă. Frontendul aflat deja în lucru a fost completat și integrat cu API-urile existente.
+
+## Etapa 3 · Identitate și încredere
+
+1. Confirmarea adresei de email cu token cu expirare și utilizare unică.
+2. Resetarea parolei cu răspuns uniform, limite de încercări și invalidarea sesiunilor.
+3. MFA pentru administratori, cu coduri de recuperare și jurnal de modificări.
+4. Listă de sesiuni și revocare individuală, inclusiv data ultimei utilizări.
+5. Sesiune în cookie HttpOnly, împreună cu protecția CSRF și reguli explicite SameSite.
+6. Verificarea eligibilității pentru premii costisitoare și recomandări, după activitate reală.
+7. Invitații cu limite configurabile și istoric de acordare a bonusurilor.
+8. Migrarea la o generație Spring Boot cu suport OSS activ.
+
+Serviciul de email și regulile pentru acordarea premiilor vor fi alese înainte de activarea funcțiilor care depind de ele. Confirmarea prin email trebuie legată de accesul la beneficii, altfel conturile multiple pot exploata în continuare bonusul inițial.
+
+## Etapa 4 · Motive să revii
+
+| Funcție | Comportament propus |
+| --- | --- |
+| Obiectiv de economisire | Premiu țintă salvat pe server, progres AP și notificare când devine accesibil |
+| Provocări săptămânale | Obiective cu început și sfârșit, progres verificat și o singură revendicare |
+| Sezoane de clasament | Perioade arhivate, premii și reguli publice |
+| Trasee de învățare | Colecții de quiz-uri pe Java, frontend, Python și DevOps |
+| Explicații după quiz | Rezultatul, motivul răspunsului și resurse ale autorilor |
+| Istoric Wordle | Statistici personale și distribuire care păstrează secret cuvântul |
+| Provocări de breaslă | Țintă comună și contribuții personale verificabile |
+| Preferințe de notificare | Selectarea alertelor utile și frecvenței lor |
+| Colecții de premii | Liste tematice și recomandări explicate prin preferințe explicite |
+| Alerte de obiectiv | Notificări când premiul țintă revine în stoc sau intră în ofertă |
+
+Fiecare recompensă nouă va avea plafon, reguli de eligibilitate și protecție la cereri simultane. Indicatorii de produs vor urmări activarea, revenirea la 7 zile și comenzile finalizate, cu date agregate.
+
+## Etapa 5 · Magazin și comunitate
+
+- Editor de produse în interfața de administrare, inclusiv imagini, activare și limite de comandă.
+- Editor de oferte și coduri promo, cu previzualizarea prețului rezultat.
+- Cozi de moderare pentru recenzii și propuneri, cu motiv și istoric.
+- Anunțuri către membri, cu previzualizare și confirmare a destinatarilor.
+- Căutare și filtrare în istoricul comenzilor, cu legături către produs.
+- Repetarea unei comenzi printr-o cotă nouă de preț și stoc.
+- Rezervări de stoc cu expirare, pentru a limita blocarea inventarului.
+- Instrucțiuni de livrare specifice fiecărui premiu digital.
+- Integrare reală cu furnizorul de transport ales și actualizări verificate de status.
+- Întrebări despre produse, cu raportare, moderare și limite de publicare.
+- Listă publică de funcții cerute și statusul deciziilor de produs.
+- Exporturi administrative limitate pe rol, cu jurnal și minimizarea datelor.
+
+## Etapa 6 · Calitate, SEO și CI
+
+Verificarea locală include backendul cu PostgreSQL real, teste pentru securitatea frontendului și fluxuri de browser prin nginx. Workflow-ul pregătit rulează pe Java 21 și 25, folosește permisiuni GitHub de citire și versiuni de Actions fixate prin SHA.
+
+Buildul frontend generează HTML pentru catalog și produsele active, titluri și canonical pentru paginile publice, sitemap și robots. Metadatele pentru paginile private sunt completate prin `X-Robots-Tag` și aplicație. Paginile generate trebuie reconstruite când se schimbă catalogul.
+
+De continuat după publicare cu măsurători din trafic real.
+
+- Core Web Vitals pe mobil și bugete pentru resursele statice.
+- Navigare completă din tastatură, contrast și verificări cu cititoare de ecran.
+- Teste de browser suplimentare în Firefox și WebKit.
+- Search Console, sitemap trimis și verificarea paginilor indexate.
+- Teste de încărcare pe un mediu izolat și verificarea limitelor poolului DB.
+- Alerte pentru erori 5xx, autentificări respinse, acțiuni administrative și discrepanțe în registrul AP.
+- Politici de retenție pentru loguri, backupuri și datele asociate comenzilor.
+
+## Reguli de livrare
+
+Fiecare etapă verificată are commit separat, cu identitatea Git existentă a utilizatorului. Mesajele nu includ coautori sau atribuire către asistent. Funcțiile externe se livrează după alegerea serviciului și configurarea credentialelor sale.
