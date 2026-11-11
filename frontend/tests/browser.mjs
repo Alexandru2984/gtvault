@@ -11,6 +11,25 @@ const errors = [];
 const email = `browser-${Date.now()}@rewardhub.test`;
 await mkdir('test-results/browser', { recursive: true });
 
+// Toate contextele folosesc același IP. Păstrăm rata traficului automat sub limita nginx
+// de 20 cereri API/s, inclusiv pe runner-ele care execută mult mai repede decât un utilizator.
+let nextApiRequest = 0;
+async function paceApi(context) {
+  await context.route('**/RewardHub/api/**', async (route) => {
+    const now = performance.now();
+    const delay = Math.max(0, nextApiRequest - now);
+    nextApiRequest = Math.max(now, nextApiRequest) + 75;
+    if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+    await route.continue();
+  });
+}
+
+async function openSettings(page) {
+  await page.getByRole('button', { name: 'Meniul contului', exact: true }).click();
+  await page.locator('#user-menu a[href="/profil?tab=setari"]').click();
+  await page.getByRole('heading', { name: 'Sesiuni active', exact: true }).waitFor();
+}
+
 function observe(page) {
   page.setDefaultTimeout(20_000);
   page.on('pageerror', (error) => errors.push(error.message));
@@ -35,6 +54,7 @@ async function noOverflow(page, label) {
 
 try {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+  await paceApi(context);
   const page = await context.newPage();
   observe(page);
   await page.goto(origin + '/magazin');
@@ -141,8 +161,7 @@ try {
   });
   assert.equal(secondLogin.status(), 200);
   const secondSession = (await secondLogin.json()).token;
-  await page.goto(origin + '/profil?tab=setari');
-  await page.getByRole('heading', { name: 'Sesiuni active', exact: true }).waitFor();
+  await openSettings(page);
   assert.equal(await page.locator('[data-revoke-session]').count(), 1);
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 844 });
@@ -185,6 +204,7 @@ try {
   await page.screenshot({ path: 'test-results/browser/notifications-mobile.png', fullPage: true });
 
   const adminContext = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+  await paceApi(adminContext);
   const admin = await adminContext.newPage();
   observe(admin);
   await admin.goto(origin + '/autentificare');
@@ -221,8 +241,7 @@ try {
   await context.setOffline(false);
   await page.getByRole('link', { name: 'Încearcă din nou' }).click();
   await page.locator('h1').waitFor();
-  await page.goto(origin + '/profil?tab=setari');
-  await page.getByRole('heading', { name: 'Sesiuni active', exact: true }).waitFor();
+  await openSettings(page);
   await page.locator('[data-logout-all]').click();
   const rotated = page.waitForResponse((r) => r.url().endsWith('/auth/logout-all'));
   await page.getByRole('dialog').getByRole('button', { name: 'Deconectează', exact: true }).click();
