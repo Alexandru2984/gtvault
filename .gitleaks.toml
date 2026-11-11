@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Parole sintetice folosite exclusiv de testele izolate"
+condition = "AND"
+paths = ['''^(src/test/|frontend/(tests|scripts)/)''']
+regexTarget = "secret"
+regexes = ['''^Parola-(Sigura-123|Noua-456|Release-123)$''']

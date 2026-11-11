@@ -5,7 +5,12 @@ export default function legal({ root }) {
   const privacy = location.pathname.startsWith('/confidentialitate');
   const title = privacy ? 'Confidențialitate' : 'Reguli de utilizare';
   setMeta({ title });
-  mount(root, html`<article class="stack narrow">
+  mount(root, legalContent(privacy));
+}
+
+export function legalContent(privacy) {
+  const title = privacy ? 'Confidențialitate' : 'Reguli de utilizare';
+  return html`<article class="stack narrow">
     <h1>${title}</h1>
     <p>Operatorul platformei este <strong>Dragne Alexandru Mihai</strong>. Pentru întrebări despre cont, comenzi sau datele personale, scrie la <a href="mailto:984.alexmihai@proton.me">984.alexmihai@proton.me</a>.</p>
     ${privacy ? html`
@@ -31,5 +36,5 @@ export default function legal({ root }) {
         <p>Urmărește statusul, opțiunile de anulare și codurile digitale în <a href="/comenzi">Comenzile mele</a>.</p>
       </section>`}
     <p><a href="/ajutor">Întrebări frecvente</a></p>
-  </article>`);
+  </article>`;
 }

@@ -37,7 +37,9 @@ export function setMeta({ title, description, path = location.pathname, noindex 
   metaTag('property', 'og:title').content = full;
   metaTag('property', 'og:description').content = desc;
   metaTag('property', 'og:url').content = url;
-  metaTag('property', 'og:image').content = image ? SITE.origin + image : `${SITE.origin}/images/og-image.png`;
+  const preview = image ? SITE.origin + image : `${SITE.origin}/images/og-image.png`;
+  metaTag('property', 'og:image').content = preview;
+  metaTag('name', 'twitter:image').content = preview;
   metaTag('name', 'twitter:title').content = full;
   metaTag('name', 'twitter:description').content = desc;
 

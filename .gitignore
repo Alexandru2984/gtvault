@@ -76,3 +76,5 @@ gt-shop-exploded/
 # JaCoCo & Test Coverage
 *.exec
 .coverage
+node_modules/
+test-results/

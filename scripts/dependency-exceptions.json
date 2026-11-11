@@ -1,0 +1,14 @@
+[
+  {
+    "package": "org.springframework:spring-webmvc",
+    "id": "GHSA-j9f9-w8pj-32f8",
+    "reason": "Aplicația servește JSON și nu folosește fragmente de view transmise prin SSE. Migrarea la Spring Boot 4 este în PLAN.md.",
+    "reviewBy": "2026-12-11"
+  },
+  {
+    "package": "org.springframework:spring-webmvc",
+    "id": "GHSA-pc63-qcmh-9cmg",
+    "reason": "Aplicația nu folosește XsltView sau view-uri XSLT. Migrarea la Spring Boot 4 este în PLAN.md.",
+    "reviewBy": "2026-12-11"
+  }
+]

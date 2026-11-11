@@ -1,0 +1,14 @@
+{
+  "name": "rewardhub",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check:frontend": "node frontend/scripts/check.mjs",
+    "test:frontend": "node --test frontend/tests/*.test.mjs",
+    "test:browser": "node frontend/tests/browser.mjs",
+    "build:frontend": "node frontend/scripts/build.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.64.1"
+  }
+}
