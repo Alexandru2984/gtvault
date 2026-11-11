@@ -21,7 +21,8 @@ export default async function orders({ root, signal, alive }) {
 
   function render() {
     mount(root, html`<div class="page">
-      <div class="page-head"><div><h1>Comenzile mele</h1><p>Urmărește livrarea, vezi codurile de voucher și anulează comenzile neexpediate.</p></div></div>
+      <div class="page-head"><div><h1>Comenzile mele</h1><p>Urmărește livrarea, vezi codurile de voucher și anulează comenzile neexpediate.</p></div>
+        <a class="btn btn-secondary" href="/vouchere">Verifică un voucher</a></div>
       ${items.length ? html`<div class="stack" id="orders-list">${join(items, card)}</div>
         ${page + 1 < totalPages ? html`<div class="load-more"><button class="btn btn-secondary" type="button" data-more>Comenzi mai vechi</button></div>` : ''}`
       : emptyState({ icon: '📦', title: 'Nu ai comenzi încă', text: 'Primul premiu e la un click distanță. Ai deja AP de bun venit!', action: html`<a class="btn btn-primary" href="/magazin">Mergi la magazin</a>` })}

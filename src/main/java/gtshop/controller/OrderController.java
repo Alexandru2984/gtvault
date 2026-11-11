@@ -5,10 +5,14 @@ import gtshop.security.RateLimit;
 import gtshop.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,6 +28,8 @@ public class OrderController {
         this.orders = orders;
         this.currentUser = currentUser;
     }
+
+    public record VoucherVerification(@NotBlank @Size(max = 40) String code) {}
 
     @GetMapping("/orders")
     @Operation(summary = "Istoricul comenzilor (paginat)")
@@ -55,5 +61,12 @@ public class OrderController {
     @Operation(summary = "Verifică public un cod voucher (fără date despre proprietar)")
     public Map<String, Object> verify(@RequestParam String code) {
         return orders.verifyVoucher(code);
+    }
+
+    @PostMapping("/vouchers/verify")
+    @RateLimit(name = "voucher-verify", limit = 20, windowSeconds = 60, scope = RateLimit.Scope.IP)
+    @Operation(summary = "Verifică un voucher folosind codul din corpul cererii")
+    public Map<String, Object> verifyBody(@Valid @RequestBody VoucherVerification request) {
+        return orders.verifyVoucher(request.code());
     }
 }

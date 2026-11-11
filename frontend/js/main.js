@@ -22,6 +22,7 @@ const v = (name) => () => import(`./views/${name}.js`);
 route('/', v('home'));
 route('/magazin', v('shop'));
 route('/compara', v('compare'));
+route('/vouchere', v('vouchers'));
 route('/produs/:id', v('product'));
 route('/cos', v('cart'), { auth: true });
 route('/finalizare', v('checkout'), { auth: true });

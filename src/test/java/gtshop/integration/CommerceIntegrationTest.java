@@ -150,6 +150,10 @@ class CommerceIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.valid").value(true)).andExpect(jsonPath("$.rewardName").value("Template CV"))
                 .andExpect(jsonPath("$.email").doesNotExist());
         mvc.perform(getAs("/api/vouchers/verify?code=GT-AAAA-BBBB-CCCC", null)).andExpect(status().isNotFound());
+        String publicVerification = mvc.perform(postJson("/api/vouchers/verify", null, Map.of("code", voucher.toLowerCase())))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.valid").value(true))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(publicVerification).doesNotContain(u.email()).doesNotContain(u.id());
 
         String orderId = res.at("/order/id").asText();
         mvc.perform(postJson("/api/orders/" + orderId + "/cancel", u, null))
