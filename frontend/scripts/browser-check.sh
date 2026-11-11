@@ -31,7 +31,8 @@ free_port() {
 preview_container=$(docker run -d --rm --label project=rewardhub-browser-check \
     -e POSTGRES_PASSWORD=isolated-browser-check -p 127.0.0.1::5432 postgres:18.6-alpine)
 for _ in {1..60}; do
-    if docker exec "$preview_container" pg_isready -U postgres >/dev/null 2>&1; then break; fi
+    # Serverul temporar de initdb accepta numai socketuri Unix. TCP indica instanta finala.
+    if docker exec "$preview_container" pg_isready -h 127.0.0.1 -U postgres >/dev/null 2>&1; then break; fi
     sleep 1
 done
 docker exec "$preview_container" psql -U postgres -v ON_ERROR_STOP=1 \

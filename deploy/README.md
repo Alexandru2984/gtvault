@@ -45,7 +45,7 @@ Secretul JWT, parola bazei și restul setărilor private se citesc din configura
 
 1. Pregătește release-ul într-un director nou și salvează hashurile artefactelor. Copiază JAR-ul ca fișier nou înainte de pornirea sa.
 2. Verifică erorile și operațiile în curs. Activează o fereastră de mentenanță pentru API-ul acestui vhost și oprește serviciul, astfel încât backupul și migrarea să aibă un punct consistent.
-3. Salvează unitatea systemd, vhost-ul, configurația privată și un dump complet al bazei într-un director accesibil numai operatorului. Protejează backupul și verifică restaurarea într-o bază izolată înainte de schimbarea bazei live.
+3. Salvează unitatea systemd, vhost-ul, configurația privată și un dump complet al bazei în directorul existent `/var/backups/gtshop`, folosind fișierele de revenire ale aplicației. Protejează backupul și verifică restaurarea într-o bază izolată înainte de schimbarea bazei live.
 4. Verifică proprietarii tabelelor, emailurile duplicate după normalizare, soldurile negative, prețurile și voucher-ele duplicate. La audit, verificările de date executate au trecut. Repetă-le pe starea curentă.
 5. Execută `deploy/db/00-transfer-ownership.sql` cu rolul administrativ PostgreSQL, numai pentru tabelele acestei aplicații. La această instalare, schema live exista fără istoric Flyway. Baseline V1 și migrările V2–V6 au fost verificate cu schema exportată și date sintetice.
 6. Configurează `ExecStart` către JAR-ul nou din directorul release-ului și păstrează utilizatorul dedicat și izolarea systemd. Pornește aplicația și urmărește Flyway, validarea Hibernate și health pe loopback.
@@ -78,4 +78,4 @@ După reluarea scrierilor, restaurarea unui dump vechi poate pierde comenzi sau 
 
 Pentru pregătirea unei comunicări, adună perioada incidentului, categoriile de date, numărul estimat de persoane, consecințele probabile, măsurile luate și adresa de contact `984.alexmihai@proton.me`. Transmiterea comunicărilor este o acțiune distinctă a operatorului.
 
-Exercițiul de migrare executat în această etapă a folosit schema live și date sintetice. Separat, dumpul complet din `/var/backups/gtshop/audit-20261111T022903Z/` a fost restaurat și verificat într-un container izolat, cu aceleași 3 conturi, 16 achiziții și 12 premii. Directorul este protejat pentru root. Copia externă, programul periodic și exercițiul de răspuns la compromitere rămân în plan.
+Exercițiul de migrare executat în această etapă a folosit schema live și date sintetice. Separat, dumpul complet din `/var/backups/gtshop/gtshop-predeploy.dump` a fost restaurat și verificat într-un container izolat, cu aceleași 3 conturi, 16 achiziții și 12 premii. Directorul este protejat pentru root. Copia externă, programul periodic și exercițiul de răspuns la compromitere rămân în plan.

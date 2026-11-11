@@ -82,7 +82,7 @@ Furnizorii observați sunt Cloudflare, găzduirea VPS și GitHub pentru surse/CI
 - Browserul verifică fluxuri reale prin nginx și PostgreSQL izolat, inclusiv CSP, rutare, acces, administrare și offline.
 - Gitleaks a scanat istoricul Git disponibil. Cele 14 potriviri inițiale erau parole sintetice din teste. Excepția este restrânsă la acele valori și căi de test.
 - Inventarul runtime a fost verificat prin OSV. Excepțiile documentate se referă numai la condițiile Spring MVC descrise mai sus.
-- Backupul complet din 11 noiembrie, ora 02.29 UTC, a fost restaurat într-un container eliminat la final. Numărul de conturi, achiziții și premii a coincis cu verificările live dinainte și de după dump. Fișierele sunt accesibile numai root în `/var/backups/gtshop/audit-20261111T022903Z/`. Copia se află pe același VPS.
+- Backupul complet din 11 noiembrie, ora 02.29 UTC, a fost restaurat într-un container eliminat la final. Numărul de conturi, achiziții și premii a coincis cu verificările live dinainte și de după dump. Fișierul este accesibil numai root în `/var/backups/gtshop/gtshop-predeploy.dump`. Copia se află pe același VPS.
 - Au fost verificate Chromium și mediul Java local. Workflow-ul pregătit trebuie executat și pe GitHub după publicarea commiturilor.
 
 Testele de încărcare și extinderea auditului la celelalte aplicații de pe VPS rămân de planificat. Prioritățile restante sunt publicarea versiunii verificate, protecția identității, backupurile și alertarea.
