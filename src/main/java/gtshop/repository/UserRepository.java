@@ -38,9 +38,6 @@ public interface UserRepository extends JpaRepository<UserProfile, String> {
 
     @Query("select u from UserProfile u where u.banned = false order by u.streakDays desc, u.longestStreak desc")
     List<UserProfile> findTopByStreak(Pageable pageable);
-
-    List<UserProfile> findByEmailIn(List<String> emails);
-
     List<UserProfile> findTop20ByReferredByOrderByCreatedAtDesc(String referredBy);
 
     List<UserProfile> findByReferralCodeIsNull();

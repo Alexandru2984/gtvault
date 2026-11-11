@@ -2,7 +2,6 @@ package gtshop.config;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -19,9 +18,6 @@ public class AppProperties {
 
     /** Originile acceptate pentru CORS (frontend-ul principal este same-origin). */
     private List<String> corsOrigins = new ArrayList<>();
-
-    /** Email-urile care primesc automat rolul ADMIN la pornire / autentificare. */
-    private List<String> adminEmails = new ArrayList<>();
 
     /**
      * Daca este true, IP-ul clientului se citeste din X-Real-IP doar cand cererea vine de pe loopback
@@ -51,16 +47,6 @@ public class AppProperties {
     public void setCorsOrigins(List<String> corsOrigins) {
         this.corsOrigins = corsOrigins == null ? new ArrayList<>() :
                 corsOrigins.stream().map(String::trim).filter(s -> !s.isEmpty()).toList();
-    }
-
-    public List<String> getAdminEmails() { return adminEmails; }
-    public void setAdminEmails(List<String> adminEmails) {
-        this.adminEmails = adminEmails == null ? new ArrayList<>() :
-                adminEmails.stream().map(s -> s.trim().toLowerCase(Locale.ROOT)).filter(s -> !s.isEmpty()).toList();
-    }
-
-    public boolean isAdminEmail(String email) {
-        return email != null && adminEmails.contains(email.trim().toLowerCase(Locale.ROOT));
     }
 
     public String getContentDir() { return contentDir; }

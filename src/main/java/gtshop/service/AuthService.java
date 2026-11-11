@@ -1,7 +1,6 @@
 package gtshop.service;
 
 import gtshop.game.Badge;
-import gtshop.config.AppProperties;
 import gtshop.dto.AuthResponse;
 import gtshop.dto.UserSummary;
 import gtshop.model.TxType;
@@ -33,20 +32,18 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final WalletService wallet;
-    private final AppProperties props;
     private final NotificationService notifications;
     private final BadgeService badges;
     /** Hash folosit cand email-ul nu exista, ca timpul de raspuns sa nu dezvaluie conturile. */
     private final String dummyHash;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider,
-                       WalletService wallet, AppProperties props, NotificationService notifications,
+                       WalletService wallet, NotificationService notifications,
                        BadgeService badges) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.wallet = wallet;
-        this.props = props;
         this.notifications = notifications;
         this.badges = badges;
         this.dummyHash = passwordEncoder.encode("dummy-password-for-timing-" + Ids.code(8));
@@ -90,7 +87,7 @@ public class AuthService {
         user.setName(name);
         user.setAvatar(AvatarCatalog.DEFAULT);
         user.setReferralCode(uniqueReferralCode());
-        user.setRole(props.isAdminEmail(email) ? UserProfile.ROLE_ADMIN : UserProfile.ROLE_USER);
+        user.setRole(UserProfile.ROLE_USER);
         user.setActivityPoints(0);
         if (referrer != null) {
             user.setReferredBy(referrer.getReferralCode());
@@ -158,10 +155,6 @@ public class AuthService {
         }
         if (user.isBanned()) {
             throw ApiException.forbidden("Contul este suspendat. Contactează echipa Generația Tech.");
-        }
-        if (props.isAdminEmail(email) && !user.isAdmin()) {
-            user.setRole(UserProfile.ROLE_ADMIN);
-            userRepository.save(user);
         }
         var issued = tokenProvider.generateToken(user.getId(), user.getTokenVersion());
         return AuthResponse.ok("Autentificare reușită!", issued.token(), issued.expiresAt(), UserSummary.of(user));

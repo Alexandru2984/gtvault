@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Administrarea conturilor: cautare, detalii, corectarea soldului si suspendarea.
- * Rolul de administrator se acorda doar prin configurare (ADMIN_EMAILS), nu din API.
+ * Rolul de administrator este gestionat explicit de operator in baza de date.
  */
 @Service
 public class AdminUserService {
@@ -86,7 +86,7 @@ public class AdminUserService {
 
     @Transactional
     public Map<String, Object> adjustPoints(String id, Integer amount, String reason) {
-        if (amount == null || amount == 0 || Math.abs(amount) > MAX_ADJUSTMENT) {
+        if (amount == null || amount == 0 || amount < -MAX_ADJUSTMENT || amount > MAX_ADJUSTMENT) {
             throw ApiException.badRequest("Suma trebuie să fie nenulă și cel mult " + MAX_ADJUSTMENT + " AP în valoare absolută.");
         }
         String why = InputSanitizer.cleanText(reason, 3, 200, "Motivul");

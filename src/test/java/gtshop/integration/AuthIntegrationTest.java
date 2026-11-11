@@ -88,10 +88,12 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void configuredAdminEmailGetsAdminRole() throws Exception {
-        TestUser admin = register("admin@rewardhub.test", "Admin GT", null);
-        JsonNode me = readJson(mvc.perform(getAs("/api/user/me", admin)).andReturn());
-        assertThat(me.path("role").asText()).isEqualTo("ADMIN");
+    void registrationAndLoginNeverPromoteAnAccountByEmail() throws Exception {
+        TestUser user = register("admin@rewardhub.test", "Admin GT", null);
+        mvc.perform(getAs("/api/user/me", user)).andExpect(jsonPath("$.role").value("USER"));
+        mvc.perform(postJson("/api/auth/login", null, Map.of("email", user.email(), "password", "Parola-Sigura-123")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.user.role").value("USER"));
+        mvc.perform(getAs("/api/admin/stats", user)).andExpect(status().isForbidden());
     }
 
     @Test

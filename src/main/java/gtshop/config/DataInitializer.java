@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Populeaza catalogul la prima pornire si sincronizeaza rolurile de admin din configurare.
+ * Populeaza catalogul la prima pornire si completeaza codurile de recomandare lipsa.
  * Nu se mai creeaza niciun utilizator implicit (anterior "user-123" era folosit pentru orice vizitator anonim).
  */
 @Component
@@ -21,12 +21,9 @@ public class DataInitializer {
 
     private final RewardRepository rewardRepository;
     private final UserRepository userRepository;
-    private final AppProperties props;
-
-    public DataInitializer(RewardRepository rewardRepository, UserRepository userRepository, AppProperties props) {
+    public DataInitializer(RewardRepository rewardRepository, UserRepository userRepository) {
         this.rewardRepository = rewardRepository;
         this.userRepository = userRepository;
-        this.props = props;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -72,16 +69,6 @@ public class DataInitializer {
             } while (userRepository.existsByReferralCode(code));
             u.setReferralCode(code);
             userRepository.saveAndFlush(u);
-        }
-
-        if (!props.getAdminEmails().isEmpty()) {
-            userRepository.findByEmailIn(props.getAdminEmails()).forEach(u -> {
-                if (!u.isAdmin()) {
-                    u.setRole(gtshop.model.UserProfile.ROLE_ADMIN);
-                    userRepository.save(u);
-                    log.info("Rol ADMIN acordat pentru {}", u.getId());
-                }
-            });
         }
     }
 }
