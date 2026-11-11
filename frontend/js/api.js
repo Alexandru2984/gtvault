@@ -15,6 +15,7 @@ export class ApiError extends Error {
 
 let tokenProvider = () => null;
 let onUnauthorized = () => {};
+const cartWrites = new Map();
 
 export function configureApi({ getToken, unauthorized }) {
   tokenProvider = getToken;
@@ -42,9 +43,22 @@ const FALLBACK = {
  * Cerere catre API. Cererile de modificare nu sunt reincercate automat (nu dublam comenzi sau plati);
  * pentru checkout se trimite Idempotency-Key.
  */
-export async function api(path, { method = 'GET', body, signal, idempotencyKey, auth = true } = {}) {
+export function api(path, options = {}) {
+  const token = options.auth === false ? null : tokenProvider();
+  const method = options.method || 'GET';
+  const pending = path === '/cart' || path === '/checkout/quote'
+    ? [...cartWrites].filter(([, owner]) => owner === token).map(([request]) => request) : [];
+  const request = sendRequest(path, { ...options, method }, token, pending);
+  if (/^\/cart(?:\/|$)/.test(path) && !['GET', 'HEAD'].includes(method)) {
+    cartWrites.set(request, token);
+    request.then(() => cartWrites.delete(request), () => cartWrites.delete(request));
+  }
+  return request;
+}
+
+async function sendRequest(path, { method, body, signal, idempotencyKey }, token, pending) {
+  await Promise.allSettled(pending);
   const headers = { Accept: 'application/json' };
-  const token = auth ? tokenProvider() : null;
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
