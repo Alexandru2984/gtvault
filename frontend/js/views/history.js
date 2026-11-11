@@ -5,7 +5,8 @@ import { apAmount, emptyState, skeletonPage } from '../components.js';
 import { setMeta } from '../seo.js';
 import { setQuery } from '../router.js';
 import { state } from '../store.js';
-import { busy, handleError } from '../ui.js';
+import { busy, downloadBlob, handleError } from '../ui.js';
+import { ledgerCsv } from '../csv.js';
 
 const FILTERS = { all: 'Toate', earned: 'Câștigate', games: 'Jocuri', gifts: 'Cadouri', orders: 'Comenzi' };
 
@@ -30,7 +31,8 @@ export default async function history({ root, query, signal, alive }) {
     mount(root, html`<div class="page">
       <div class="page-head">
         <div><h1>Istoric puncte</h1><p>Fiecare AP câștigat sau cheltuit, cu soldul după fiecare mișcare.</p></div>
-        <div class="kpi"><span class="kpi-label">Sold curent</span><span class="kpi-value">${apAmount(state.user?.activityPoints || 0)}</span></div>
+        <div class="stack"><div class="kpi"><span class="kpi-label">Sold curent</span><span class="kpi-value">${apAmount(state.user?.activityPoints || 0)}</span></div>
+          <button class="btn btn-secondary btn-sm" type="button" data-export-ledger>Descarcă tot istoricul CSV</button></div>
       </div>
       <div class="chips" role="group" aria-label="Filtru tranzacții">${join(Object.entries(FILTERS), ([k, v]) => html`<button class="chip" type="button" data-f="${k}" aria-pressed="${k === filter}">${v}</button>`)}</div>
       ${items.length ? html`<section class="card" aria-label="${totalItems} tranzacții">${join(items, (t) => html`<div class="tx">
@@ -53,6 +55,12 @@ export default async function history({ root, query, signal, alive }) {
   render();
 
   const offs = [
+    on(root, 'click', '[data-export-ledger]', (event, button) => busy(button, async () => {
+      try {
+        const data = await get('/user/export', { signal });
+        if (alive()) downloadBlob(ledgerCsv(data.point_transactions || []), 'rewardhub-istoric-puncte.csv');
+      } catch (error) { if (alive()) handleError(error); }
+    })),
     on(root, 'click', '[data-f]', async (e, b) => {
       filter = b.dataset.f;
       setQuery({ f: filter === 'all' ? '' : filter });
