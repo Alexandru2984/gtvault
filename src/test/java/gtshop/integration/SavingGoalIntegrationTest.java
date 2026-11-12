@@ -19,12 +19,23 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
 class SavingGoalIntegrationTest extends AbstractIntegrationTest {
     @Autowired SavingGoalService goals;
     @Autowired SavingGoalAlerts alerts;
+    private final java.util.List<String> rewardIds = new ArrayList<>();
+
+    @AfterEach
+    void retireOwnCatalogFixtures() {
+        for (String id : rewardIds) {
+            jdbc.update("UPDATE flash_deals SET starts_at = ?, ends_at = ? WHERE reward_id = ?",
+                    Timestamp.from(START.minusSeconds(60)), Timestamp.from(START.minusSeconds(1)), id);
+            jdbc.update("UPDATE rewards SET active = false WHERE id = ?", id);
+        }
+    }
 
     private String reward(int price, int stock) {
         String id = "goal-" + UUID.randomUUID();
@@ -33,6 +44,7 @@ class SavingGoalIntegrationTest extends AbstractIntegrationTest {
                     active, fulfillment, max_per_order, created_at)
                 VALUES (?, 'Premiu pentru obiectiv', 'Detalii test', ?, 'Digital', ?, ?, false, true, 'DIGITAL', 5, ?)
                 """, id, price, stock > 0, stock, Timestamp.from(clock.instant()));
+        rewardIds.add(id);
         return id;
     }
 
