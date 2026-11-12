@@ -10,6 +10,8 @@ Noua aplicație a fost publicată pe `shop.micutu.com` la 11 noiembrie 2026, dup
 
 Actualizarea următoare a publicat sesiunile revocabile și preferințele de notificare, cu migrările V7–V8. Datele celor 22 de tabele existente au fost comparate integral înainte și după pornire. Dumpul curent a fost restaurat într-un PostgreSQL fără acces la rețea. CI a trecut pe Java 21 și 25, iar domeniul public a fost verificat din nou în browser. S-a reutilizat directorul release-ului și un singur set de fișiere de revenire în directorul de backup existent.
 
+Obiectivul de economisire și corecția reducerilor pentru totaluri mari au fost publicate cu V9. Restaurarea dumpului și păstrarea integrală a celor 24 de tabele existente au fost verificate. Au rămas 3 conturi, 16 achiziții, 16 comenzi și 12 premii. Site-ul public a trecut verificările de browser, inclusiv acțiunea de obiectiv pentru vizitatori și protejarea API-ului privat.
+
 ## Etapa 1 · Securitate și funcționare
 
 | Lucrare | Stare | Criteriu de acceptare |
@@ -113,3 +115,5 @@ De continuat după publicare cu măsurători din trafic real.
 ## Reguli de livrare
 
 Fiecare etapă verificată are commit separat, cu identitatea Git existentă a utilizatorului. Mesajele nu includ coautori sau atribuire către asistent. Funcțiile externe se livrează după alegerea serviciului și configurarea credentialelor sale.
+
+Push-ul este făcut exclusiv de proprietar. Modificările noi rămân în commituri locale, fără actualizarea ramurilor remote prin Git sau API.

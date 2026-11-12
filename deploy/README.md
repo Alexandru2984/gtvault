@@ -81,9 +81,13 @@ Migrarea V7 adaugă registrul de sesiuni. JWT-urile emise anterior nu au o intra
 
 Logout-ul confirmat revocă sesiunea curentă în baza de date. Schimbarea parolei și deconectarea celorlalte dispozitive invalidează toate tokenurile anterioare și emit o sesiune nouă pentru dispozitivul curent. O cerere deja autorizată înaintea revocării poate încă termina operația în curs. Metadatele sesiunilor expirate sunt eliminate zilnic. Lista nu păstrează IP-uri sau user-agent complet.
 
-## Răspuns la incident
+## Obiectivul de economisire
 
 Obiectivul de economisire folosește tabelul adăugat de V9, cu maximum un premiu țintă per cont. Verificarea alertelor rulează la intervale de 60 de secunde, în loturi de maximum 100, cu tranzacție separată per cont. Configurația `rewardhub.goals-alerts-delay-ms` schimbă intervalul; testele folosesc un interval mare și declanșează verificările explicit. Alerta respectă categoria de progres și se trimite o singură dată pentru selecția curentă. Selectarea repetată a aceluiași premiu păstrează această stare. Schimbarea sau eliminarea obiectivului nu afectează AP, inventarul ori comenzile.
+
+La actualizare, reload-ul nginx este asincron. Confirmă răspunsul de mentenanță în mai multe cereri consecutive înainte de oprirea backendului și crearea dumpului consistent.
+
+## Răspuns la incident
 
 1. Notează momentul constatării, simptomele, versiunea și operațiile cunoscute. Conservă logurile și copiile existente cu acces restrâns.
 2. Limitează ruta sau contul afectat. Pentru un compromis activ al aplicației, păstrează API-ul în mentenanță până la stabilirea extinderii incidentului.
