@@ -37,7 +37,7 @@ export default async function leaderboard({ root, query, signal, alive }) {
         <a class="btn btn-secondary btn-sm" href="/bresle">${icon('shield')} Clasamentul breslelor</a>
       </div>
       <div class="tabs" role="tablist" aria-label="Perioada">
-        ${join(Object.entries(PERIODS), ([k, v]) => html`<button type="button" role="tab" data-period="${k}" aria-selected="${k === period}">${v}</button>`)}
+        ${join(Object.entries(PERIODS), ([k, v]) => html`<button type="button" role="tab" data-period="${k}" aria-selected="${String(k === period)}">${v}</button>`)}
       </div>
       ${entries.length ? html`
         <div class="card card-pad">

@@ -108,6 +108,8 @@ Buildul frontend generează HTML pentru catalog și produsele active, titluri ș
 
 De continuat după publicare cu măsurători din trafic real.
 
+Stările de selecție din catalog, favorite, comparație, istoric, clasament, comunitate și profil, precum și validarea codului promo, sunt corectate local. Valorile ARIA sunt explicite, astfel încât stilurile active și cititoarele de ecran primesc aceeași stare. Browserul verifică filtrele după reîncărcare, culorile selecției, taburile și valorile atributelor pe paginile vizitate.
+
 - Core Web Vitals pe mobil și bugete pentru resursele statice.
 - Navigare completă din tastatură, contrast și verificări cu cititoare de ecran.
 - Teste de browser suplimentare în Firefox și WebKit.

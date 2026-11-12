@@ -47,8 +47,8 @@ export default async function shop({ root, query: q0, signal, alive }) {
       <div class="chips" id="shop-cats" role="group" aria-label="Categorii"></div>
       <div class="shop-filters">
         <div class="row">
-          <button class="chip" type="button" data-toggle="oferte" aria-pressed="${f.oferte}">${icon('zap')} Oferte</button>
-          <button class="chip" type="button" data-toggle="stoc" aria-pressed="${f.stoc}">${icon('check')} În stoc</button>
+          <button class="chip" type="button" data-toggle="oferte" aria-pressed="${String(f.oferte)}">${icon('zap')} Oferte</button>
+          <button class="chip" type="button" data-toggle="stoc" aria-pressed="${String(f.stoc)}">${icon('check')} În stoc</button>
         </div>
         <label class="row small">
           <span class="muted">Sortează</span>
@@ -67,8 +67,8 @@ export default async function shop({ root, query: q0, signal, alive }) {
 
   function renderCats() {
     mount(qs('#shop-cats', root), html`
-      <button class="chip" type="button" data-cat="" aria-pressed="${!f.cat}">Toate</button>
-      ${join(categories, (c) => html`<button class="chip" type="button" data-cat="${c}" aria-pressed="${f.cat === c}">${c}</button>`)}`);
+      <button class="chip" type="button" data-cat="" aria-pressed="${String(!f.cat)}">Toate</button>
+      ${join(categories, (c) => html`<button class="chip" type="button" data-cat="${c}" aria-pressed="${String(f.cat === c)}">${c}</button>`)}`);
   }
 
   async function load() {

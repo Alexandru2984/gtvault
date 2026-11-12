@@ -63,7 +63,7 @@ export function productBadges(r) {
 
 export function wishButton(id, name) {
   const on = state.wishlist.has(id);
-  return html`<button class="wish-btn" type="button" data-wish="${id}" aria-pressed="${on}" aria-label="${on ? 'Scoate' : 'Adaugă'} „${name}” ${on ? 'din' : 'în'} favorite">${icon('heart')}</button>`;
+  return html`<button class="wish-btn" type="button" data-wish="${id}" aria-pressed="${String(on)}" aria-label="${on ? 'Scoate' : 'Adaugă'} „${name}” ${on ? 'din' : 'în'} favorite">${icon('heart')}</button>`;
 }
 
 export function productCard(r) {
@@ -93,7 +93,7 @@ export function productCard(r) {
 }
 
 export function compareButton(reward) {
-  return html`<button class="btn btn-ghost btn-sm" type="button" data-compare="${reward.id}" aria-pressed="${comparedIds().includes(reward.id)}" aria-label="Compară ${reward.name}">${icon('sliders')} Compară</button>`;
+  return html`<button class="btn btn-ghost btn-sm" type="button" data-compare="${reward.id}" aria-pressed="${String(comparedIds().includes(reward.id))}" aria-label="Compară ${reward.name}">${icon('sliders')} Compară</button>`;
 }
 
 export const productGrid = (list) => html`<div class="products">${join(list, productCard)}</div>`;

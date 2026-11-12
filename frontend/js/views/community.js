@@ -48,8 +48,8 @@ export default async function community({ root, query, signal, alive }) {
             <h2 id="prop-h">💡 Propuneri de premii</h2>
             <div class="row">
               <div class="tabs" role="tablist" aria-label="Ordonare">
-                <button type="button" role="tab" data-sort="top" aria-selected="${sort === 'top'}">Top</button>
-                <button type="button" role="tab" data-sort="new" aria-selected="${sort === 'new'}">Noi</button>
+                <button type="button" role="tab" data-sort="top" aria-selected="${String(sort === 'top')}">Top</button>
+                <button type="button" role="tab" data-sort="new" aria-selected="${String(sort === 'new')}">Noi</button>
               </div>
               ${isAuthed() ? html`<button class="btn btn-primary btn-sm" type="button" data-propose>${icon('plus')} Propune</button>` : ''}
             </div>
@@ -69,7 +69,7 @@ export default async function community({ root, query, signal, alive }) {
   function proposal(p) {
     const st = PROPOSAL_STATUS[p.status] || { label: p.status, cls: '' };
     return html`<article class="card proposal">
-      <button class="vote-btn" type="button" data-vote="${p.id}" aria-pressed="${p.hasVoted}" aria-label="${p.hasVoted ? 'Retrage votul' : 'Votează'} „${p.title}”, ${p.votesCount} voturi" ${!isAuthed() || p.isMine || p.status !== 'PENDING' ? 'disabled' : ''}>
+      <button class="vote-btn" type="button" data-vote="${p.id}" aria-pressed="${String(Boolean(p.hasVoted))}" aria-label="${p.hasVoted ? 'Retrage votul' : 'Votează'} „${p.title}”, ${p.votesCount} voturi" ${!isAuthed() || p.isMine || p.status !== 'PENDING' ? 'disabled' : ''}>
         ${icon('chevronUp')}<span class="tnum">${num(p.votesCount)}</span>
       </button>
       <div class="stack stack-sm">

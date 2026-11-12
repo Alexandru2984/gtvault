@@ -102,7 +102,7 @@ export default async function product({ root, params, signal, alive }) {
               <button class="btn btn-gold btn-lg" type="button" data-buy="now">Revendică acum</button>
             </div>`
           : html`<div class="callout is-danger">${icon('alert')}<span><strong>Stoc epuizat.</strong> Salvează premiul la favorite și te anunțăm când revine în stoc.</span></div>
-            <button class="btn btn-secondary" type="button" data-wish="${r.id}" aria-pressed="${state.wishlist.has(r.id)}">${icon('heart')} Anunță-mă</button>`}
+            <button class="btn btn-secondary" type="button" data-wish="${r.id}" aria-pressed="${String(state.wishlist.has(r.id))}">${icon('heart')} Anunță-mă</button>`}
           <div class="row small muted">
             ${compareButton(r)}
             <button class="btn btn-secondary btn-sm" type="button" data-goal-set="${r.id}">🎯 Setează ca obiectiv</button>
@@ -240,7 +240,7 @@ export default async function product({ root, params, signal, alive }) {
       <div class="row small muted">${stars(x.rating)}<span>${date(x.createdAt)}${x.updatedAt ? ' · editată' : ''}</span></div>
       <p class="review-body">${x.comment}</p>
       ${!x.mine ? html`<div class="review-actions">
-        <button class="btn btn-ghost btn-sm" type="button" data-helpful="${x.id}" aria-pressed="${x.votedHelpful}">${icon('thumbsUp')} Utilă${x.helpfulCount ? html` · <span class="tnum">${x.helpfulCount}</span>` : ''}</button>
+        <button class="btn btn-ghost btn-sm" type="button" data-helpful="${x.id}" aria-pressed="${String(Boolean(x.votedHelpful))}">${icon('thumbsUp')} Utilă${x.helpfulCount ? html` · <span class="tnum">${x.helpfulCount}</span>` : ''}</button>
         <button class="btn btn-ghost btn-sm" type="button" data-report="${x.id}">${icon('flag')} Raportează</button>
       </div>` : x.helpfulCount ? html`<span class="small muted">${plural(x.helpfulCount, 'membru a găsit-o utilă', 'membri au găsit-o utilă')}</span>` : ''}
     </article>`;

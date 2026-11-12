@@ -159,7 +159,7 @@ async function insigne({ body, signal, alive }) {
     mount(body, html`<div class="stack">
       <div class="row-between"><p class="muted">${d.unlockedCount} din ${d.totalCount} insigne deblocate</p>
         <div class="chips" role="group" aria-label="Filtru insigne">
-          ${join([['all', 'Toate'], ['unlocked', 'Deblocate'], ['locked', 'Blocate'], ...Object.entries(RARITY).filter(([k]) => (d.badges || []).some((b) => b.rarity === k))], ([k, v]) => html`<button class="chip" type="button" data-bf="${k}" aria-pressed="${k === filter}">${v}</button>`)}
+          ${join([['all', 'Toate'], ['unlocked', 'Deblocate'], ['locked', 'Blocate'], ...Object.entries(RARITY).filter(([k]) => (d.badges || []).some((b) => b.rarity === k))], ([k, v]) => html`<button class="chip" type="button" data-bf="${k}" aria-pressed="${String(k === filter)}">${v}</button>`)}
         </div></div>
       ${progress(percent(d.unlockedCount, d.totalCount), 'is-gold', 'Colecția de insigne')}
       <div class="badges-grid">${join(list, badgeTile)}</div>
@@ -443,7 +443,7 @@ async function avatarPicker(onChange) {
   await modal({
     title: 'Alege-ți avatarul',
     size: 'lg',
-    content: html`<div class="avatar-picker" role="group" aria-label="Avatare">${join(all, (a) => html`<button type="button" data-pick="${a}" aria-pressed="${a === current}" aria-label="Avatar ${a.split('/').pop().replace('.svg', '')}"><img src="${avatarSrc(a)}" alt="" width="76" height="76" loading="lazy"></button>`)}</div>`,
+    content: html`<div class="avatar-picker" role="group" aria-label="Avatare">${join(all, (a) => html`<button type="button" data-pick="${a}" aria-pressed="${String(a === current)}" aria-label="Avatar ${a.split('/').pop().replace('.svg', '')}"><img src="${avatarSrc(a)}" alt="" width="76" height="76" loading="lazy"></button>`)}</div>`,
     onMount: (dlg, close) => on(dlg, 'click', '[data-pick]', async (e, b) => {
       try {
         const r = await post('/user/me', { avatar: b.dataset.pick });

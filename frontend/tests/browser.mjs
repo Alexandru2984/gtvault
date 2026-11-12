@@ -42,6 +42,11 @@ function observe(page) {
 }
 
 async function noOverflow(page, label) {
+  const invalidStates = await page.locator('[aria-pressed], [aria-selected], [aria-invalid]').evaluateAll((nodes) => nodes.flatMap((node) =>
+    ['aria-pressed', 'aria-selected', 'aria-invalid'].filter((attribute) => node.hasAttribute(attribute)
+      && !['true', 'false', ...(attribute === 'aria-pressed' ? ['mixed'] : attribute === 'aria-invalid' ? ['grammar', 'spelling'] : [])].includes(node.getAttribute(attribute)))
+      .map((attribute) => ({ tag: node.tagName, attribute, value: node.getAttribute(attribute) }))));
+  assert.deepEqual(invalidStates, [], `${label}: control states must be explicit and valid`);
   const fits = await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
   if (!fits) {
     await page.screenshot({ path: 'test-results/browser/overflow.png', fullPage: true });
@@ -59,6 +64,22 @@ try {
   observe(page);
   await page.goto(origin + '/magazin');
   await page.getByRole('link', { name: 'Template CV', exact: true }).waitFor();
+  await page.locator('#shop-cats [data-cat=""][aria-pressed="true"]').waitFor();
+  const categoryButton = page.locator('#shop-cats [data-cat]:not([data-cat=""])').first();
+  const categoryName = await categoryButton.getAttribute('data-cat');
+  await categoryButton.click();
+  await page.waitForFunction((category) => [...document.querySelectorAll('#shop-cats [aria-pressed="true"]')]
+    .some((button) => button.dataset.cat === category), categoryName);
+  const categoryColors = await page.locator('#shop-cats .chip').evaluateAll((nodes) => nodes.map((node) => ({ selected: node.getAttribute('aria-pressed') === 'true', background: getComputedStyle(node).backgroundColor })));
+  assert.notEqual(categoryColors.find((node) => node.selected).background, categoryColors.find((node) => !node.selected).background);
+  await page.locator('#shop-cats [data-cat=""]').click();
+  await page.locator('#shop-cats [data-cat=""][aria-pressed="true"]').waitFor();
+  await page.locator('[data-toggle="stoc"]').click();
+  await page.waitForURL(/stoc=1/);
+  await page.reload();
+  await page.locator('[data-toggle="stoc"][aria-pressed="true"]').waitFor();
+  await page.locator('[data-toggle="stoc"]').click();
+  await page.getByRole('link', { name: 'Template CV', exact: true }).waitFor();
   for (const width of [320, 390, 768, 1023, 1024, 1440]) {
     await page.setViewportSize({ width, height: 844 });
     assert.equal(await page.locator('.mainnav').isVisible(), width >= 1024, `main navigation at ${width}`);
@@ -68,6 +89,9 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('button', { name: 'Compară Tricou GT', exact: true }).click();
   await page.getByRole('button', { name: 'Compară Sticker GT', exact: true }).click();
+  await page.reload();
+  await page.locator('[data-compare="rew-tricou"][aria-pressed="true"]').waitFor();
+  await page.locator('[data-compare="rew-sticker"][aria-pressed="true"]').waitFor();
   await page.locator('[data-compare-link]').click();
   await page.locator('.compare-table').waitFor();
   assert.equal(await page.locator('thead a').count(), 2);
@@ -148,6 +172,11 @@ try {
   await page.getByRole('heading', { name: 'Voucher activ' }).waitFor();
 
   await page.goto(origin + '/istoric');
+  await page.locator('[data-f="all"][aria-pressed="true"]').waitFor();
+  await page.locator('[data-f="orders"]').click();
+  await page.locator('[data-f="orders"][aria-pressed="true"]').waitFor();
+  await page.locator('[data-f="all"]').click();
+  await page.locator('[data-f="all"][aria-pressed="true"]').waitFor();
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Descarcă tot istoricul CSV' }).click();
   const download = await downloadPromise;
@@ -171,6 +200,16 @@ try {
     await page.locator(`a[href="${route}"]:visible`).first().click();
     await page.getByRole('heading', { name: heading, level: 1 }).waitFor();
     await noOverflow(page, route);
+    if (route === '/clasament') {
+      await page.getByRole('tab', { name: 'Săptămâna asta', selected: true }).waitFor();
+      await page.getByRole('tab', { name: 'Luna asta' }).click();
+      await page.getByRole('tab', { name: 'Luna asta', selected: true }).waitFor();
+    }
+    if (route === '/comunitate') {
+      await page.getByRole('tab', { name: 'Top', selected: true }).waitFor();
+      await page.getByRole('tab', { name: 'Noi' }).click();
+      await page.getByRole('tab', { name: 'Noi', selected: true }).waitFor();
+    }
     if (route === '/wordle') {
       const history = page.locator('.wordle-history');
       await history.getByText('Nu ai încă runde încheiate.', { exact: false }).waitFor();
@@ -421,7 +460,7 @@ try {
     headers: { Authorization: `Bearer ${rotatedToken}` },
   })).status(), 401);
   assert.deepEqual(errors, []);
-  console.log('Browser checks passed for responsive navigation, registration, comparison, wishlist, saving goals, checkout, vouchers, CSV, daily rewards, Wordle history/replay/sharing/account isolation, sessions, notification preferences, admin and offline recovery.');
+  console.log('Browser checks passed for responsive navigation, valid control states, registration, comparison, wishlist, saving goals, checkout, vouchers, CSV, daily rewards, quiz notebook/practice/account isolation, Wordle history/replay/sharing/account isolation, sessions, notification preferences, admin and offline recovery.');
 } catch (error) {
   if (errors.length) console.error('Browser HTTP or script errors', errors);
   throw error;

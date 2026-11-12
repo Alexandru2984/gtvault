@@ -50,7 +50,7 @@ function promoBlock(promo) {
   return html`<form class="stack stack-sm" data-promo-form novalidate>
     <label class="field-label" for="promo">Ai un cod promoțional?</label>
     <div class="promo-row">
-      <input class="input" id="promo" name="code" placeholder="EX: GT2026" maxlength="32" autocomplete="off" autocapitalize="characters" value="${promo?.code || ''}" aria-invalid="${Boolean(promo && !promo.valid)}">
+      <input class="input" id="promo" name="code" placeholder="EX: GT2026" maxlength="32" autocomplete="off" autocapitalize="characters" value="${promo?.code || ''}" aria-invalid="${String(Boolean(promo && !promo.valid))}">
       <button class="btn btn-secondary" type="submit">Aplică</button>
     </div>
     ${promo && !promo.valid ? html`<span class="error small">${promo.message}</span>` : ''}

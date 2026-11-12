@@ -34,7 +34,7 @@ export default async function history({ root, query, signal, alive }) {
         <div class="stack"><div class="kpi"><span class="kpi-label">Sold curent</span><span class="kpi-value">${apAmount(state.user?.activityPoints || 0)}</span></div>
           <button class="btn btn-secondary btn-sm" type="button" data-export-ledger>Descarcă tot istoricul CSV</button></div>
       </div>
-      <div class="chips" role="group" aria-label="Filtru tranzacții">${join(Object.entries(FILTERS), ([k, v]) => html`<button class="chip" type="button" data-f="${k}" aria-pressed="${k === filter}">${v}</button>`)}</div>
+      <div class="chips" role="group" aria-label="Filtru tranzacții">${join(Object.entries(FILTERS), ([k, v]) => html`<button class="chip" type="button" data-f="${k}" aria-pressed="${String(k === filter)}">${v}</button>`)}</div>
       ${items.length ? html`<section class="card" aria-label="${totalItems} tranzacții">${join(items, (t) => html`<div class="tx">
           <span class="tx-ico" aria-hidden="true">${t.icon || '•'}</span>
           <div class="ellipsis"><div class="strong ellipsis">${t.label}</div><div class="xsmall muted ellipsis">${t.description || ''} · ${dateTime(t.createdAt)}</div></div>
