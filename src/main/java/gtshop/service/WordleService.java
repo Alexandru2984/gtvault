@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -264,12 +265,78 @@ public class WordleService {
                 }, userId, date).stream().findFirst();
     }
 
+    public record HistoryItem(String date, int puzzleNumber, String status, int attempts, int reward,
+                              boolean gridAvailable, String shareText) {}
+    public record HistoryPage(List<HistoryItem> items, int page, int size, long totalItems, long totalPages, String filter) {}
+
+    @Transactional(readOnly = true)
+    public HistoryPage history(String userId, int page, int size, String status) {
+        int p = Math.max(0, page);
+        int s = Math.min(30, Math.max(1, size));
+        String filter = status == null || status.isBlank() ? "ALL" : status.trim().toUpperCase(Locale.ROOT);
+        if (!Set.of("ALL", WON, LOST).contains(filter)) {
+            throw ApiException.badRequest("Filtru invalid. Alege ALL, WON sau LOST.");
+        }
+        String where = """
+                WHERE g.user_id = ? AND g.game_date <= ? AND g.status IN ('WON', 'LOST')
+                    AND (? = 'ALL' OR g.status = ?)
+                """;
+        long total = jdbc.queryForObject("SELECT count(*) FROM wordle_games g " + where,
+                Long.class, userId, time.todayIso(), filter, filter);
+        long offset = (long) p * s;
+        if (offset >= total) return new HistoryPage(List.of(), p, s, total, (total + s - 1) / s, filter);
+        List<HistoryItem> items = jdbc.query("""
+                SELECT g.game_date, g.guesses, g.status, g.reward, g.puzzle_date, p.answer, p.topic, p.hint
+                FROM wordle_games g LEFT JOIN wordle_puzzles p ON p.game_date = g.puzzle_date
+                """ + where + " ORDER BY g.game_date DESC LIMIT ? OFFSET ?", (rs, row) -> {
+                    LocalDate day = LocalDate.parse(rs.getString("game_date"));
+                    Game game = new Game(parseGuesses(rs.getString("guesses")), rs.getString("status"),
+                            rs.getInt("reward"), rs.getString("puzzle_date"));
+                    ContentBank.WordleWord answer = rs.getString("answer") == null ? answerFor(game, day)
+                            : new ContentBank.WordleWord(rs.getString("answer"), rs.getString("topic"), rs.getString("hint"));
+                    Map<String, Object> round = round(day, game, answer);
+                    return new HistoryItem(day.toString(), puzzleNumber(day), game.status(), game.guesses().size(),
+                            game.reward(), answer != null, (String) round.get("shareText"));
+                }, userId, time.todayIso(), filter, filter, s, offset);
+        return new HistoryPage(items, p, s, total, (total + s - 1) / s, filter);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> historyRound(String userId, String rawDate) {
+        LocalDate day;
+        try {
+            if (rawDate == null || rawDate.length() != 10) throw new IllegalArgumentException();
+            day = LocalDate.parse(rawDate);
+        } catch (IllegalArgumentException | java.time.format.DateTimeParseException e) {
+            throw ApiException.badRequest("Data trebuie să fie o zi validă în formatul AAAA-LL-ZZ.");
+        }
+        if (day.isAfter(time.today())) throw ApiException.notFound("Runda nu a fost găsită.");
+        Game game = load(userId, day.toString()).filter(g -> WON.equals(g.status()) || LOST.equals(g.status()))
+                .orElseThrow(() -> ApiException.notFound("Runda nu a fost găsită sau nu este încheiată."));
+        return round(day, game, answerFor(game, day));
+    }
+
+    private Map<String, Object> round(LocalDate day, Game game, ContentBank.WordleWord answer) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("date", day.toString());
+        result.put("puzzleNumber", puzzleNumber(day));
+        result.put("length", Economy.WORDLE_LENGTH);
+        result.put("maxGuesses", Economy.WORDLE_MAX_GUESSES);
+        result.put("readOnly", true);
+        fill(result, game, answer);
+        return result;
+    }
+
+    private static List<String> parseGuesses(String raw) {
+        return raw == null || raw.isEmpty() ? List.of() : Arrays.asList(raw.split(","));
+    }
+
     /** Statistici personale: jocuri, victorii, serie curenta/maxima si distributia incercarilor. */
     Map<String, Object> stats(String userId, LocalDate today) {
         Set<LocalDate> won = new HashSet<>();
         Set<LocalDate> lost = new HashSet<>();
         int[] distribution = new int[Economy.WORDLE_MAX_GUESSES];
-        jdbc.query("SELECT game_date, status, guesses FROM wordle_games WHERE user_id = ? AND status <> 'PLAYING'", rs -> {
+        jdbc.query("SELECT game_date, status, guesses FROM wordle_games WHERE user_id = ? AND status <> 'PLAYING' AND game_date <= ?", rs -> {
             LocalDate d = LocalDate.parse(rs.getString(1));
             if (WON.equals(rs.getString(2))) {
                 won.add(d);
@@ -278,7 +345,7 @@ public class WordleService {
             } else {
                 lost.add(d);
             }
-        }, userId);
+        }, userId, today.toString());
         int current = 0;
         if (!lost.contains(today)) {
             LocalDate d = won.contains(today) ? today : today.minusDays(1);

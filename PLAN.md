@@ -12,6 +12,8 @@ Actualizarea următoare a publicat sesiunile revocabile și preferințele de not
 
 Obiectivul de economisire și corecția reducerilor pentru totaluri mari au fost publicate cu V9. Restaurarea dumpului și păstrarea integrală a celor 24 de tabele existente au fost verificate. Au rămas 3 conturi, 16 achiziții, 16 comenzi și 12 premii. Site-ul public a trecut verificările de browser, inclusiv acțiunea de obiectiv pentru vizitatori și protejarea API-ului privat.
 
+Următoarea etapă este pregătită local, fără push sau publicare. Include V10 pentru stabilitatea cuvântului Wordle, istoricul personal paginat, filtre și replay fără recompensare suplimentară. Verificarea locală a trecut 181 de teste backend pe Java 25, 7 teste JavaScript și fluxurile reale de browser prin nginx. Producția rămâne la V9.
+
 ## Etapa 1 · Securitate și funcționare
 
 | Lucrare | Stare | Criteriu de acceptare |
@@ -71,7 +73,7 @@ Serviciul de email și regulile pentru acordarea premiilor vor fi alese înainte
 | Sezoane de clasament | Perioade arhivate, premii și reguli publice |
 | Trasee de învățare | Colecții de quiz-uri pe Java, frontend, Python și DevOps |
 | Explicații după quiz | Rezultatul, motivul răspunsului și resurse ale autorilor |
-| Istoric Wordle | Statistici personale și distribuire care păstrează secret cuvântul |
+| Istoric Wordle | Implementat local, nepublicat. Paginare, filtre, replay pentru rundele încheiate și distribuire cu scor și grilă fără litere |
 | Provocări de breaslă | Țintă comună și contribuții personale verificabile |
 | Preferințe de notificare | Implementată selectarea a cinci categorii de alerte în aplicație. Agregarea periodică rămâne de evaluat |
 | Colecții de premii | Liste tematice și recomandări explicate prin preferințe explicite |

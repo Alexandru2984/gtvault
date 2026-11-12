@@ -91,6 +91,8 @@ La actualizare, reload-ul nginx este asincron. Confirmă răspunsul de mentenan�
 
 V10 adaugă cuvintele zilnice salvate și o referință opțională pe rundele personale. Coloanele existente ale rundelor sunt păstrate. O victorie veche se poate reconstrui din ultima încercare; o înfrângere fără soluție salvată păstrează scorul, fără a inventa marcajele. Publicarea acestei migrări este încă în așteptare. La verificarea conservării datelor, compară coloanele existente ale `wordle_games` separat de noua coloană `puzzle_date`.
 
+Istoricul personal este disponibil prin `GET /api/games/wordle/history` și `GET /api/games/wordle/history/{date}`. Ambele cer autentificare, se limitează la rundele proprii încheiate și exclud datele viitoare. Listele au maximum 30 de intrări; accesul la istoric și replay împarte o limită de 60 de cereri pe minut per cont. Replay-ul nu acordă din nou AP sau progres în misiuni. Exportul personal include data ultimei actualizări și referința rundei, fără soluția unui joc neterminat.
+
 ## Răspuns la incident
 
 1. Notează momentul constatării, simptomele, versiunea și operațiile cunoscute. Conservă logurile și copiile existente cu acces restrâns.

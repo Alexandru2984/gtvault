@@ -170,6 +170,66 @@ try {
     await page.locator(`a[href="${route}"]:visible`).first().click();
     await page.getByRole('heading', { name: heading, level: 1 }).waitFor();
     await noOverflow(page, route);
+    if (route === '/wordle') {
+      const history = page.locator('.wordle-history');
+      await history.getByText('Nu ai încă runde încheiate.', { exact: false }).waitFor();
+      let finished;
+      for (const [index, word] of ['ZZZZZ', 'QQQQQ', 'XXXXX', 'JJJJJ', 'VVVVV', 'WWWWW'].entries()) {
+        const response = page.waitForResponse((r) => r.url().endsWith('/games/wordle/guess') && r.request().method() === 'POST');
+        await page.keyboard.type(word);
+        await page.keyboard.press('Enter');
+        const result = await response;
+        assert.equal(result.status(), 200);
+        finished = await result.json();
+        await page.waitForFunction((i) => document.querySelectorAll('#wd-board .wd-row')[i]
+          ?.querySelectorAll('[data-state="HIT"], [data-state="NEAR"], [data-state="MISS"]').length === 5, index);
+      }
+      assert.equal(finished.status, 'LOST');
+      const statsDialog = page.getByRole('dialog');
+      await statsDialog.getByRole('heading', { name: 'Statistici Tech Wordle', exact: true }).waitFor();
+      await statsDialog.getByRole('button', { name: 'Închide', exact: true }).click();
+      await history.locator('[data-wordle-replay]').waitFor();
+      await page.getByLabel('Rezultat', { exact: true }).selectOption('WON');
+      await history.getByText('Nu ai runde care să corespundă acestui filtru.', { exact: true }).waitFor();
+      await page.getByLabel('Rezultat', { exact: true }).selectOption('ALL');
+      await history.locator('[data-wordle-replay]').click();
+      const replay = page.getByRole('dialog');
+      await replay.getByRole('table', { name: 'Grila rundei arhivate' }).waitFor();
+      assert.equal(await replay.getByRole('cell').count(), 30);
+      assert.equal(await replay.locator('[data-key]').count(), 0);
+      await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+      await page.evaluate(() => Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }));
+      await replay.locator('[data-share-replay]').click();
+      const shared = await page.evaluate(() => navigator.clipboard.readText());
+      assert.ok(shared.includes('X/6'));
+      assert.ok(!shared.includes(finished.answer) && !shared.includes('ZZZZZ'));
+      for (const width of [320, 390, 768, 1440]) {
+        await page.setViewportSize({ width, height: 844 });
+        await noOverflow(page, `Wordle replay at ${width}`);
+        assert.ok(await replay.evaluate((el) => el.getBoundingClientRect().width <= innerWidth));
+        assert.ok(await replay.locator('.modal-body').evaluate((el) => el.scrollWidth <= el.clientWidth));
+      }
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.screenshot({ path: 'test-results/browser/wordle-history-mobile.png', fullPage: true });
+      const originalSession = await page.evaluate(() => localStorage.getItem('gt.session'));
+      const adminAuthResponse = await context.request.post(origin + '/RewardHub/api/auth/login', {
+        data: { email: 'admin@rewardhub.test', password: 'Parola-Release-123' },
+      });
+      assert.equal(adminAuthResponse.status(), 200);
+      const adminAuth = await adminAuthResponse.json();
+      const actor = await context.newPage();
+      await actor.goto(origin + '/offline.html');
+      await actor.evaluate((auth) => localStorage.setItem('gt.session', JSON.stringify({
+        token: auth.token, expiresAt: Date.parse(auth.expiresAt), user: auth.user,
+      })), adminAuth);
+      await history.getByText('Nu ai încă runde încheiate.', { exact: false }).waitFor();
+      assert.equal(await page.getByRole('dialog').count(), 0, 'account switch closes private replay dialogs');
+      await actor.evaluate((session) => localStorage.setItem('gt.session', session), originalSession);
+      await history.locator('[data-wordle-replay]').waitFor();
+      await actor.close();
+      await page.reload();
+      await history.locator('[data-wordle-replay]').waitFor();
+    }
   }
   await page.locator('.site-footer a[href="/activitati"]').click();
   const claim = page.locator('[data-claim]');
@@ -284,7 +344,7 @@ try {
     headers: { Authorization: `Bearer ${rotatedToken}` },
   })).status(), 401);
   assert.deepEqual(errors, []);
-  console.log('Browser checks passed for responsive navigation, registration, comparison, wishlist, saving goals, checkout, vouchers, CSV, daily rewards, sessions, notification preferences, admin and offline recovery.');
+  console.log('Browser checks passed for responsive navigation, registration, comparison, wishlist, saving goals, checkout, vouchers, CSV, daily rewards, Wordle history/replay/sharing/account isolation, sessions, notification preferences, admin and offline recovery.');
 } catch (error) {
   if (errors.length) console.error('Browser HTTP or script errors', errors);
   throw error;

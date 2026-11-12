@@ -49,7 +49,7 @@ public class PrivacyService {
         TABLES.put("proposals", "SELECT id, title, category, description, status, votes_count, created_at FROM reward_proposals WHERE user_id = ? ORDER BY created_at");
         TABLES.put("proposal_votes", "SELECT * FROM proposal_votes WHERE user_id = ?");
         TABLES.put("promo_redemptions", "SELECT promo_id, order_id, discount, created_at FROM promo_redemptions WHERE user_id = ?");
-        TABLES.put("wordle_games", "SELECT game_date, guesses, status, reward FROM wordle_games WHERE user_id = ? ORDER BY game_date");
+        TABLES.put("wordle_games", "SELECT game_date, guesses, status, reward, updated_at, puzzle_date FROM wordle_games WHERE user_id = ? ORDER BY game_date");
         TABLES.put("notifications", "SELECT type, title, body, is_read, created_at FROM notifications WHERE user_id = ? ORDER BY created_at");
     }
 

@@ -4,8 +4,9 @@ import { icon } from '../icons.js';
 import { num, percent } from '../format.js';
 import { countdownEl, loginPrompt, skeletonPage, apAmount } from '../components.js';
 import { setMeta } from '../seo.js';
-import { isAuthed } from '../store.js';
+import { isAuthed, state } from '../store.js';
 import { celebrate, handleError, modal, shareLink, toast, copyText } from '../ui.js';
+import { wordleHistory } from '../wordle-history.js';
 
 const ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
 const REVEAL_MS = 250;
@@ -17,6 +18,8 @@ export default async function wordle({ root, signal, alive }) {
     description: 'Ghicește cuvântul tech al zilei din 6 încercări: limbaje, unelte, concepte de programare. Câștigi AP în funcție de cât de repede îl găsești.',
   });
   mount(root, skeletonPage());
+  const token = state.token;
+  const active = () => alive() && state.token === token;
   let g;
   try {
     g = await get('/games/wordle', { signal });
@@ -24,7 +27,19 @@ export default async function wordle({ root, signal, alive }) {
     if (isAbort(err)) return;
     throw err;
   }
-  if (!alive()) return;
+  if (!active()) return;
+
+  mount(root, html`<div data-wordle-current></div>${isAuthed() ? html`<div class="page" data-wordle-history></div>` : ''}`);
+  const playRoot = qs('[data-wordle-current]', root);
+  const dialogs = new Set();
+  let historyReady = null;
+  function openDialog(options) {
+    return modal({ ...options, onMount: (dlg, close) => {
+      dialogs.add(close);
+      dlg.addEventListener('close', () => dialogs.delete(close), { once: true });
+      options.onMount?.(dlg, close);
+    } });
+  }
 
   let buffer = '';
   let sending = false;
@@ -64,7 +79,7 @@ export default async function wordle({ root, signal, alive }) {
 
   function render() {
     const done = g.status !== 'PLAYING';
-    mount(root, html`<div class="page">
+    mount(playRoot, html`<div class="page">
       <div class="page-head">
         <div><h1>Tech Wordle <span class="muted">#${g.puzzleNumber}</span></h1>
           <p>Ghicește cuvântul tech de ${L} litere. ${g.community ? `${num(g.community.players)} jucători azi, ${num(g.community.solvers)} l-au ghicit.` : ''}</p></div>
@@ -114,7 +129,7 @@ export default async function wordle({ root, signal, alive }) {
   }
 
   function showStats() {
-    modal({
+    openDialog({
       title: `Statistici Tech Wordle`,
       content: statsContent(),
       footer: g.shareText ? html`<button class="btn btn-primary" type="button" data-share-modal>${icon('share')} Distribuie</button>` : null,
@@ -158,7 +173,7 @@ export default async function wordle({ root, signal, alive }) {
     sending = true;
     try {
       const r = await post('/games/wordle/guess', { word: buffer });
-      if (!alive()) return;
+      if (!active()) return;
       const prevKeyboard = keyboard;
       g = r;
       buffer = '';
@@ -169,7 +184,7 @@ export default async function wordle({ root, signal, alive }) {
       if (live) live.textContent = r.message || '';
       const wait = reduced() ? 50 : REVEAL_MS * (L - 1) + 520;
       setTimeout(async () => {
-        if (!alive()) return;
+        if (!active()) return;
         keyboard = { ...(g.keyboard || {}) };
         revealRow = -1;
         if (g.status === 'WON') {
@@ -183,19 +198,21 @@ export default async function wordle({ root, signal, alive }) {
         } else {
           const winRow = g.status === 'WON' ? g.guesses.length - 1 : -1;
           render();
+          historyReady?.then((history) => history.refresh({ reset: true }));
           if (winRow >= 0) qsa('.wd-row', root)[winRow]?.classList.add('is-winning');
           if (g.status === 'WON') toast(r.message, { type: 'reward', icon: '🏆', title: r.rewardPoints ? `+${num(r.rewardPoints)} AP` : null });
           else toast(r.message, { icon: '🧩' });
           await celebrate(r, { confettiOn: g.status === 'WON' });
-          setTimeout(() => { if (alive()) showStats(); }, reduced() ? 0 : 1400);
+          setTimeout(() => { if (active()) showStats(); }, reduced() ? 0 : 1400);
         }
       }, wait);
     } catch (err) {
-      if (isAbort(err)) return;
+      if (isAbort(err) || !active()) return;
       if (['INVALID_WORD', 'DUPLICATE_GUESS'].includes(err.code)) shake(err.message);
       else if (err.code === 'GAME_OVER') {
         handleError(err);
         g = await get('/games/wordle', { signal }).catch(() => g);
+        if (!active()) return;
         render();
       } else handleError(err);
     } finally {
@@ -233,11 +250,12 @@ export default async function wordle({ root, signal, alive }) {
   document.addEventListener('keydown', onKey);
 
   render();
+  if (isAuthed()) historyReady = wordleHistory(qs('[data-wordle-history]', root), { signal, alive: active });
   const offs = [
     on(root, 'click', '[data-key]', (e, b) => { b.blur(); press(b.dataset.key); }),
     on(root, 'click', '[data-stats]', () => showStats()),
     on(root, 'click', '[data-share]', () => share()),
-    on(root, 'click', '[data-help]', () => modal({
+    on(root, 'click', '[data-help]', () => openDialog({
       title: 'Cum se joacă',
       content: html`<p>Ghicește cuvântul tech al zilei în ${MAX} încercări. Fiecare încercare trebuie să fie un cuvânt de ${L} litere.</p>
         <div class="wd-row"><div class="wd-tile" data-state="HIT">J</div><div class="wd-tile">A</div><div class="wd-tile">V</div><div class="wd-tile">A</div><div class="wd-tile">X</div></div>
@@ -249,15 +267,19 @@ export default async function wordle({ root, signal, alive }) {
         <p class="small muted">Recompensa scade cu fiecare încercare: ${join(g.rewards || [], (r, i) => html`${i ? ' · ' : ''}${i + 1} → ${apAmount(r)}`)}. După 3 încercări primești un indiciu. Un cuvânt nou apare zilnic la miezul nopții.</p>`,
     })),
     on(root, 'countdown:end', '[data-countdown]', () => setTimeout(async () => {
-      if (!alive()) return;
+      if (!active()) return;
       g = await get('/games/wordle', { signal }).catch(() => g);
+      if (!active()) return;
       keyboard = { ...(g.keyboard || {}) };
       buffer = '';
       render();
+      historyReady?.then((history) => history.refresh({ reset: true }));
     }, 1500)),
   ];
   return () => {
     document.removeEventListener('keydown', onKey);
+    for (const close of [...dialogs]) close();
+    historyReady?.then((history) => history.cleanup());
     offs.forEach((off) => off());
   };
 }

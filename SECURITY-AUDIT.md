@@ -54,6 +54,8 @@ Migrarea V9 adaugă un singur obiectiv de economisire per cont. API-ul foloseșt
 
 Migrarea V10 este pregătită local. Cuvântul, tema și explicația zilei sunt comune tuturor participanților și rămân stabile după prima încercare validă, inclusiv între instanțe cu chei diferite. Citirile și încercările invalide nu creează o rundă comună. Soluția nu este expusă participanților înaintea încheierii rundei proprii. Pentru victoriile vechi se poate folosi ultima încercare; pentru înfrângerile fără soluție salvată se păstrează scorul și se marchează grila ca indisponibilă.
 
+Istoricul Wordle este privat implicit și folosește exclusiv contul autentificat. Listele sunt paginate, cu cel mult 30 de runde pe pagină. Rundele neîncheiate și cele viitoare sunt excluse, inclusiv din statisticile personale. Replay-ul este o citire, fără operații de creditare sau progres în misiuni. Lista nu include soluții sau încercări în clar; distribuirea include numai scorul și marcajele. Dialogurile Wordle se închid la schimbarea paginii ori contului, pentru a elimina rezultatele private ale sesiunii precedente.
+
 CSP permite scripturile proprii, nonce-uri generate per răspuns și beaconul Cloudflare deja folosit pe domeniu. Paginile HTML răspund cu un document proaspăt pentru a păstra potrivirea dintre nonce și scripturile inserate de Cloudflare. Reîncărcarea paginilor a fost verificată în browser. [Integrarea CSP cu JavaScript Detections](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/)
 
 ## Model de amenințări
@@ -100,5 +102,6 @@ Furnizorii observați sunt Cloudflare, găzduirea VPS și GitHub pentru surse/CI
 - Actualizarea V7–V8 a păstrat integral datele existente în 22 de tabele. Dumpul curent a fost restaurat și comparat înainte de migrare. Au rămas 3 conturi, 16 achiziții, 16 comenzi și 12 premii. Directorul de backup existent a fost reutilizat fără subdirectoare noi.
 - Parserul inventarului Maven elimină secvențele ANSI înainte de scanare și are două teste de regresie. OSV verifică 95 de biblioteci runtime. Două avertizări condiționale rămân documentate, fără constatări noi nerevizuite.
 - Extinderea testului de browser a produs răspunsuri 429 pe runnerul rapid. Testul navighează prin interfață și își limitează cererile automate la un ritm sub plafonul nginx. Limitele aplicației au rămas active. Verificarea ulterioară a trecut integral în CI.
+- Etapa Wordle nepublicată a trecut local 181 de teste backend și 7 teste JavaScript. Browserul verifică o rundă încheiată, filtrarea, replay-ul, copierea fără soluție, lipsa derulării orizontale la 320 px și schimbarea efectivă a contului din alt tab, care închide dialogul privat. Nu a fost făcut push pentru aceste modificări.
 
 Testele de încărcare și extinderea auditului la celelalte aplicații de pe VPS rămân de planificat. Prioritățile restante sunt protecția identității, backupurile periodice și alertarea.
