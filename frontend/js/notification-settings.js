@@ -6,7 +6,7 @@ import { busy, handleError } from './ui.js';
 const OPTIONS = [
   ['wishlistSales', 'Reduceri la favorite', 'Când un premiu salvat intră într-o ofertă flash.'],
   ['wishlistStock', 'Reveniri în stoc', 'Când poți comanda din nou un premiu salvat.'],
-  ['progress', 'Progres și realizări', 'Insigne, misiuni și praguri de streak.'],
+  ['progress', 'Progres și realizări', 'Obiectivul de economisire, insigne, misiuni și praguri de streak.'],
   ['community', 'Activitate în comunitate', 'Voturi utile la recenzii și voturi la propuneri.'],
   ['announcements', 'Noutăți RewardHub', 'Anunțuri publicate de echipa platformei.'],
 ];

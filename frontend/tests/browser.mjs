@@ -109,6 +109,22 @@ try {
   await page.getByRole('button', { name: 'Mai târziu' }).click();
   await page.locator('[data-wish]').first().click();
   await page.waitForFunction(() => document.querySelector('[data-wish]')?.getAttribute('aria-pressed') === 'true');
+  const goalSaved = page.waitForResponse((r) => r.url().endsWith('/user/saving-goal') && r.request().method() === 'PUT');
+  await page.locator('[data-goal-set]').click();
+  assert.equal((await goalSaved).status(), 200);
+  await page.locator('.site-footer a[href="/favorite"]').click();
+  await page.locator('.saving-goal h3').filter({ hasText: 'Template CV' }).waitFor();
+  await page.locator('[data-goal-status="READY"]').waitFor();
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 844 });
+    await noOverflow(page, `saving goal at ${width}`);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'test-results/browser/goal-mobile.png', fullPage: true });
+  await page.reload();
+  await page.locator('.saving-goal h3').filter({ hasText: 'Template CV' }).waitFor();
+  await page.locator('.saving-goal a[href="/produs/rew-templatecv"]').click();
+  await page.getByRole('heading', { name: 'Template CV', level: 1 }).waitFor();
   await page.locator('[data-buy=cart]').click();
   await page.getByRole('link', { name: /^Coș/ }).click();
   await page.getByRole('heading', { name: 'Coșul tău', level: 1 }).waitFor();
@@ -117,6 +133,12 @@ try {
   await page.waitForURL(/\/comenzi\/ORD-/);
   const voucher = await page.locator('.voucher code').first().textContent();
   assert.match(voucher.trim(), /^GT-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+
+  await page.locator('.site-footer a[href="/favorite"]').click();
+  await page.locator('.saving-goal h3').filter({ hasText: 'Template CV' }).waitFor();
+  await page.locator('[data-goal-clear]').click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Elimină obiectivul', exact: true }).click();
+  await page.getByRole('link', { name: 'Alege un premiu țintă', exact: true }).waitFor();
 
   await page.goto(origin + '/vouchere');
   await page.getByLabel('Cod voucher').fill(voucher.trim());
@@ -262,7 +284,7 @@ try {
     headers: { Authorization: `Bearer ${rotatedToken}` },
   })).status(), 401);
   assert.deepEqual(errors, []);
-  console.log('Browser checks passed for responsive navigation, registration, comparison, wishlist, checkout, vouchers, CSV, daily rewards, sessions, notification preferences, admin and offline recovery.');
+  console.log('Browser checks passed for responsive navigation, registration, comparison, wishlist, saving goals, checkout, vouchers, CSV, daily rewards, sessions, notification preferences, admin and offline recovery.');
 } catch (error) {
   if (errors.length) console.error('Browser HTTP or script errors', errors);
   throw error;

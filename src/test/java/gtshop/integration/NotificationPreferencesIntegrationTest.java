@@ -68,7 +68,7 @@ class NotificationPreferencesIntegrationTest extends AbstractIntegrationTest {
     void optionalAlertsAreSuppressedWhileOrdersAccountAndModerationRemainActive() throws Exception {
         TestUser user = register();
         save(user, preferences(false, false, false, false, false));
-        for (String type : List.of("BADGE", "QUEST", "STREAK", "REVIEW", "PROPOSAL", "ANNOUNCEMENT")) {
+        for (String type : List.of("BADGE", "QUEST", "STREAK", "GOAL", "REVIEW", "PROPOSAL", "ANNOUNCEMENT")) {
             notifications.notify(user.id(), type, "Progres test", "Detalii", "🔔", "#/profil");
             assertThat(count(user, type)).as(type).isZero();
         }

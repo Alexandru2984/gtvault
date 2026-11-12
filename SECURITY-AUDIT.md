@@ -48,6 +48,8 @@ Etapa de sesiuni adaugă verificarea identificatorului JWT în baza de date. Sun
 
 Preferințele de notificare sunt legate exclusiv de contul autentificat. Atât emisiile individuale, cât și inserările în masă pentru favorite și anunțuri țin cont de opțiunile salvate. Comenzile, soldurile, cadourile, recomandările și deciziile de moderare rămân active. Migrarea V8 este aditivă și păstrează alertele existente. Preferințele sunt incluse în exportul de date și se elimină prin cascadă la ștergerea contului.
 
+Migrarea V9 adaugă un singur obiectiv de economisire per cont. API-ul folosește exclusiv identitatea autentificată și aceeași logică de preț ca checkout-ul, inclusiv limitele ofertelor per utilizator. Obiectivul nu acordă AP, nu rezervă stoc și nu declanșează achiziții. Verificările alertelor blochează contul pentru a preveni duplicatele; loturile sunt limitate și parcurg obiectivele după ultima verificare. Alegerea și ștergerea sunt limitate împreună la 30 de operații pe zi. Exportul și ștergerea contului includ noua stare.
+
 CSP permite scripturile proprii, nonce-uri generate per răspuns și beaconul Cloudflare deja folosit pe domeniu. Paginile HTML răspund cu un document proaspăt pentru a păstra potrivirea dintre nonce și scripturile inserate de Cloudflare. Reîncărcarea paginilor a fost verificată în browser. [Integrarea CSP cu JavaScript Detections](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/)
 
 ## Model de amenințări

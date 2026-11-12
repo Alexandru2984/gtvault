@@ -17,6 +17,7 @@ export function legalContent(privacy) {
       <section class="card card-pad stack">
         <h2>Date folosite în RewardHub</h2>
         <p>Contul include adresa de email, numele de afișare și activitatea din aplicație. Pentru comenzile fizice sunt necesare date de livrare.</p>
+        <p>Premiul ales ca obiectiv, momentul selectării și starea alertei se păstrează în cont. Îl poți schimba sau elimina din Favorite; datele sunt incluse în exportul contului.</p>
         <p>Sesiunile active păstrează browserul și sistemul estimate, data autentificării, ultima utilizare și expirarea. Nu păstrăm IP-ul sau user-agentul complet în lista de sesiuni. Sesiunile expirate sunt eliminate automat zilnic, iar deconectarea confirmată de server elimină sesiunea respectivă.</p>
         <p>Folosim aceste informații pentru autentificare, evidența punctelor, procesarea comenzilor și funcționarea comunității. Traficul trece prin Cloudflare și serverul de găzduire, care procesează date tehnice pentru livrarea și securizarea site-ului.</p>
         <h2>Profil și activitate publică</h2>

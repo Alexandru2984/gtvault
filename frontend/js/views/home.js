@@ -6,6 +6,7 @@ import { num, timeAgo, plural } from '../format.js';
 import { productGrid, skeletonGrid, apAmount, avatar, countdownEl, progress } from '../components.js';
 import { setMeta } from '../seo.js';
 import { busy, celebrate, handleError, toastOk } from '../ui.js';
+import { savingGoal } from '../saving-goal.js';
 
 const safe = (p) => p.catch(() => null);
 
@@ -32,6 +33,8 @@ export default async function home({ root, signal, alive }) {
   const products = (catalog?.rewards || []).slice(0, 8);
   mount(root, html`<div class="page">
     ${authed && status ? dashboard(status, wordle, quests) : hero(stats, products)}
+
+    ${authed ? html`<div data-saving-goal></div>` : ''}
 
     ${deals?.length ? html`<section class="section" aria-labelledby="deals-h">
       <div class="section-head">
@@ -80,7 +83,8 @@ export default async function home({ root, signal, alive }) {
       if (meta) meta.textContent = `Streak: ${plural(r.streakDays, 'zi', 'zile')} 🔥`;
     } catch (err) { handleError(err); }
   }));
-  return offClaim;
+  const goalReady = authed ? savingGoal(qs('[data-saving-goal]', root), { signal, alive }) : null;
+  return () => { offClaim(); goalReady?.then((cleanup) => cleanup()); };
 }
 
 function heroSkeleton() {

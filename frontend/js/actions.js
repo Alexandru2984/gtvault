@@ -1,7 +1,7 @@
 // Actiuni folosite din mai multe pagini: cos, favorite, deconectare.
 import { qsa } from './dom.js';
 import { post, put, del, enc } from './api.js';
-import { state, isAuthed, endSession, setCartCount, emit } from './store.js';
+import { state, isAuthed, endSession, setCartCount, refreshUnread, emit } from './store.js';
 import { navigate } from './router.js';
 import { toast, toastOk, handleError } from './ui.js';
 
@@ -66,6 +66,24 @@ export async function toggleWish(btn, rewardId) {
   } finally {
     if (btn) delete btn.dataset.pending;
   }
+}
+
+export async function setSavingGoal(btn, rewardId) {
+  if (!isAuthed()) {
+    requireLogin('Intră în cont ca să salvezi un obiectiv.');
+    return;
+  }
+  if (btn?.getAttribute('aria-busy') === 'true') return;
+  const token = state.token;
+  btn?.setAttribute('aria-busy', 'true');
+  try {
+    await put('/user/saving-goal', { rewardId });
+    if (state.token !== token) return;
+    emit('goal:changed');
+    refreshUnread();
+    toastOk('Premiul a devenit obiectivul tău!', { icon: '🎯', action: { label: 'Vezi progresul', href: '/favorite' } });
+  } catch (err) { if (state.token === token) handleError(err); }
+  finally { btn?.removeAttribute('aria-busy'); }
 }
 
 let logoutPending = false;

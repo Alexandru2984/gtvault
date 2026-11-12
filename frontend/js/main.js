@@ -2,7 +2,7 @@
 import { html, mount, on, qs, qsa, safeHref, join } from './dom.js';
 import { icon, coin } from './icons.js';
 import { post, get, enc, isAbort } from './api.js';
-import { addToCart, toggleWish, logout } from './actions.js';
+import { addToCart, toggleWish, setSavingGoal, logout } from './actions.js';
 import {
   state, on as onStore, loadSession, isAuthed, isAdmin, refreshAll, refreshUser, refreshUnread,
   captureReferral, setUnread,
@@ -216,6 +216,10 @@ function bindGlobal() {
     toggleWish(btn, btn.dataset.wish);
   });
   on(document, 'click', '[data-logout]', (e) => { e.preventDefault(); logout(); });
+  on(document, 'click', '[data-goal-set]', (e, btn) => {
+    e.preventDefault();
+    setSavingGoal(btn, btn.dataset.goalSet);
+  });
   on(document, 'click', '[data-theme-toggle]', () => {
     toggleTheme();
     renderHeader();

@@ -24,10 +24,11 @@ public class NotificationService {
     }
 
     @Transactional
-    public void notify(String userId, String type, String title, String body, String icon, String link) {
-        if (!preferences.allows(userId, type)) return;
+    public boolean notify(String userId, String type, String title, String body, String icon, String link) {
+        if (!preferences.allows(userId, type)) return false;
         repository.save(new Notification(Ids.prefixed("ntf-"), userId, type,
                 truncate(title, 140), truncate(body, 500), truncate(icon, 16), truncate(link, 255), time.now()));
+        return true;
     }
 
     @Transactional(readOnly = true)

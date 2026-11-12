@@ -105,6 +105,7 @@ export default async function product({ root, params, signal, alive }) {
             <button class="btn btn-secondary" type="button" data-wish="${r.id}" aria-pressed="${state.wishlist.has(r.id)}">${icon('heart')} Anunță-mă</button>`}
           <div class="row small muted">
             ${compareButton(r)}
+            <button class="btn btn-secondary btn-sm" type="button" data-goal-set="${r.id}">🎯 Setează ca obiectiv</button>
             <button class="btn btn-ghost btn-sm" type="button" data-share>${icon('share')} Distribuie</button>
             ${r.wishlistCount ? html`<span>❤️ ${plural(r.wishlistCount, 'membru îl are', 'membri îl au')} la favorite</span>` : ''}
           </div>

@@ -1,6 +1,6 @@
 # Plan de produs RewardHub
 
-Actualizat la 11 noiembrie 2026.
+Actualizat la 12 noiembrie 2026.
 
 ## Starea verificată
 
@@ -64,7 +64,7 @@ Serviciul de email și regulile pentru acordarea premiilor vor fi alese înainte
 
 | Funcție | Comportament propus |
 | --- | --- |
-| Obiectiv de economisire | Premiu țintă salvat pe server, progres AP și notificare când devine accesibil |
+| Obiectiv de economisire | Implementat, în verificare pentru publicare. Premiu țintă pe server, estimare prin calculul checkout, progres AP și o alertă per selecție când devine eligibil |
 | Provocări săptămânale | Obiective cu început și sfârșit, progres verificat și o singură revendicare |
 | Sezoane de clasament | Perioade arhivate, premii și reguli publice |
 | Trasee de învățare | Colecții de quiz-uri pe Java, frontend, Python și DevOps |
@@ -76,6 +76,8 @@ Serviciul de email și regulile pentru acordarea premiilor vor fi alese înainte
 | Alerte de obiectiv | Notificări când premiul țintă revine în stoc sau intră în ofertă |
 
 Fiecare recompensă nouă va avea plafon, reguli de eligibilitate și protecție la cereri simultane. Indicatorii de produs vor urmări activarea, revenirea la 7 zile și comenzile finalizate, cu date agregate.
+
+Obiectivul se alege din pagina produsului sau din Favorite și apare și pe pagina principală. Se păstrează pe server, se poate elimina și nu rezervă AP sau stoc. Prețul include oferta pentru care contul este eligibil și reducerea de nivel, fără cod promo. Alertele țin cont de stoc, nivel, premiile deja deținute și preferința de progres. Verificarea periodică procesează maximum 100 de obiective într-un lot, cu prioritate pentru cele neverificate de mult timp.
 
 ## Etapa 5 · Magazin și comunitate
 

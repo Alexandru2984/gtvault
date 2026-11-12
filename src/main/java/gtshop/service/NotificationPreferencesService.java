@@ -44,7 +44,7 @@ public class NotificationPreferencesService {
     @Transactional(readOnly = true)
     public boolean allows(String userId, String type) {
         return switch (type) {
-            case "BADGE", "QUEST", "STREAK" -> get(userId).progress();
+            case "BADGE", "QUEST", "STREAK", "GOAL" -> get(userId).progress();
             case "REVIEW", "PROPOSAL" -> get(userId).community();
             case "ANNOUNCEMENT" -> get(userId).announcements();
             // Comenzile, cadourile, soldurile și moderarea rămân disponibile indiferent de preferințe.

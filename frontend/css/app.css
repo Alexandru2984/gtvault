@@ -1028,3 +1028,8 @@ a.feed-item:hover .feed-title { color: var(--brand); }
 .preference-options { border: 0; padding: 0; min-width: 0; }
 .preference-options .hint { display: block; margin-top: 3px; color: var(--muted); font-size: 0.8rem; font-weight: 400; }
 .notification-options .btn { white-space: normal; padding-block: 10px; }
+.goal-summary { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.goal-summary > img { width: 88px; height: 88px; object-fit: contain; flex-shrink: 0; border-radius: var(--radius-sm); background: var(--surface-2); }
+.saving-goal .btn { white-space: normal; padding-block: 10px; }
+.goal-summary h3 { overflow-wrap: anywhere; }
+@media (max-width: 479.98px) { .goal-summary { align-items: flex-start; } .goal-summary > img { width: 56px; height: 56px; } }
