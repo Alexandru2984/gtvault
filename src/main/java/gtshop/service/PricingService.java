@@ -96,7 +96,7 @@ public class PricingService {
         }
 
         int afterFlash = subtotal - flash;
-        int tierDiscount = afterFlash * tier.discountPercent() / 100;
+        int tierDiscount = (int) ((long) afterFlash * tier.discountPercent() / 100);
         int afterTier = afterFlash - tierDiscount;
 
         PromoResult promo = null;
@@ -135,7 +135,7 @@ public class PricingService {
         }
         int discount;
         if (p.getDiscountPercent() > 0) {
-            discount = amount * p.getDiscountPercent() / 100;
+            discount = (int) ((long) amount * p.getDiscountPercent() / 100);
             if (p.getMaxDiscount() != null && p.getMaxDiscount() > 0) {
                 discount = Math.min(discount, p.getMaxDiscount());
             }

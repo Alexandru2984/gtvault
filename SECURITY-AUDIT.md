@@ -31,6 +31,7 @@ Au fost găsite 3 conturi și 16 achiziții în baza live la verificarea iniția
 | SEC-15 | P2 | JavaScript-ul vechi, imaginile și service workerul nu corespundeau noii interfețe | Resurse locale completate, iconuri PWA valide și fallback offline. API-urile și datele personale sunt excluse din cache-ul workerului |
 | SEC-16 | P2 | CI verifica numai sintaxa fișierului JavaScript vechi | Verificări de module, rute, browser, dependențe și secrete pregătite în workflow |
 | SEC-17 | P1 | Logout-ul din interfață elimina numai copia locală, iar tokenul copiat rămânea utilizabil | Sesiuni server-side legate de JWT, revocare individuală și logout server-side publicate. Verificate cu PostgreSQL izolat și în CI |
+| SEC-18 | P2 | Înmulțirea procentelor cu totaluri mari putea depăși `int`, producând reduceri negative sau greșite | Calcule intermediare pe `long`, cu două teste la limitele permise pentru coș. În verificare pentru publicare |
 
 Riscurile de bibliotecă sunt analizate după configurația aplicației. De exemplu, remediile Tomcat pentru HTTP/2, AJP sau WebSocket au condiții proprii de exploatare. Inventarul de versiuni identifică pachetele care necesită actualizare, iar atingerea unui endpoint vulnerabil se evaluează separat. [Buletine Apache Tomcat](https://tomcat.apache.org/security-10.html)
 
