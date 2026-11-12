@@ -93,6 +93,14 @@ V10 adaugă cuvintele zilnice salvate și o referință opțională pe rundele p
 
 Istoricul personal este disponibil prin `GET /api/games/wordle/history` și `GET /api/games/wordle/history/{date}`. Ambele cer autentificare, se limitează la rundele proprii încheiate și exclud datele viitoare. Listele au maximum 30 de intrări; accesul la istoric și replay împarte o limită de 60 de cereri pe minut per cont. Replay-ul nu acordă din nou AP sau progres în misiuni. Exportul personal include data ultimei actualizări și referința rundei, fără soluția unui joc neterminat.
 
+## Quiz — modificări locale pentru V11
+
+V11 adaugă `quiz_attempts`, fără modificarea tabelelor existente. Nu reconstruiește răspunsuri istorice. La trimiterea validă, întrebarea, variantele amestecate, alegerea, răspunsul corect, explicația și recompensa de quiz se salvează în aceeași tranzacție cu progresul și creditarea. Cheia cont/zi și blocarea contului previn rezultatele și recompensele duplicate. Reîncărcarea quiz-ului rezolvat folosește această copie, inclusiv după schimbarea băncii de conținut.
+
+`GET /api/gamification/quiz/history` acceptă `page`, `size` (maximum 20), `result=ALL|CORRECT|WRONG` și `category`. Sumarul rămâne pentru întregul caiet. `GET /api/gamification/quiz/history/{date}` returnează explicația unei întrebări rezolvate de contul autentificat. Ambele exclud datele viitoare și împart 60 de cereri/minut per cont. Recapitularea interactivă este locală în browser, fără API de acordare a AP. Exportul personal include copia salvată, iar ștergerea contului o elimină prin cascadă.
+
+Formularul trimite `questionVersion`, o amprentă a conținutului vizibil care detectează schimbarea variantelor, inclusiv când identificatorul întrebării rămâne același. Amprenta nu conține răspunsul sau explicația ascunsă și nu este un control de autorizare. Câmpul rămâne opțional pentru compatibilitatea cu clienții anteriori. Această etapă este locală și nu a fost publicată.
+
 ## Răspuns la incident
 
 1. Notează momentul constatării, simptomele, versiunea și operațiile cunoscute. Conservă logurile și copiile existente cu acces restrâns.

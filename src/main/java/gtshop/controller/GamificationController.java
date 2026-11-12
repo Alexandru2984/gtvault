@@ -36,7 +36,7 @@ public class GamificationController {
         this.currentUser = currentUser;
     }
 
-    public record QuizAnswer(String questionId, Integer answerIndex) {}
+    public record QuizAnswer(String questionId, Integer answerIndex, String questionVersion) {}
 
     @GetMapping("/config")
     @Operation(summary = "Regulile publice ale economiei (inclusiv probabilitățile reale)")
@@ -74,7 +74,7 @@ public class GamificationController {
     @RateLimit(name = "quiz", limit = 10, windowSeconds = 60)
     @Operation(summary = "Trimite răspunsul la quiz")
     public Map<String, Object> submitQuiz(@RequestBody QuizAnswer body) {
-        return daily.submitQuiz(currentUser.requireId(), body.questionId(), body.answerIndex());
+        return daily.submitQuiz(currentUser.requireId(), body.questionId(), body.answerIndex(), body.questionVersion());
     }
 
     @PostMapping("/fortune-cookie")

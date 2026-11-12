@@ -4,8 +4,9 @@ import { icon } from '../icons.js';
 import { num, plural, percent } from '../format.js';
 import { apAmount, countdownEl, loginPrompt, progress, skeletonPage } from '../components.js';
 import { setMeta } from '../seo.js';
-import { isAuthed } from '../store.js';
-import { busy, celebrate, confirmDialog, handleError, toast, toastOk } from '../ui.js';
+import { isAuthed, state } from '../store.js';
+import { quizNotebook } from '../quiz-notebook.js';
+import { busy, celebrate, handleError, modal, toast, toastOk } from '../ui.js';
 
 const HEX = /^#[0-9a-fA-F]{3,8}$/;
 const safeColor = (c, fallback = '#7c3aed') => (HEX.test(c || '') ? c : fallback);
@@ -17,6 +18,9 @@ export default async function activities({ root, signal, alive }) {
     description: 'Câștigă AP zilnic: streak, quiz tehnic, răvașul programatorului, roata norocului, cufere misterioase și misiuni săptămânale.',
   });
   mount(root, skeletonPage());
+  const ownerToken = state.token;
+  let disposed = false;
+  const active = () => !disposed && alive() && state.token === ownerToken;
   const authed = isAuthed();
   const opt = { signal };
   let config;
@@ -34,7 +38,34 @@ export default async function activities({ root, signal, alive }) {
     if (isAbort(err)) return;
     throw err;
   }
-  if (!alive()) return;
+  if (!active()) return;
+
+  mount(root, html`<div class="page"><div data-activities-content></div>${authed ? html`<div id="caiet-quiz" data-quiz-notebook></div>` : ''}</div>`);
+  const contentRoot = qs('[data-activities-content]', root);
+  let notebookReady = null;
+  const dialogs = new Set();
+
+  async function submit(path, body) {
+    if (!active()) throw new DOMException('Pagina nu mai este activă', 'AbortError');
+    const result = await post(path, body, { signal });
+    if (!active()) throw new DOMException('Contul s-a schimbat', 'AbortError');
+    return result;
+  }
+
+  function report(err) { if (active() && !isAbort(err)) handleError(err); }
+
+  function confirmAction({ title, body, confirmText }) {
+    if (!active()) return Promise.resolve(false);
+    return modal({ title, content: html`<p class="muted">${body}</p>`,
+      footer: html`<button class="btn btn-ghost" type="button" data-close>Renunță</button><button class="btn btn-primary" type="button" data-confirm-activity>${confirmText}</button>`,
+      onMount: (dlg, close) => {
+        dialogs.add(close);
+        dlg.addEventListener('close', () => dialogs.delete(close), { once: true });
+        qs('[data-confirm-activity]', dlg).addEventListener('click', () => close(true));
+        qs('[data-confirm-activity]', dlg).focus();
+      },
+    }).then((confirmed) => confirmed === true && active());
+  }
 
   let wheelRotation = 0;
   let fortune = null;
@@ -43,7 +74,8 @@ export default async function activities({ root, signal, alive }) {
   let dayRollover = false;
 
   function render() {
-    mount(root, html`<div class="page">
+    if (!active()) return;
+    mount(contentRoot, html`<div class="page">
       <div class="page-head">
         <div><h1>Activități</h1><p>Câștigă AP în fiecare zi. Totul se resetează la miezul nopții (ora României).</p></div>
         ${status ? countdownEl(status.resetsAt, { prefix: 'Reset în' }) : ''}
@@ -121,20 +153,21 @@ export default async function activities({ root, signal, alive }) {
     const done = quiz.alreadyAnswered || quizResult;
     const correctIndex = quizResult ? quizResult.correctIndex : quiz.correctIndex;
     const wasCorrect = quizResult ? quizResult.isCorrect : quiz.wasCorrect;
-    const picked = quizResult?.picked;
+    const picked = quizResult?.picked ?? quiz.selectedIndex;
     const letters = ['A', 'B', 'C', 'D', 'E'];
     return html`<section class="card card-pad game-card" id="quiz" aria-labelledby="quiz-h">
       <div class="card-head"><h2 class="card-title" id="quiz-h">${icon('sparkles')} Quiz-ul zilei</h2><span class="tag tag-brand">${quiz.category}</span></div>
       <p class="quiz-q">${quiz.question}</p>
       <div class="quiz-opts" role="group" aria-label="Variante de răspuns">
-        ${join(quiz.options, (o, i) => html`<button class="quiz-opt ${done && i === correctIndex ? 'is-correct' : ''} ${done && picked === i && i !== correctIndex ? 'is-wrong' : ''}" type="button" data-answer="${i}" ${done || !isAuthed() ? 'disabled' : ''}>
-          <span class="k">${letters[i]}</span><span>${o}</span></button>`)}
+        ${join(quiz.options, (o, i) => html`<button class="quiz-opt ${done && i === correctIndex ? 'is-correct' : ''} ${done && picked === i && i !== correctIndex ? 'is-wrong' : ''}" type="button" data-answer="${i}" aria-pressed="${String(picked === i)}" ${done || !isAuthed() ? 'disabled' : ''}>
+          <span class="k">${letters[i] || String.fromCharCode(65 + i)}</span><span>${o}${done && picked === i ? html`<span class="small strong quiz-option-note">Răspunsul tău</span>` : ''}${done && i === correctIndex ? html`<span class="small strong quiz-option-note">Răspuns corect</span>` : ''}</span></button>`)}
       </div>
       ${done ? html`<div class="callout ${wasCorrect ? 'is-success' : 'is-warning'}">${icon(wasCorrect ? 'check' : 'info')}<div>
           <strong>${wasCorrect ? `Corect! +${quiz.rewardPoints} AP` : 'De data asta n-a mers.'}</strong>
           ${(quizResult?.explanation || quiz.explanation) ? html`<div class="small">${quizResult?.explanation || quiz.explanation}</div>` : ''}
           <div class="small muted">Întrebare nouă mâine.</div></div></div>`
       : html`<p class="small muted">Un singur răspuns pe zi · răspuns corect = ${apAmount(quiz.rewardPoints)}</p>`}
+      ${authed ? html`<div><a class="btn btn-ghost btn-sm" href="#caiet-quiz">Caietul meu de quiz</a></div>` : ''}
     </section>`;
   }
 
@@ -211,36 +244,37 @@ export default async function activities({ root, signal, alive }) {
   }
 
   async function refreshStatus() {
-    if (!isAuthed()) return;
+    if (!active() || !isAuthed()) return;
     try {
       [status, quests] = await Promise.all([get('/gamification/status', { signal }), get('/quests', { signal }).catch(() => quests)]);
     } catch { /* pastram starea existenta */ }
   }
 
   render();
+  if (authed) notebookReady = quizNotebook(qs('[data-quiz-notebook]', root), { signal, alive: active });
   if (location.hash) qs(location.hash, root)?.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
 
   const offs = [
     on(root, 'click', '[data-claim]', (e, b) => busy(b, async () => {
       try {
-        const r = await post('/gamification/daily-claim');
+        const r = await submit('/gamification/daily-claim');
         toastOk(r.message, { icon: '🔥', title: r.milestoneBonus ? `Prag atins: +${num(r.milestoneBonus)} AP bonus!` : null });
         await celebrate(r, { confettiOn: r.milestoneBonus > 0 });
         await refreshStatus();
         render();
-      } catch (err) { handleError(err); }
+      } catch (err) { report(err); }
     })),
     on(root, 'click', '[data-freeze]', async (e, b) => {
-      const ok = await confirmDialog({ title: 'Cumperi o protecție de streak?', body: `Costă ${num(status.streakFreezeCost)} AP și se folosește automat dacă ratezi o zi. Poți avea maximum ${status.maxStreakFreezes}.`, confirmText: 'Cumpără' });
+      const ok = await confirmAction({ title: 'Cumperi o protecție de streak?', body: `Costă ${num(status.streakFreezeCost)} AP și se folosește automat dacă ratezi o zi. Poți avea maximum ${status.maxStreakFreezes}.`, confirmText: 'Cumpără' });
       if (!ok) return;
       await busy(b, async () => {
         try {
-          const r = await post('/gamification/streak-freeze');
+          const r = await submit('/gamification/streak-freeze');
           toastOk(r.message, { icon: '🛡️' });
           await celebrate(r);
           await refreshStatus();
           render();
-        } catch (err) { handleError(err); }
+        } catch (err) { report(err); }
       });
     }),
     on(root, 'click', '[data-answer]', (e, b) => {
@@ -248,15 +282,26 @@ export default async function activities({ root, signal, alive }) {
       for (const x of root.querySelectorAll('[data-answer]')) { x.disabled = true; x.setAttribute('aria-pressed', String(x === b)); }
       busy(b, async () => {
         try {
-          const r = await post('/gamification/quiz/submit', { questionId: quiz.questionId, answerIndex: i });
+          if (!active()) return;
+          const r = await submit('/gamification/quiz/submit', { questionId: quiz.questionId, questionVersion: quiz.questionVersion, answerIndex: i });
+          if (!active()) return;
           quizResult = { ...r, picked: i };
           if (r.isCorrect) toastOk(r.message, { icon: '🧠' });
           else toast(r.message || 'Răspuns greșit.', { icon: '🤔' });
           await celebrate(r, { confettiOn: r.isCorrect });
           await refreshStatus();
           render();
+          (await notebookReady)?.refresh({ reset: true });
         } catch (err) {
+          if (!active() || isAbort(err)) return;
           handleError(err);
+          if (err.code === 'QUIZ_CHANGED' || err.code === 'ALREADY_ANSWERED') {
+            quiz = await get('/gamification/quiz', { signal }).catch(() => quiz);
+            quizResult = null;
+            render();
+            (await notebookReady)?.refresh({ reset: true });
+            return;
+          }
           for (const x of root.querySelectorAll('[data-answer]')) x.disabled = false;
         }
       });
@@ -265,20 +310,21 @@ export default async function activities({ root, signal, alive }) {
       b.classList.add('is-cracking');
       busy(b, async () => {
         try {
-          const [r] = await Promise.all([post('/gamification/fortune-cookie'), new Promise((res) => setTimeout(res, reduced() ? 0 : 700))]);
+          const [r] = await Promise.all([submit('/gamification/fortune-cookie'), new Promise((res) => setTimeout(res, reduced() ? 0 : 700))]);
+          if (!active()) return;
           fortune = r;
           toastOk(r.message, { icon: '🥠' });
           await celebrate(r);
           await refreshStatus();
           render();
-        } catch (err) { handleError(err); b.classList.remove('is-cracking'); }
+        } catch (err) { report(err); b.classList.remove('is-cracking'); }
       });
     }),
     on(root, 'click', '[data-spin]', (e, b) => {
       const segs = config.wheel?.segments || [];
       busy(b, async () => {
         try {
-          const r = await post('/gamification/spin-wheel');
+          const r = await submit('/gamification/spin-wheel');
           const n = segs.length || 1;
           const seg = 360 / n;
           const jitter = (Math.random() - 0.5) * seg * 0.6;
@@ -288,19 +334,19 @@ export default async function activities({ root, signal, alive }) {
           const wheel = qs('#wheel', root);
           wheel.style.setProperty('transform', `rotate(${wheelRotation}deg)`);
           await new Promise((res) => setTimeout(res, reduced() ? 650 : 5100));
-          if (!alive()) return;
+          if (!active()) return;
           if (r.wonPoints > 0) toastOk(r.message, { icon: '🎡', title: `+${num(r.wonPoints)} AP` });
           else toast(r.message, { icon: '🎡' });
           await celebrate(r, { confettiOn: r.wonPoints >= 100 });
           await refreshStatus();
           render();
-        } catch (err) { handleError(err); }
+        } catch (err) { report(err); }
       });
     }),
     on(root, 'click', '[data-crate]', async (e, b) => {
       const c = config.crate || {};
       if (!crateResult) {
-        const ok = await confirmDialog({ title: 'Deschizi un cufăr?', body: `Costă ${num(c.cost)} AP. Poate conține între ${num(Math.min(...(c.tiers || [{ points: 0 }]).map((t) => t.points)))} și ${num(Math.max(...(c.tiers || [{ points: 0 }]).map((t) => t.points)))} AP.`, confirmText: 'Deschide' });
+        const ok = await confirmAction({ title: 'Deschizi un cufăr?', body: `Costă ${num(c.cost)} AP. Poate conține între ${num(Math.min(...(c.tiers || [{ points: 0 }]).map((t) => t.points)))} și ${num(Math.max(...(c.tiers || [{ points: 0 }]).map((t) => t.points)))} AP.`, confirmText: 'Deschide' });
         if (!ok) return;
       }
       await busy(b, async () => {
@@ -309,24 +355,24 @@ export default async function activities({ root, signal, alive }) {
           render();
           const crate = qs('#crate', root);
           crate?.classList.add('is-shaking');
-          const [r] = await Promise.all([post('/gamification/open-crate'), new Promise((res) => setTimeout(res, reduced() ? 0 : 900))]);
-          if (!alive()) return;
+          const [r] = await Promise.all([submit('/gamification/open-crate'), new Promise((res) => setTimeout(res, reduced() ? 0 : 900))]);
+          if (!active()) return;
           crateResult = r;
           toastOk(r.message, { icon: '🧰' });
           await celebrate(r, { confettiOn: r.wonPoints > c.cost });
           await refreshStatus();
           render();
-        } catch (err) { handleError(err); render(); }
+        } catch (err) { report(err); render(); }
       });
     }),
     on(root, 'click', '[data-quest]', (e, b) => busy(b, async () => {
       try {
-        const r = await post(`/quests/${enc(b.dataset.quest)}/claim`);
+        const r = await submit(`/quests/${enc(b.dataset.quest)}/claim`);
         toastOk(r.message, { icon: '🎯' });
         await celebrate(r, { confettiOn: true });
         await refreshStatus();
         render();
-      } catch (err) { handleError(err); }
+      } catch (err) { report(err); }
     })),
     on(root, 'countdown:end', '[data-countdown]', () => {
       // a trecut miezul noptii: reincarcam starea zilei (o singura data, chiar daca expira mai multe cronometre)
@@ -334,7 +380,7 @@ export default async function activities({ root, signal, alive }) {
       dayRollover = true;
       setTimeout(async () => {
         dayRollover = false;
-        if (!alive()) return;
+        if (!active()) return;
         await refreshStatus();
         quiz = await get('/gamification/quiz', { signal }).catch(() => quiz);
         quizResult = null;
@@ -343,5 +389,10 @@ export default async function activities({ root, signal, alive }) {
       }, 1500);
     }),
   ];
-  return () => offs.forEach((off) => off());
+  return () => {
+    disposed = true;
+    for (const close of [...dialogs]) close();
+    offs.forEach((off) => off());
+    notebookReady?.then((notebook) => notebook.cleanup());
+  };
 }

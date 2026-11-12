@@ -36,7 +36,24 @@ public class ContentBank {
     public record WordleWord(String word, String topic, String hint) {}
 
     /** Intrebarea zilei pentru un utilizator, cu variantele deja amestecate. */
-    public record DailyQuestion(QuizQuestion source, List<String> options, int correctIndex) {}
+    public record DailyQuestion(QuizQuestion source, List<String> options, int correctIndex) {
+        /** Amprenta exclusiv a conținutului vizibil; nu include răspunsul sau explicația ascunsă. */
+        public String version() {
+            try {
+                var digest = java.security.MessageDigest.getInstance("SHA-256");
+                List<String> fields = new ArrayList<>(List.of(source.id(), source.category(), source.question()));
+                fields.addAll(options);
+                for (String field : fields) {
+                    byte[] bytes = field.getBytes(StandardCharsets.UTF_8);
+                    digest.update(java.nio.ByteBuffer.allocate(4).putInt(bytes.length).array());
+                    digest.update(bytes);
+                }
+                return java.util.HexFormat.of().formatHex(digest.digest());
+            } catch (java.security.NoSuchAlgorithmException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+    }
 
     private static final Logger log = LoggerFactory.getLogger(ContentBank.class);
 
@@ -87,7 +104,11 @@ public class ContentBank {
         }
         var ids = new HashSet<String>();
         for (QuizQuestion q : quiz) {
-            if (!ids.add(q.id()) || q.options() == null || q.options().size() < 2
+            if (q.id() == null || q.id().isBlank() || !ids.add(q.id())
+                    || q.category() == null || q.category().isBlank() || q.category().length() > 100
+                    || q.question() == null || q.question().isBlank() || q.explanation() == null || q.explanation().isBlank()
+                    || q.options() == null || q.options().size() < 2 || q.options().size() > 10
+                    || q.options().stream().anyMatch(o -> o == null || o.isBlank())
                     || q.answer() < 0 || q.answer() >= q.options().size()
                     || new HashSet<>(q.options()).size() != q.options().size()) {
                 throw new IllegalStateException("Intrebare invalida in quiz.json: " + q.id());

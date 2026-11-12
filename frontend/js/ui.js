@@ -66,10 +66,12 @@ export async function busy(btn, fn) {
 /** Dupa o actiune care castiga puncte/insigne: actualizeaza soldul si sarbatoreste. */
 export async function celebrate(result, { confettiOn = false } = {}) {
   if (!result) return;
+  const ownerToken = state.token;
   if (typeof result.newBalance === 'number') setBalance(result.newBalance);
   const codes = Array.isArray(result.badgesUnlocked) ? result.badgesUnlocked : [];
   if (codes.length) {
     const catalog = await badgeCatalog();
+    if (state.token !== ownerToken) return;
     state.badgeCatalog = null; // insignele s-au schimbat; reincarcam data viitoare
     for (const code of codes) {
       const b = catalog.get(code);

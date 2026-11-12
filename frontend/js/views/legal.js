@@ -21,6 +21,7 @@ export function legalContent(privacy) {
         <p>Sesiunile active păstrează browserul și sistemul estimate, data autentificării, ultima utilizare și expirarea. Nu păstrăm IP-ul sau user-agentul complet în lista de sesiuni. Sesiunile expirate sunt eliminate automat zilnic, iar deconectarea confirmată de server elimină sesiunea respectivă.</p>
         <p>Folosim aceste informații pentru autentificare, evidența punctelor, procesarea comenzilor și funcționarea comunității. Traficul trece prin Cloudflare și serverul de găzduire, care procesează date tehnice pentru livrarea și securizarea site-ului.</p>
         <h2>Profil și activitate publică</h2>
+        <p>Caietul de quiz este privat. Păstrăm întrebările rezolvate, variantele alese, explicațiile și punctele primite, pentru istoric și recapitulare. Aceste date sunt incluse în exportul personal și se elimină la ștergerea contului.</p>
         <p>Poți seta vizibilitatea profilului din setări. Recenziile, propunerile și clasamentele pot afișa numele de afișare separat de pagina de profil.</p>
         <h2>Opțiunile contului</h2>
         <p>Din <a href="/profil?tab=setari">setări</a> poți descărca datele contului, gestiona sesiunile și cere ștergerea contului.</p>

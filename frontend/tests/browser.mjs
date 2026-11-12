@@ -162,6 +162,7 @@ try {
   assert.equal(missing.status(), 404);
   await page.getByRole('heading', { name: 'Pagina nu a fost găsită' }).waitFor();
 
+  let alternateSession;
   for (const [route, heading] of [
     ['/ajutor', 'Întrebări frecvente'], ['/confidentialitate', 'Confidențialitate'], ['/termeni', 'Reguli de utilizare'],
     ['/wordle', /Tech Wordle/], ['/clasament', 'Clasament'], ['/activitati', 'Activități'], ['/comunitate', 'Comunitate'],
@@ -217,6 +218,7 @@ try {
       });
       assert.equal(adminAuthResponse.status(), 200);
       const adminAuth = await adminAuthResponse.json();
+      alternateSession = JSON.stringify({ token: adminAuth.token, expiresAt: Date.parse(adminAuth.expiresAt), user: adminAuth.user });
       const actor = await context.newPage();
       await actor.goto(origin + '/offline.html');
       await actor.evaluate((auth) => localStorage.setItem('gt.session', JSON.stringify({
@@ -229,6 +231,81 @@ try {
       await actor.close();
       await page.reload();
       await history.locator('[data-wordle-replay]').waitFor();
+    }
+    if (route === '/activitati') {
+      const notebook = page.locator('.quiz-notebook');
+      await notebook.getByText('Caietul este gol.', { exact: false }).waitFor();
+      const originalSession = await page.evaluate(() => localStorage.getItem('gt.session'));
+      const actor = await context.newPage();
+      await actor.goto(origin + '/offline.html');
+      // Serverul salvează răspunsul primului cont. Întârziem numai livrarea răspunsului,
+      // pentru a verifica schimbarea contului în timp ce cererea este în curs.
+      let releaseSubmit;
+      let submitted;
+      const submittedReady = new Promise((resolve) => { submitted = resolve; });
+      const submitGate = new Promise((resolve) => { releaseSubmit = resolve; });
+      await page.route('**/RewardHub/api/gamification/quiz/submit', async (route) => {
+        const response = await route.fetch();
+        assert.equal(response.status(), 200);
+        submitted(await response.json());
+        await submitGate;
+        await route.fulfill({ response }).catch(() => {}); // schimbarea contului anulează pagina veche
+      });
+      await page.locator('#quiz [data-answer="0"]').click();
+      const quizResult = await submittedReady;
+      await actor.evaluate((session) => localStorage.setItem('gt.session', session), alternateSession);
+      await notebook.getByText('Caietul este gol.', { exact: false }).waitFor();
+      releaseSubmit();
+      await page.unroute('**/RewardHub/api/gamification/quiz/submit');
+      assert.equal(await notebook.locator('[data-quiz-review]').count(), 0);
+      await actor.evaluate((session) => localStorage.setItem('gt.session', session), originalSession);
+      await notebook.locator('[data-quiz-review]').waitFor();
+      assert.equal(await page.locator('#quiz [data-answer="0"][aria-pressed="true"]').count(), 1);
+      await page.getByLabel('Rezultatul la quiz', { exact: true }).selectOption(quizResult.isCorrect ? 'WRONG' : 'CORRECT');
+      await notebook.getByText('Nu ai răspunsuri care să corespundă filtrelor alese.', { exact: true }).waitFor();
+      await page.getByLabel('Rezultatul la quiz', { exact: true }).selectOption(quizResult.isCorrect ? 'CORRECT' : 'WRONG');
+      await notebook.locator('[data-quiz-review]').waitFor();
+      const category = await page.locator('#quiz .tag-brand').textContent();
+      await page.getByLabel('Categoria quiz-ului', { exact: true }).selectOption(category);
+      await notebook.locator('[data-quiz-review]').click();
+      const review = page.getByRole('dialog');
+      await review.getByText('Răspuns salvat', { exact: false }).waitFor();
+      const correct = Number(await review.locator('.quiz-opt.is-correct').getAttribute('data-quiz-review-answer'));
+      const options = await review.locator('.quiz-opt').count();
+      let practiceWrites = 0;
+      const watchPractice = (request) => { if (request.method() !== 'GET' && request.url().includes('/RewardHub/api/gamification/')) practiceWrites++; };
+      page.on('request', watchPractice);
+      await review.getByRole('button', { name: 'Testează-mă din nou', exact: true }).click();
+      assert.equal(await review.locator('[data-quiz-review-feedback]').count(), 0);
+      await review.locator(`[data-quiz-review-answer="${(correct + 1) % options}"]`).click();
+      await review.getByText('Revezi explicația.', { exact: true }).waitFor();
+      await review.getByRole('button', { name: 'Testează-mă din nou', exact: true }).click();
+      await review.locator(`[data-quiz-review-answer="${correct}"]`).click();
+      await review.getByText('Corect.', { exact: true }).waitFor();
+      assert.equal(practiceWrites, 0, 'recap exercises never submit rewards or change stored answers');
+      page.off('request', watchPractice);
+      for (const width of [320, 390, 768, 1440]) {
+        await page.setViewportSize({ width, height: 844 });
+        await noOverflow(page, `quiz recap at ${width}`);
+        assert.ok(await review.locator('.modal-body').evaluate((el) => el.scrollWidth <= el.clientWidth));
+      }
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.screenshot({ path: 'test-results/browser/quiz-recap-mobile.png' });
+      await actor.evaluate((session) => localStorage.setItem('gt.session', session), alternateSession);
+      await notebook.getByText('Caietul este gol.', { exact: false }).waitFor();
+      assert.equal(await page.getByRole('dialog').count(), 0, 'account switch closes private quiz details');
+      await actor.evaluate((session) => localStorage.setItem('gt.session', session), originalSession);
+      await notebook.locator('[data-quiz-review]').waitFor();
+      await actor.close();
+      await page.reload();
+      await notebook.locator('[data-quiz-review]').waitFor();
+      assert.equal(await page.locator('#quiz [data-answer="0"][aria-pressed="true"]').count(), 1);
+      for (const width of [320, 390, 768, 1440]) {
+        await page.setViewportSize({ width, height: 844 });
+        await noOverflow(page, `quiz notebook at ${width}`);
+      }
+      await page.setViewportSize({ width: 390, height: 844 });
+      await notebook.screenshot({ path: 'test-results/browser/quiz-notebook-mobile.png' });
     }
   }
   await page.locator('.site-footer a[href="/activitati"]').click();

@@ -35,10 +35,11 @@ public class DailyRewardsService {
     private final NotificationService notifications;
     private final ContentBank content;
     private final TimeService time;
+    private final QuizHistoryService quizHistory;
 
     public DailyRewardsService(UserRepository userRepository, WalletService wallet, DailyCounterService counters,
                                BadgeService badges, QuestService quests, NotificationService notifications,
-                               ContentBank content, TimeService time) {
+                               ContentBank content, TimeService time, QuizHistoryService quizHistory) {
         this.userRepository = userRepository;
         this.wallet = wallet;
         this.counters = counters;
@@ -47,6 +48,7 @@ public class DailyRewardsService {
         this.notifications = notifications;
         this.content = content;
         this.time = time;
+        this.quizHistory = quizHistory;
     }
 
     // ------------------------------------------------------------------ status
@@ -164,9 +166,28 @@ public class DailyRewardsService {
     @Transactional(readOnly = true)
     public Map<String, Object> quiz(Optional<String> userId) {
         LocalDate today = time.today();
+        Optional<QuizHistoryService.Attempt> saved = userId.flatMap(id -> quizHistory.find(id, today));
+        if (saved.isPresent()) {
+            QuizHistoryService.Attempt a = saved.get();
+            Map<String, Object> r = new LinkedHashMap<>();
+            r.put("questionId", a.questionId());
+            r.put("category", a.category());
+            r.put("question", a.question());
+            r.put("options", a.options());
+            r.put("rewardPoints", a.rewardPoints());
+            r.put("requiresLogin", false);
+            r.put("alreadyAnswered", true);
+            r.put("wasCorrect", a.isCorrect());
+            r.put("selectedIndex", a.selectedIndex());
+            r.put("correctIndex", a.correctIndex());
+            r.put("explanation", a.explanation());
+            r.put("resetsAt", time.startOfTomorrow());
+            return r;
+        }
         ContentBank.DailyQuestion dq = content.questionFor(userId.orElse("public"), today);
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("questionId", dq.source().id());
+        r.put("questionVersion", dq.version());
         r.put("category", dq.source().category());
         r.put("question", dq.source().question());
         r.put("options", dq.options());
@@ -188,21 +209,23 @@ public class DailyRewardsService {
     }
 
     @Transactional
-    public Map<String, Object> submitQuiz(String userId, String questionId, Integer answerIndex) {
+    public Map<String, Object> submitQuiz(String userId, String questionId, Integer answerIndex, String questionVersion) {
         UserProfile u = wallet.lock(userId);
         LocalDate today = time.today();
-        if (today.toString().equals(u.getLastQuizDate())) {
+        if (today.toString().equals(u.getLastQuizDate()) || quizHistory.find(userId, today).isPresent()) {
             throw new ApiException(HttpStatus.CONFLICT, "ALREADY_ANSWERED",
                     "Ai răspuns deja la quiz-ul de azi. Revino mâine pentru o nouă întrebare!");
         }
         ContentBank.DailyQuestion dq = content.questionFor(userId, today);
-        if (questionId != null && !questionId.equals(dq.source().id())) {
+        if ((questionId != null && !questionId.equals(dq.source().id()))
+                || (questionVersion != null && !questionVersion.equals(dq.version()))) {
             throw new ApiException(HttpStatus.CONFLICT, "QUIZ_CHANGED", "Întrebarea zilei s-a schimbat. Reîncarcă pagina.");
         }
         if (answerIndex == null || answerIndex < 0 || answerIndex >= dq.options().size()) {
             throw ApiException.badRequest("Alege una dintre variantele de răspuns.");
         }
         boolean correct = answerIndex == dq.correctIndex();
+        quizHistory.record(userId, today, dq, answerIndex, correct ? Economy.QUIZ_REWARD : 0);
         u.setLastQuizDate(today.toString());
         userRepository.save(u);
         quests.track(u, Action.SOLVE_QUIZ, 1);

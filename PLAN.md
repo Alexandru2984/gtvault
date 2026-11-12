@@ -72,7 +72,7 @@ Serviciul de email și regulile pentru acordarea premiilor vor fi alese înainte
 | Provocări săptămânale | Obiective cu început și sfârșit, progres verificat și o singură revendicare |
 | Sezoane de clasament | Perioade arhivate, premii și reguli publice |
 | Trasee de învățare | Colecții de quiz-uri pe Java, frontend, Python și DevOps |
-| Explicații după quiz | Rezultatul, motivul răspunsului și resurse ale autorilor |
+| Explicații după quiz | Caiet privat implementat local, nepublicat: întrebări și alegeri salvate, filtre pe categorie și greșeli, statistici și recapitulare interactivă fără AP. Resursele autorilor rămân de adăugat |
 | Istoric Wordle | Implementat local, nepublicat. Paginare, filtre, replay pentru rundele încheiate și distribuire cu scor și grilă fără litere |
 | Provocări de breaslă | Țintă comună și contribuții personale verificabile |
 | Preferințe de notificare | Implementată selectarea a cinci categorii de alerte în aplicație. Agregarea periodică rămâne de evaluat |
@@ -82,6 +82,8 @@ Serviciul de email și regulile pentru acordarea premiilor vor fi alese înainte
 Fiecare recompensă nouă va avea plafon, reguli de eligibilitate și protecție la cereri simultane. Indicatorii de produs vor urmări activarea, revenirea la 7 zile și comenzile finalizate, cu date agregate.
 
 Obiectivul se alege din pagina produsului sau din Favorite și apare și pe pagina principală. Se păstrează pe server, se poate elimina și nu rezervă AP sau stoc. Prețul include oferta pentru care contul este eligibil și reducerea de nivel, fără cod promo. Alertele țin cont de stoc, nivel, premiile deja deținute și preferința de progres. Verificarea periodică procesează maximum 100 de obiective într-un lot, cu prioritate pentru cele neverificate de mult timp.
+
+Caietul de quiz păstrează numai răspunsurile trimise după activarea V11. Întrebarea, variantele, alegerea și explicația rămân cele de la rezolvare, inclusiv după actualizarea conținutului. Utilizatorul poate filtra greșelile pe categorii și relua local întrebarea, fără schimbarea rezultatului sau acordarea altor AP. Răspunsurile vechi nu sunt reconstruite din banca actuală. Formularul nou verifică și versiunea conținutului vizibil înainte de trimitere.
 
 ## Etapa 5 · Magazin și comunitate
 
