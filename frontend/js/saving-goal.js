@@ -73,7 +73,7 @@ export function goalCard(goal) {
       </div>
     </div>
     ${r.active && goal.issues?.length ? html`<div class="callout is-warning"><div>${join(goal.issues, (issue) => html`<p>${issue}</p>`)}</div></div>` : ''}
-    <p class="xsmall muted">Total estimat pentru o bucată, fără cod promo. AP și stocul rămân disponibile; prețul se confirmă la finalizarea comenzii. Primești o singură alertă pentru obiectivul ales, verificată periodic și controlată din preferințele de progres.</p>
+    <details class="small muted"><summary>Despre estimare și alertă</summary><p class="mt-1">Total estimat pentru o bucată, fără cod promo. AP și stocul rămân disponibile; prețul se confirmă la finalizarea comenzii. Primești o singură alertă pentru obiectivul ales, verificată periodic și controlată din preferințele de progres.</p></details>
     <div class="row">
       ${r.active ? html`<a class="btn ${goal.ready ? 'btn-primary' : 'btn-secondary'}" href="/produs/${enc(r.id)}">${goal.ready ? 'Vezi premiul și comandă' : 'Vezi premiul'}</a>` : ''}
       <a class="btn btn-ghost" href="/magazin">Schimbă premiul</a>

@@ -83,6 +83,8 @@ Logout-ul confirmat revocă sesiunea curentă în baza de date. Schimbarea parol
 
 ## Răspuns la incident
 
+Obiectivul de economisire folosește tabelul adăugat de V9, cu maximum un premiu țintă per cont. Verificarea alertelor rulează la intervale de 60 de secunde, în loturi de maximum 100, cu tranzacție separată per cont. Configurația `rewardhub.goals-alerts-delay-ms` schimbă intervalul; testele folosesc un interval mare și declanșează verificările explicit. Alerta respectă categoria de progres și se trimite o singură dată pentru selecția curentă. Selectarea repetată a aceluiași premiu păstrează această stare. Schimbarea sau eliminarea obiectivului nu afectează AP, inventarul ori comenzile.
+
 1. Notează momentul constatării, simptomele, versiunea și operațiile cunoscute. Conservă logurile și copiile existente cu acces restrâns.
 2. Limitează ruta sau contul afectat. Pentru un compromis activ al aplicației, păstrează API-ul în mentenanță până la stabilirea extinderii incidentului.
 3. Revocă sesiunile afectate prin versiunea tokenului. Dacă secretul JWT sau credentialele bazei au fost expuse, rotește valorile și verifică serviciile care le folosesc.

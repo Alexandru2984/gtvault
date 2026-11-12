@@ -64,7 +64,7 @@ Serviciul de email și regulile pentru acordarea premiilor vor fi alese înainte
 
 | Funcție | Comportament propus |
 | --- | --- |
-| Obiectiv de economisire | Implementat, în verificare pentru publicare. Premiu țintă pe server, estimare prin calculul checkout, progres AP și o alertă per selecție când devine eligibil |
+| Obiectiv de economisire | Implementat și verificat. Premiu țintă pe server, estimare prin calculul checkout, progres AP și o alertă per selecție când devine eligibil |
 | Provocări săptămânale | Obiective cu început și sfârșit, progres verificat și o singură revendicare |
 | Sezoane de clasament | Perioade arhivate, premii și reguli publice |
 | Trasee de învățare | Colecții de quiz-uri pe Java, frontend, Python și DevOps |

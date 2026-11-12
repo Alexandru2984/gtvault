@@ -1032,4 +1032,6 @@ a.feed-item:hover .feed-title { color: var(--brand); }
 .goal-summary > img { width: 88px; height: 88px; object-fit: contain; flex-shrink: 0; border-radius: var(--radius-sm); background: var(--surface-2); }
 .saving-goal .btn { white-space: normal; padding-block: 10px; }
 .goal-summary h3 { overflow-wrap: anywhere; }
+.saving-goal summary { cursor: pointer; }
+[data-goal-set] { white-space: normal; padding-block: 8px; }
 @media (max-width: 479.98px) { .goal-summary { align-items: flex-start; } .goal-summary > img { width: 56px; height: 56px; } }
