@@ -87,6 +87,10 @@ Obiectivul de economisire folosește tabelul adăugat de V9, cu maximum un premi
 
 La actualizare, reload-ul nginx este asincron. Confirmă răspunsul de mentenanță în mai multe cereri consecutive înainte de oprirea backendului și crearea dumpului consistent.
 
+## Wordle — modificări locale pentru V10
+
+V10 adaugă cuvintele zilnice salvate și o referință opțională pe rundele personale. Coloanele existente ale rundelor sunt păstrate. O victorie veche se poate reconstrui din ultima încercare; o înfrângere fără soluție salvată păstrează scorul, fără a inventa marcajele. Publicarea acestei migrări este încă în așteptare. La verificarea conservării datelor, compară coloanele existente ale `wordle_games` separat de noua coloană `puzzle_date`.
+
 ## Răspuns la incident
 
 1. Notează momentul constatării, simptomele, versiunea și operațiile cunoscute. Conservă logurile și copiile existente cu acces restrâns.

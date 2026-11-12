@@ -32,6 +32,7 @@ Au fost găsite 3 conturi și 16 achiziții în baza live la verificarea iniția
 | SEC-16 | P2 | CI verifica numai sintaxa fișierului JavaScript vechi | Verificări de module, rute, browser, dependențe și secrete pregătite în workflow |
 | SEC-17 | P1 | Logout-ul din interfață elimina numai copia locală, iar tokenul copiat rămânea utilizabil | Sesiuni server-side legate de JWT, revocare individuală și logout server-side publicate. Verificate cu PostgreSQL izolat și în CI |
 | SEC-18 | P2 | Înmulțirea procentelor cu totaluri mari putea depăși `int`, producând reduceri negative sau greșite | Calcule intermediare pe `long`, cu două teste la limitele permise pentru coș. Remediere verificată local și în CI |
+| SEC-19 | P2 | Soluția Wordle era recalculată din secret și conținut, astfel încât o rotație putea schimba o rundă existentă sau grila ei | V10 salvează cuvântul zilei la prima încercare validă și leagă rundele noi de el. Verificat local, nepublicat |
 
 Riscurile de bibliotecă sunt analizate după configurația aplicației. De exemplu, remediile Tomcat pentru HTTP/2, AJP sau WebSocket au condiții proprii de exploatare. Inventarul de versiuni identifică pachetele care necesită actualizare, iar atingerea unui endpoint vulnerabil se evaluează separat. [Buletine Apache Tomcat](https://tomcat.apache.org/security-10.html)
 
@@ -50,6 +51,8 @@ Etapa de sesiuni adaugă verificarea identificatorului JWT în baza de date. Sun
 Preferințele de notificare sunt legate exclusiv de contul autentificat. Atât emisiile individuale, cât și inserările în masă pentru favorite și anunțuri țin cont de opțiunile salvate. Comenzile, soldurile, cadourile, recomandările și deciziile de moderare rămân active. Migrarea V8 este aditivă și păstrează alertele existente. Preferințele sunt incluse în exportul de date și se elimină prin cascadă la ștergerea contului.
 
 Migrarea V9 adaugă un singur obiectiv de economisire per cont. API-ul folosește exclusiv identitatea autentificată și aceeași logică de preț ca checkout-ul, inclusiv limitele ofertelor per utilizator. Obiectivul nu acordă AP, nu rezervă stoc și nu declanșează achiziții. Verificările alertelor blochează contul pentru a preveni duplicatele; loturile sunt limitate și parcurg obiectivele după ultima verificare. Alegerea și ștergerea sunt limitate împreună la 30 de operații pe zi. Exportul și ștergerea contului includ noua stare.
+
+Migrarea V10 este pregătită local. Cuvântul, tema și explicația zilei sunt comune tuturor participanților și rămân stabile după prima încercare validă, inclusiv între instanțe cu chei diferite. Citirile și încercările invalide nu creează o rundă comună. Soluția nu este expusă participanților înaintea încheierii rundei proprii. Pentru victoriile vechi se poate folosi ultima încercare; pentru înfrângerile fără soluție salvată se păstrează scorul și se marchează grila ca indisponibilă.
 
 CSP permite scripturile proprii, nonce-uri generate per răspuns și beaconul Cloudflare deja folosit pe domeniu. Paginile HTML răspund cu un document proaspăt pentru a păstra potrivirea dintre nonce și scripturile inserate de Cloudflare. Reîncărcarea paginilor a fost verificată în browser. [Integrarea CSP cu JavaScript Detections](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/)
 

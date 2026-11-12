@@ -14,6 +14,7 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,10 +41,11 @@ public class WordleService {
     static final LocalDate LAUNCH = LocalDate.of(2026, 11, 9);
 
     private static final String UPSERT = """
-            INSERT INTO wordle_games (user_id, game_date, guesses, status, reward, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO wordle_games (user_id, game_date, guesses, status, reward, updated_at, puzzle_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT (user_id, game_date) DO UPDATE
-            SET guesses = EXCLUDED.guesses, status = EXCLUDED.status, reward = EXCLUDED.reward, updated_at = EXCLUDED.updated_at""";
+            SET guesses = EXCLUDED.guesses, status = EXCLUDED.status, reward = EXCLUDED.reward,
+                updated_at = EXCLUDED.updated_at, puzzle_date = EXCLUDED.puzzle_date""";
 
     private final JdbcTemplate jdbc;
     private final WalletService wallet;
@@ -69,13 +71,57 @@ public class WordleService {
         this.secret = ("tech-wordle:" + s).getBytes(StandardCharsets.UTF_8);
     }
 
-    private record Game(List<String> guesses, String status, int reward) {
-        static final Game EMPTY = new Game(List.of(), PLAYING, 0);
+    private record Game(List<String> guesses, String status, int reward, String puzzleDate) {
+        static final Game EMPTY = new Game(List.of(), PLAYING, 0, null);
     }
 
     /** Cuvantul unei zile (folosit si de teste; nu este expus prin API inainte de finalul rundei). */
     public ContentBank.WordleWord wordFor(LocalDate day) {
+        Optional<ContentBank.WordleWord> stored = storedPuzzle(day);
+        if (stored.isPresent()) return stored.get();
+        // O victorie existentă este dovada cuvântului jucat înaintea migrării.
+        var legacy = jdbc.queryForList("""
+                SELECT guesses FROM wordle_games WHERE game_date = ? AND status = 'WON'
+                ORDER BY updated_at, user_id LIMIT 1
+                """, String.class, day.toString());
+        if (!legacy.isEmpty()) {
+            String[] guesses = legacy.getFirst().split(",");
+            String answer = Wordle.normalize(guesses[guesses.length - 1]);
+            if (answer != null) return describe(answer);
+        }
         return content.words().get(Wordle.dailyIndex(day, content.words().size(), secret));
+    }
+
+    private Optional<ContentBank.WordleWord> storedPuzzle(LocalDate day) {
+        return jdbc.query("SELECT answer, topic, hint FROM wordle_puzzles WHERE game_date = ?",
+                (rs, row) -> new ContentBank.WordleWord(rs.getString(1), rs.getString(2), rs.getString(3)), day.toString())
+                .stream().findFirst();
+    }
+
+    private ContentBank.WordleWord describe(String answer) {
+        return content.words().stream().filter(w -> w.word().equals(answer)).findFirst()
+                .orElse(new ContentBank.WordleWord(answer, "Rundă arhivată", "Cuvânt folosit într-o rundă anterioară."));
+    }
+
+    private ContentBank.WordleWord puzzleForPlay(LocalDate day) {
+        Optional<ContentBank.WordleWord> stored = storedPuzzle(day);
+        if (stored.isPresent()) return stored.get();
+        ContentBank.WordleWord candidate = wordFor(day);
+        jdbc.update("""
+                INSERT INTO wordle_puzzles (game_date, answer, topic, hint, created_at) VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT (game_date) DO NOTHING
+                """, day.toString(), candidate.word(), candidate.topic(), candidate.hint(), Timestamp.from(time.now()));
+        // În cazul pornirilor simultane, toate conturile folosesc rândul care a câștigat inserarea.
+        return storedPuzzle(day).orElseThrow();
+    }
+
+    private ContentBank.WordleWord answerFor(Game game, LocalDate day) {
+        if (game.puzzleDate() != null) return storedPuzzle(day).orElseThrow();
+        if (WON.equals(game.status()) && !game.guesses().isEmpty()) {
+            return describe(game.guesses().getLast());
+        }
+        // Soluția unei înfrângeri vechi nu se poate deduce în siguranță din încercările salvate.
+        return PLAYING.equals(game.status()) ? wordFor(day) : null;
     }
 
     static int puzzleNumber(LocalDate day) {
@@ -96,7 +142,8 @@ public class WordleService {
             return r;
         }
         r.put("requiresLogin", false);
-        fill(r, load(userId.get(), today.toString()).orElse(Game.EMPTY), wordFor(today));
+        Game game = load(userId.get(), today.toString()).orElse(Game.EMPTY);
+        fill(r, game, answerFor(game, today));
         r.put("stats", stats(userId.get(), today));
         return r;
     }
@@ -106,7 +153,6 @@ public class WordleService {
         UserProfile u = wallet.lock(userId);
         LocalDate today = time.today();
         String date = today.toString();
-        ContentBank.WordleWord answer = wordFor(today);
         Game game = load(userId, date).orElse(Game.EMPTY);
         if (!PLAYING.equals(game.status())) {
             throw new ApiException(HttpStatus.CONFLICT, "GAME_OVER",
@@ -120,13 +166,14 @@ public class WordleService {
         if (game.guesses().contains(word)) {
             throw ApiException.badRequest("DUPLICATE_GUESS", "Ai încercat deja cuvântul " + word + ".");
         }
+        ContentBank.WordleWord answer = puzzleForPlay(today);
         List<String> guesses = new ArrayList<>(game.guesses());
         guesses.add(word);
         boolean won = word.equals(answer.word());
         boolean lost = !won && guesses.size() >= Economy.WORDLE_MAX_GUESSES;
         String status = won ? WON : lost ? LOST : PLAYING;
         int reward = won ? Economy.WORDLE_REWARDS.get(guesses.size() - 1) : 0;
-        jdbc.update(UPSERT, userId, date, String.join(",", guesses), status, reward, Timestamp.from(time.now()));
+        jdbc.update(UPSERT, userId, date, String.join(",", guesses), status, reward, Timestamp.from(time.now()), date);
 
         List<Badge> unlocked = List.of();
         if (won) {
@@ -140,7 +187,7 @@ public class WordleService {
 
         Map<String, Object> r = base(today);
         r.put("requiresLogin", false);
-        fill(r, new Game(guesses, status, reward), answer);
+        fill(r, new Game(guesses, status, reward, date), answer);
         r.put("stats", stats(userId, today));
         r.put("success", true);
         r.put("lastMarks", Wordle.score(word, answer.word()));
@@ -176,8 +223,9 @@ public class WordleService {
         Map<Character, Wordle.Mark> keyboard = new TreeMap<>();
         StringBuilder grid = new StringBuilder();
         for (String guess : g.guesses()) {
-            List<Wordle.Mark> marks = Wordle.score(guess, answer.word());
-            rows.add(Map.of("word", guess, "marks", marks));
+            List<Wordle.Mark> marks = answer == null ? null : Wordle.score(guess, answer.word());
+            rows.add(Map.of("word", guess, "marks", marks == null ? Collections.nCopies(Economy.WORDLE_LENGTH, "UNKNOWN") : marks));
+            if (marks == null) continue;
             grid.append('\n').append(Wordle.emojiRow(marks));
             for (int i = 0; i < guess.length(); i++) {
                 char c = guess.charAt(i);
@@ -193,11 +241,14 @@ public class WordleService {
         r.put("guesses", rows);
         r.put("guessesLeft", Economy.WORDLE_MAX_GUESSES - g.guesses().size());
         r.put("keyboard", keyboard);
+        r.put("gridAvailable", answer != null);
         r.put("nextReward", finished ? null : Economy.WORDLE_REWARDS.get(g.guesses().size()));
-        r.put("topicHint", finished || g.guesses().size() >= 3 ? answer.topic() : null);
+        r.put("topicHint", answer != null && (finished || g.guesses().size() >= 3) ? answer.topic() : null);
         if (finished) {
-            r.put("answer", answer.word());
-            r.put("hint", answer.hint());
+            if (answer != null) {
+                r.put("answer", answer.word());
+                r.put("hint", answer.hint());
+            }
             r.put("reward", g.reward());
             String score = WON.equals(g.status()) ? String.valueOf(g.guesses().size()) : "X";
             r.put("shareText", "Tech Wordle #" + r.get("puzzleNumber") + " " + score + "/" + Economy.WORDLE_MAX_GUESSES + grid);
@@ -205,11 +256,11 @@ public class WordleService {
     }
 
     private Optional<Game> load(String userId, String date) {
-        return jdbc.query("SELECT guesses, status, reward FROM wordle_games WHERE user_id = ? AND game_date = ?",
+        return jdbc.query("SELECT guesses, status, reward, puzzle_date FROM wordle_games WHERE user_id = ? AND game_date = ?",
                 (rs, i) -> {
                     String raw = rs.getString(1);
                     List<String> guesses = raw == null || raw.isEmpty() ? List.of() : Arrays.asList(raw.split(","));
-                    return new Game(guesses, rs.getString(2), rs.getInt(3));
+                    return new Game(guesses, rs.getString(2), rs.getInt(3), rs.getString(4));
                 }, userId, date).stream().findFirst();
     }
 

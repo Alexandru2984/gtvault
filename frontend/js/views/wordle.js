@@ -90,6 +90,7 @@ export default async function wordle({ root, signal, alive }) {
       <div class="big-emoji" aria-hidden="true">${won ? '🏆' : '🧩'}</div>
       <h2>${won ? `Ai ghicit din ${g.guesses.length}${g.guesses.length === 1 ? ' — legendar!' : '!'}` : 'Nu de data asta'}</h2>
       ${g.answer ? html`<p>Cuvântul era <strong class="mono">${g.answer}</strong>${g.hint ? html` — <span class="muted">${g.hint}</span>` : ''}</p>` : ''}
+      ${g.gridAvailable === false ? html`<p class="small muted">Scorul acestei runde este păstrat, dar grila nu poate fi reconstituită.</p>` : ''}
       <div class="row center-row">
         ${g.shareText ? html`<button class="btn btn-primary" type="button" data-share>${icon('share')} Distribuie rezultatul</button>` : ''}
         <button class="btn btn-ghost" type="button" data-stats>${icon('trophy')} Statistici</button>
@@ -262,5 +263,5 @@ export default async function wordle({ root, signal, alive }) {
 }
 
 function label(state) {
-  return { HIT: 'poziție corectă', NEAR: 'în cuvânt, altă poziție', MISS: 'nu apare' }[state] || state;
+  return { HIT: 'poziție corectă', NEAR: 'în cuvânt, altă poziție', MISS: 'nu apare', UNKNOWN: 'marcaj indisponibil' }[state] || state;
 }
