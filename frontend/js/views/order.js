@@ -1,33 +1,38 @@
-import { html, mount, join, on } from '../dom.js';
+import { html, mount, join, on, qs } from '../dom.js';
 import { get, post, enc, isAbort } from '../api.js';
 import { icon } from '../icons.js';
 import { date, dateTime, num } from '../format.js';
 import { apAmount, emptyState, orderStatusTag, skeletonPage, tierName, FULFILLMENT } from '../components.js';
 import { setMeta } from '../seo.js';
 import { setQuery } from '../router.js';
-import { refreshUser } from '../store.js';
-import { busy, confirmDialog, copyText, handleError, toastOk } from '../ui.js';
+import { refreshUser, state } from '../store.js';
+import { busy, modal, copyText, handleError, toastOk } from '../ui.js';
 
 const STEP_ICON = { PLACED: 'clock', PROCESSING: 'package', SHIPPED: 'truck', DELIVERED: 'check', FULFILLED: 'check', CANCELLED: 'x' };
 
 export default async function order({ root, params, query, signal, alive }) {
+  const token = state.token;
+  let disposed = false;
+  const active = () => !disposed && alive() && state.token === token;
+  const dialogs = new Set();
   setMeta({ title: `Comanda ${params.id}`, noindex: true });
   mount(root, skeletonPage());
   let o;
   try {
     o = await get(`/orders/${enc(params.id)}`, { signal });
   } catch (err) {
-    if (isAbort(err)) return;
+    if (!active() || isAbort(err)) return;
     if (err.status === 404) {
       mount(root, emptyState({ icon: '🔎', title: 'Comanda nu a fost găsită', action: html`<a class="btn btn-primary" href="/comenzi">Comenzile mele</a>` }));
       return;
     }
     throw err;
   }
-  if (!alive()) return;
+  if (!active()) return;
   const fresh = query.nou === '1';
 
   function render() {
+    if (!active()) return;
     const delivered = o.status === 'DELIVERED' || o.status === 'FULFILLED';
     mount(root, html`<div class="page">
       <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/comenzi">Comenzile mele</a>${icon('chevronRight')}<span aria-current="page">${o.id}</span></nav>
@@ -97,26 +102,38 @@ export default async function order({ root, params, query, signal, alive }) {
   render();
   if (fresh) setQuery({}); // un refresh al paginii nu mai arata bannerul de succes
 
-  return on(root, 'click', '[data-copy], [data-cancel]', async (e, b) => {
+  const off = on(root, 'click', '[data-copy], [data-cancel]', async (e, b) => {
+    if (!active()) return;
     if (b.dataset.copy) {
       copyText(b.dataset.copy);
       return;
     }
-    const ok = await confirmDialog({
+    const ok = await modal({
       title: 'Anulezi comanda?',
-      body: `Primești înapoi integral ${num(o.total)} AP, iar produsele revin în stoc. Acțiunea nu poate fi anulată.`,
-      confirmText: 'Da, anulează',
-      cancelText: 'Păstrează comanda',
-      danger: true,
+      content: html`<p class="muted">Primești înapoi integral ${num(o.total)} AP, iar produsele revin în stoc. Acțiunea nu poate fi anulată.</p>`,
+      footer: html`<button class="btn btn-ghost" type="button" data-close>Păstrează comanda</button><button class="btn btn-danger" type="button" data-confirm-cancel>Da, anulează</button>`,
+      onMount: (dlg, close) => {
+        dialogs.add(close);
+        dlg.addEventListener('close', () => dialogs.delete(close), { once: true });
+        qs('[data-confirm-cancel]', dlg).addEventListener('click', () => close(true));
+        qs('[data-confirm-cancel]', dlg).focus();
+      },
     });
-    if (!ok) return;
+    if (ok !== true || !active()) return;
     await busy(b, async () => {
       try {
-        o = await post(`/orders/${enc(o.id)}/cancel`);
+        const result = await post(`/orders/${enc(o.id)}/cancel`, null, { signal });
+        if (!active()) return;
+        o = result;
         toastOk(`Comanda a fost anulată. ${num(o.total)} AP au revenit în cont.`, { icon: '↩️' });
         refreshUser();
         render();
-      } catch (err) { handleError(err); }
+      } catch (err) { if (active() && !isAbort(err)) handleError(err); }
     });
   });
+  return () => {
+    disposed = true;
+    for (const close of [...dialogs]) close();
+    off();
+  };
 }

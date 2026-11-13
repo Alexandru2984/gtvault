@@ -439,6 +439,77 @@ try {
   await page.locator('.voucher code').waitFor();
   assert.equal(await page.locator('.voucher code').textContent(), voucher);
 
+  // Comandă fizică reală în baza izolată: confirmarea și răspunsul anulării
+  // trebuie să dispară când sesiunea proprietarului nu mai este activă.
+  const ownerAuth = JSON.parse(originalOrderSession);
+  const fixtureAdmin = JSON.parse(alternateSession);
+  const ownerHeaders = { Authorization: `Bearer ${ownerAuth.token}` };
+  const credited = await context.request.post(origin + `/RewardHub/api/admin/users/${ownerAuth.user.id}/points`, {
+    headers: { Authorization: `Bearer ${fixtureAdmin.token}` },
+    data: { amount: 1000, reason: 'Sold sintetic pentru verificarea izolării anulării' },
+  });
+  assert.equal(credited.status(), 200);
+  assert.equal((await context.request.post(origin + '/RewardHub/api/cart/items', {
+    headers: ownerHeaders, data: { rewardId: 'rew-sticker', quantity: 1 },
+  })).status(), 200);
+  const privateAddress = 'Strada Sintetică nr. 13';
+  const physicalResponse = await context.request.post(origin + '/RewardHub/api/checkout', {
+    headers: { ...ownerHeaders, 'Idempotency-Key': `browser-cancel-race-${Date.now()}` },
+    data: { shipping: { name: 'Client Browser Sintetic', phone: '0722123456', address: privateAddress,
+      city: 'Cluj-Napoca', county: 'cluj', postalCode: '400001' } },
+  });
+  assert.equal(physicalResponse.status(), 200);
+  const physical = await physicalResponse.json();
+  assert.equal(physical.order.canCancel, true);
+  await page.goto(origin + `/comenzi/${physical.order.id}`);
+  await page.getByRole('button', { name: 'Anulează comanda', exact: true }).waitFor();
+  assert.ok((await page.locator('#main').textContent()).includes(privateAddress));
+  const cancelActor = await context.newPage();
+  await cancelActor.goto(origin + '/offline.html');
+  let cancelRequests = 0;
+  const cancelPath = `/orders/${physical.order.id}/cancel`;
+  const watchCancellation = (request) => { if (request.method() === 'POST' && request.url().endsWith(cancelPath)) cancelRequests++; };
+  page.on('request', watchCancellation);
+  await page.getByRole('button', { name: 'Anulează comanda', exact: true }).click();
+  await page.getByRole('dialog').getByRole('heading', { name: 'Anulezi comanda?', exact: true }).waitFor();
+  await cancelActor.evaluate((session) => localStorage.setItem('gt.session', session), alternateSession);
+  await page.getByRole('heading', { name: 'Comanda nu a fost găsită', exact: true }).waitFor();
+  assert.equal(await page.getByRole('dialog').count(), 0, 'account switch dismisses order confirmation');
+  assert.equal(cancelRequests, 0);
+  await cancelActor.evaluate((session) => localStorage.setItem('gt.session', session), originalOrderSession);
+  await page.getByRole('button', { name: 'Anulează comanda', exact: true }).waitFor();
+  let cancelled, releaseCancellation, cancellationDelivered;
+  const cancellationReady = new Promise((resolve) => { cancelled = resolve; });
+  const cancellationGate = new Promise((resolve) => { releaseCancellation = resolve; });
+  const cancellationDone = new Promise((resolve) => { cancellationDelivered = resolve; });
+  const cancelHandler = async (route) => {
+    const response = await route.fetch();
+    assert.equal(response.status(), 200);
+    cancelled(await response.json());
+    await cancellationGate;
+    await route.fulfill({ response }).catch(() => {});
+    cancellationDelivered();
+  };
+  await page.route('**/RewardHub/api' + cancelPath, cancelHandler);
+  await page.getByRole('button', { name: 'Anulează comanda', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Da, anulează', exact: true }).click();
+  assert.equal((await cancellationReady).status, 'CANCELLED');
+  await cancelActor.evaluate((session) => localStorage.setItem('gt.session', session), alternateSession);
+  await page.getByRole('heading', { name: 'Comanda nu a fost găsită', exact: true }).waitFor();
+  releaseCancellation();
+  await cancellationDone;
+  await page.unroute('**/RewardHub/api' + cancelPath, cancelHandler);
+  assert.ok(!(await page.locator('#main').textContent()).includes(privateAddress));
+  assert.equal(await page.getByRole('heading', { name: 'Comanda nu a fost găsită', exact: true }).count(), 1);
+  assert.equal(cancelRequests, 1, 'only the confirmed request was sent');
+  page.off('request', watchCancellation);
+  await cancelActor.evaluate((session) => localStorage.setItem('gt.session', session), originalOrderSession);
+  await page.getByRole('heading', { name: physical.order.id, exact: true }).waitFor();
+  assert.equal(await page.locator('[data-cancel]').count(), 0);
+  const refunded = await context.request.get(origin + '/RewardHub/api/user/me', { headers: ownerHeaders });
+  assert.equal((await refunded.json()).activityPoints, physical.newBalance + physical.order.total);
+  await cancelActor.close();
+
   await page.locator('.site-footer a[href="/activitati"]').click();
   const claim = page.locator('[data-claim]');
   await claim.waitFor();
@@ -552,7 +623,7 @@ try {
     headers: { Authorization: `Bearer ${rotatedToken}` },
   })).status(), 401);
   assert.deepEqual(errors, []);
-  console.log('Browser checks passed for responsive navigation, valid control states, registration, comparison, wishlist, saving goals, checkout, vouchers, CSV, daily rewards, quiz notebook/practice/account isolation, Wordle history/replay/sharing/account isolation, sessions, notification preferences, admin and offline recovery.');
+  console.log('Browser checks passed for responsive navigation, valid control states, registration, comparison, wishlist, saving goals, checkout, order search/filters/cancellation/account isolation, vouchers, CSV, daily rewards, quiz notebook/practice/account isolation, Wordle history/replay/sharing/account isolation, sessions, notification preferences, admin and offline recovery.');
 } catch (error) {
   if (errors.length) console.error('Browser HTTP or script errors', errors);
   throw error;

@@ -109,6 +109,8 @@ Parametrii sunt `q` (maximum 80 de caractere, ID sau numele istoric al produsulu
 
 Citirea este limitată la 60 de cereri/minut per cont. Produsele sunt încărcate într-un singur lot pentru comenzile paginii. Modificarea nu adaugă tabele sau migrări și nu schimbă operațiile de plată, livrare sau anulare. Frontendul și backendul se livrează coordonat. Etapa este locală, încă nepublicată.
 
+Pagina de detalii leagă citirea, copierea și anularea de sesiunea și navigarea care au deschis comanda. Confirmarea se închide la părăsirea paginii sau schimbarea contului. O cerere de anulare deja procesată pe server rămâne efectuată, dar răspunsul ei întârziat nu poate afișa datele vechii comenzi în pagina altui cont. La revenire, comanda este recitită de pe server.
+
 ## Răspuns la incident
 
 1. Notează momentul constatării, simptomele, versiunea și operațiile cunoscute. Conservă logurile și copiile existente cu acces restrâns.
