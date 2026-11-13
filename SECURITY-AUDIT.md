@@ -65,6 +65,8 @@ CSP permite scripturile proprii, nonce-uri generate per răspuns și beaconul Cl
 
 Istoricul comenzilor folosește identitatea autentificată atât pentru selecția comenzilor, cât și pentru încărcarea produselor lor. Căutarea și filtrele sunt parametrizate; direcția sortării provine exclusiv din două constante. Lista nu returnează vouchere, adresă, telefon, note, promo sau cheia de idempotency. Paginarea este limitată la 50 de rezumate și folosește offset pe `long`, iar citirile sunt limitate per cont. Cererile frontend vechi se anulează și verifică generația paginii și sesiunea înainte de afișarea răspunsului.
 
+Repetarea comenzilor folosește numai comenzi ale contului autentificat și cantități citite de pe server. Câmpuri trimise de client pentru preț, cantitate sau proprietar nu pot suprascrie selecția. Planul include coșul existent și calculul curent al prețurilor; confirmarea îl recalculează sub blocarea contului și a resurselor. Nu există adăugare parțială. Cantitățile istorice prea mari și depășirea numărului de linii sunt respinse înainte de calculele pe `int`. Previzualizarea nu include date de livrare sau vouchere. Operația modifică doar coșul, fără recompense, debitări, rezervări sau comenzi noi.
+
 ## Model de amenințări
 
 | Amenințare STRIDE | Scenariu prioritar | Probabilitate estimată | Impact |
@@ -116,5 +118,7 @@ Furnizorii observați sunt Cloudflare, găzduirea VPS și GitHub pentru surse/CI
 - Etapa istoricului comenzilor a trecut 197 de teste backend și 7 teste JavaScript local. Cele opt teste noi verifică autorizarea, minimizarea datelor, filtrele combinate, caracterele speciale din căutări, zilele de 23/25 de ore, sortarea stabilă, limitele paginării și cota per cont. Browserul a trecut prin filtre păstrate după reîncărcare, navigare spre produs și înapoi, căutări suprapuse și schimbarea contului cu un răspuns vechi în curs, la lățimi de la 320 la 1440 px. CI-ul existent pentru `644c4d9` este verde; modificările etapei rămân locale.
 
 - Corecția paginii de detalii a trecut verificarea completă de browser cu o comandă fizică și o adresă sintetice în PostgreSQL izolat. Schimbarea contului cu dialogul deschis nu trimite cererea. Pentru anularea confirmată, serverul a procesat o singură cerere, răspunsul întârziat nu a reapărut în contul următor, iar revenirea proprietarului a confirmat statusul și rambursarea exactă. Cele 7 teste JavaScript și verificarea modulelor au trecut din nou. Această etapă nu schimbă backendul sau migrările.
+
+- Etapa repetării comenzilor a trecut 207 teste backend și 8 teste JavaScript local. Cele 10 teste noi de integrare verifică autorizarea, prețurile și reducerile actuale, păstrarea coșului, produsele neeligibile, versiunile depășite, datele suplimentare ale clientului, confirmările simultane și limitele numerice. Browserul verifică schimbarea contului, modificarea coșului și a stocului în timpul previzualizării, blocarea confirmării, adăugarea validă și absența debitării ori a comenzilor noi. Dialogul a fost verificat la 320, 390, 768 și 1440 px. CI-ul existent pentru `0c2420e` este verde; etapa nouă rămâne locală.
 
 Testele de încărcare și extinderea auditului la celelalte aplicații de pe VPS rămân de planificat. Prioritățile restante sunt protecția identității, backupurile periodice și alertarea.

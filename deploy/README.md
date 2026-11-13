@@ -111,6 +111,18 @@ Citirea este limitată la 60 de cereri/minut per cont. Produsele sunt încărcat
 
 Pagina de detalii leagă citirea, copierea și anularea de sesiunea și navigarea care au deschis comanda. Confirmarea se închide la părăsirea paginii sau schimbarea contului. O cerere de anulare deja procesată pe server rămâne efectuată, dar răspunsul ei întârziat nu poate afișa datele vechii comenzi în pagina altui cont. La revenire, comanda este recitită de pe server.
 
+## Repetarea comenzilor — modificări locale
+
+`GET /api/cart/repeat-order/{id}` previzualizează adăugarea cantităților unei comenzi proprii la coșul actual. Se pot folosi inclusiv comenzi anulate. Produsele deja alese sunt păstrate, iar liniile istorice ale aceluiași produs sunt cumulate. Prețurile, ofertele, limitele per utilizator, reducerea de nivel, stocul și eligibilitatea sunt calculate cu același `QuoteService` ca la checkout. Prețul istoric și codul promo vechi nu sunt reutilizate; adresa, voucherele și notele nu sunt copiate.
+
+`POST /api/cart/repeat-order/{id}` primește `{"version":"amprenta de 64 de caractere hexazecimale din previzualizare"}`. Sub blocarea contului, serverul recalculează planul și blochează produsele și ofertele în aceeași ordine ca checkout-ul. Amprenta leagă contul, comanda, cantitățile existente și rezultatul calculului. Ea detectează schimbări și nu înlocuiește autentificarea. `REPEAT_CHANGED` (409) cere revederea planului și o nouă confirmare; nu se reîncearcă automat POST-ul.
+
+Repetarea este integrală. Un produs retras, stocul insuficient, nivelul neeligibil, o insignă deja deținută sau depășirea limitelor blochează toată operația. Limitele de 20 de produse diferite și 99 de unități per produs sunt verificate înaintea calculelor, apoi se aplică și limitele curente ale fiecărui produs. `REPEAT_UNAVAILABLE` (409) păstrează coșul neschimbat. Un sold insuficient nu împiedică păstrarea produselor în coș; checkout-ul va verifica din nou fondurile și disponibilitatea.
+
+Previzualizarea are 60 de cereri/minut per cont. Confirmarea împarte limita de 60/minut a operațiilor de coș. Confirmările simultane ale aceleiași stări nu pot cumula repetat cantitățile: prima modifică coșul, iar celelalte primesc o versiune depășită. Nu sunt debitate AP, rezervate stocuri, consumate oferte sau create comenzi. La o eroare de rețea, utilizatorul poate verifica direct coșul; nu se promite memorarea permanentă a cheii unei cereri.
+
+Frontendul așteaptă operațiile de coș în curs înainte de previzualizare/confirmare și leagă dialogul de pagina și sesiunea care l-au deschis. La navigare sau schimbarea contului, dialogul se închide și cererile se anulează. Etapa nu adaugă migrări sau dependențe și este locală, încă nepublicată.
+
 ## Răspuns la incident
 
 1. Notează momentul constatării, simptomele, versiunea și operațiile cunoscute. Conservă logurile și copiile existente cu acces restrâns.

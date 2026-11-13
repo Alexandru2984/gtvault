@@ -7,6 +7,7 @@ import { setMeta } from '../seo.js';
 import { setQuery } from '../router.js';
 import { refreshUser, state } from '../store.js';
 import { busy, modal, copyText, handleError, toastOk } from '../ui.js';
+import { repeatOrder } from '../order-repeat.js';
 
 const STEP_ICON = { PLACED: 'clock', PROCESSING: 'package', SHIPPED: 'truck', DELIVERED: 'check', FULFILLED: 'check', CANCELLED: 'x' };
 
@@ -30,6 +31,13 @@ export default async function order({ root, params, query, signal, alive }) {
   }
   if (!active()) return;
   const fresh = query.nou === '1';
+  function openDialog(options) {
+    return modal({ ...options, onMount: (dlg, close) => {
+      dialogs.add(close);
+      dlg.addEventListener('close', () => dialogs.delete(close), { once: true });
+      options.onMount?.(dlg, close);
+    } });
+  }
 
   function render() {
     if (!active()) return;
@@ -92,6 +100,7 @@ export default async function order({ root, params, query, signal, alive }) {
             </dl>
             ${o.status === 'CANCELLED' ? html`<div class="callout is-success">${icon('check')}<span>Cei ${num(o.total)} AP au fost returnați în contul tău.</span></div>` : ''}
             ${o.canCancel ? html`<button class="btn btn-danger-soft btn-block" type="button" data-cancel>${icon('x')} Anulează comanda</button>` : ''}
+            <button class="btn btn-secondary btn-block" type="button" data-repeat>Adaugă din nou în coș</button>
           </section>
           <p class="xsmall muted">Ultima actualizare: ${date(o.updatedAt)}</p>
         </aside>
@@ -102,19 +111,21 @@ export default async function order({ root, params, query, signal, alive }) {
   render();
   if (fresh) setQuery({}); // un refresh al paginii nu mai arata bannerul de succes
 
-  const off = on(root, 'click', '[data-copy], [data-cancel]', async (e, b) => {
+  const off = on(root, 'click', '[data-copy], [data-cancel], [data-repeat]', async (e, b) => {
     if (!active()) return;
+    if (b.hasAttribute('data-repeat')) {
+      await busy(b, () => repeatOrder({ orderId: o.id, signal, active, openDialog }));
+      return;
+    }
     if (b.dataset.copy) {
       copyText(b.dataset.copy);
       return;
     }
-    const ok = await modal({
+    const ok = await openDialog({
       title: 'Anulezi comanda?',
       content: html`<p class="muted">Primești înapoi integral ${num(o.total)} AP, iar produsele revin în stoc. Acțiunea nu poate fi anulată.</p>`,
       footer: html`<button class="btn btn-ghost" type="button" data-close>Păstrează comanda</button><button class="btn btn-danger" type="button" data-confirm-cancel>Da, anulează</button>`,
       onMount: (dlg, close) => {
-        dialogs.add(close);
-        dlg.addEventListener('close', () => dialogs.delete(close), { once: true });
         qs('[data-confirm-cancel]', dlg).addEventListener('click', () => close(true));
         qs('[data-confirm-cancel]', dlg).focus();
       },

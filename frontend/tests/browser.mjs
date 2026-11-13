@@ -508,6 +508,76 @@ try {
   assert.equal(await page.locator('[data-cancel]').count(), 0);
   const refunded = await context.request.get(origin + '/RewardHub/api/user/me', { headers: ownerHeaders });
   assert.equal((await refunded.json()).activityPoints, physical.newBalance + physical.order.total);
+
+  const repeatPath = `/cart/repeat-order/${physical.order.id}`;
+  await page.locator('[data-repeat]').click();
+  await page.getByRole('dialog').getByRole('heading', { name: 'Adaugă din nou în coș', exact: true }).waitFor();
+  await cancelActor.evaluate((session) => localStorage.setItem('gt.session', session), alternateSession);
+  await page.getByRole('heading', { name: 'Comanda nu a fost găsită', exact: true }).waitFor();
+  assert.equal(await page.getByRole('dialog').count(), 0, 'account switch closes the repeat preview');
+  assert.equal((await (await context.request.get(origin + '/RewardHub/api/cart', { headers: ownerHeaders })).json()).lines.length, 0);
+  await cancelActor.evaluate((session) => localStorage.setItem('gt.session', session), originalOrderSession);
+  await page.locator('[data-repeat]').waitFor();
+  const planRequest = page.waitForResponse((response) => response.url().endsWith(repeatPath) && response.request().method() === 'GET');
+  await page.locator('[data-repeat]').click();
+  const initialRepeat = await (await planRequest).json();
+  assert.equal(initialRepeat.canAdd, true);
+  const stockBeforeRepeat = initialRepeat.quote.lines.find((line) => line.rewardId === 'rew-sticker').stockCount;
+  const repeatDialog = page.getByRole('dialog');
+  await repeatDialog.getByRole('heading', { name: 'Adaugă din nou în coș', exact: true }).waitFor();
+  const beforeRepeatBalance = (await (await context.request.get(origin + '/RewardHub/api/user/me', { headers: ownerHeaders })).json()).activityPoints;
+  const beforeRepeatOrders = (await (await context.request.get(origin + '/RewardHub/api/orders', { headers: ownerHeaders })).json()).totalItems;
+  assert.equal((await context.request.post(origin + '/RewardHub/api/cart/items', {
+    headers: ownerHeaders, data: { rewardId: 'rew-templatecv', quantity: 1 },
+  })).status(), 200);
+  const staleRepeat = page.waitForResponse((response) => response.url().endsWith(repeatPath) && response.request().method() === 'POST');
+  await repeatDialog.getByRole('button', { name: 'Adaugă în coș', exact: true }).click();
+  assert.equal((await staleRepeat).status(), 409);
+  await repeatDialog.getByRole('alert').filter({ hasText: 'Coșul, prețurile sau disponibilitatea s-au schimbat.' }).waitFor();
+  assert.ok((await repeatDialog.textContent()).includes('Template CV'));
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 844 });
+    await noOverflow(page, `repeat preview at ${width}`);
+    const fits = await repeatDialog.locator('.modal-body').evaluate((el) => el.scrollWidth <= el.clientWidth);
+    if (!fits) {
+      await page.screenshot({ path: 'test-results/browser/repeat-overflow.png' });
+      console.error(await repeatDialog.locator('.modal-body').evaluate((body) => [...body.querySelectorAll('*')]
+        .filter((node) => node.getBoundingClientRect().right > body.getBoundingClientRect().right)
+        .map((node) => ({ tag: node.tagName, class: node.className, text: node.textContent.slice(0, 70) }))));
+    }
+    assert.ok(fits, `repeat dialog body fits at ${width}`);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'test-results/browser/repeat-order-mobile.png' });
+
+  // O schimbare de stoc invalidează confirmarea și afișează o previzualizare blocată.
+  const stockHeaders = { Authorization: `Bearer ${fixtureAdmin.token}` };
+  assert.equal((await context.request.post(origin + '/RewardHub/api/admin/rewards/rew-sticker/stock', {
+    headers: stockHeaders, data: { delta: -stockBeforeRepeat, reason: 'Stoc sintetic pentru verificarea repetării' },
+  })).status(), 200);
+  const unavailable = page.waitForResponse((response) => response.url().endsWith(repeatPath) && response.request().method() === 'POST');
+  await repeatDialog.getByRole('button', { name: 'Adaugă în coș', exact: true }).click();
+  assert.equal((await unavailable).status(), 409);
+  await repeatDialog.getByRole('alert').filter({ hasText: 'Comanda nu poate fi repetată integral.' }).waitFor();
+  assert.equal(await repeatDialog.getByRole('button', { name: 'Adaugă în coș', exact: true }).isDisabled(), true);
+  await repeatDialog.getByRole('button', { name: 'Închide', exact: true }).click();
+  assert.equal((await context.request.post(origin + '/RewardHub/api/admin/rewards/rew-sticker/stock', {
+    headers: stockHeaders, data: { delta: stockBeforeRepeat, reason: 'Restaurare stoc sintetic după verificare' },
+  })).status(), 200);
+  await page.locator('[data-repeat]').click();
+  await repeatDialog.getByRole('button', { name: 'Adaugă în coș', exact: true }).waitFor();
+  const repeated = page.waitForResponse((response) => response.url().endsWith(repeatPath) && response.request().method() === 'POST');
+  await repeatDialog.getByRole('button', { name: 'Adaugă în coș', exact: true }).click();
+  assert.equal((await repeated).status(), 200);
+  await page.waitForURL(origin + '/cos');
+  await page.getByRole('heading', { name: 'Coșul tău', exact: true }).waitFor();
+  const repeatedCart = await (await context.request.get(origin + '/RewardHub/api/cart', { headers: ownerHeaders })).json();
+  assert.equal(repeatedCart.lines.length, 2);
+  assert.equal(repeatedCart.lines.find((line) => line.rewardId === 'rew-templatecv').quantity, 1);
+  assert.equal(repeatedCart.lines.find((line) => line.rewardId === 'rew-sticker').quantity, 1);
+  assert.equal(repeatedCart.lines.find((line) => line.rewardId === 'rew-sticker').stockCount, stockBeforeRepeat);
+  assert.equal((await (await context.request.get(origin + '/RewardHub/api/user/me', { headers: ownerHeaders })).json()).activityPoints, beforeRepeatBalance);
+  assert.equal((await (await context.request.get(origin + '/RewardHub/api/orders', { headers: ownerHeaders })).json()).totalItems, beforeRepeatOrders);
   await cancelActor.close();
 
   await page.locator('.site-footer a[href="/activitati"]').click();
@@ -623,7 +693,7 @@ try {
     headers: { Authorization: `Bearer ${rotatedToken}` },
   })).status(), 401);
   assert.deepEqual(errors, []);
-  console.log('Browser checks passed for responsive navigation, valid control states, registration, comparison, wishlist, saving goals, checkout, order search/filters/cancellation/account isolation, vouchers, CSV, daily rewards, quiz notebook/practice/account isolation, Wordle history/replay/sharing/account isolation, sessions, notification preferences, admin and offline recovery.');
+  console.log('Browser checks passed for responsive navigation, valid control states, registration, comparison, wishlist, saving goals, checkout, order search/filters/cancellation/repeat/account isolation, vouchers, CSV, daily rewards, quiz notebook/practice/account isolation, Wordle history/replay/sharing/account isolation, sessions, notification preferences, admin and offline recovery.');
 } catch (error) {
   if (errors.length) console.error('Browser HTTP or script errors', errors);
   throw error;

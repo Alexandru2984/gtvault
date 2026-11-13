@@ -46,7 +46,7 @@ const FALLBACK = {
 export function api(path, options = {}) {
   const token = options.auth === false ? null : tokenProvider();
   const method = options.method || 'GET';
-  const pending = path === '/cart' || path === '/checkout/quote'
+  const pending = path === '/cart' || path === '/checkout/quote' || /^\/cart\/repeat-order\//.test(path)
     ? [...cartWrites].filter(([, owner]) => owner === token).map(([request]) => request) : [];
   const request = sendRequest(path, { ...options, method }, token, pending);
   if (/^\/cart(?:\/|$)/.test(path) && !['GET', 'HEAD'].includes(method)) {

@@ -92,7 +92,7 @@ Caietul de quiz păstrează numai răspunsurile trimise după activarea V11. În
 - Cozi de moderare pentru recenzii și propuneri, cu motiv și istoric.
 - Anunțuri către membri, cu previzualizare și confirmare a destinatarilor.
 - Căutare și filtrare în istoricul comenzilor, cu legături către produs — implementate și verificate local, nepublicate. Căutare după ID și numele istoric al produsului, status, livrare, perioadă și sortare; rezumate fără adrese sau vouchere.
-- Repetarea unei comenzi printr-o cotă nouă de preț și stoc.
+- Repetarea unei comenzi — implementată și verificată local, nepublicată. Previzualizare la prețurile actuale, păstrarea produselor existente în coș și confirmare legată de starea verificată. Dacă repetarea integrală nu este posibilă, coșul rămâne neschimbat; plata rămâne în checkout.
 - Rezervări de stoc cu expirare, pentru a limita blocarea inventarului.
 - Instrucțiuni de livrare specifice fiecărui premiu digital.
 - Integrare reală cu furnizorul de transport ales și actualizări verificate de status.
