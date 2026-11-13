@@ -38,6 +38,14 @@ class AdminIntegrationTest extends AbstractIntegrationTest {
         return mvc.perform(postJson(url, admin, body));
     }
 
+    private MockHttpServletRequestBuilder editReward(String id, Map<String, Object> changes) throws Exception {
+        JsonNode editor = readJson(mvc.perform(getAs("/api/admin/rewards/" + id, admin)).andExpect(status().isOk()).andReturn());
+        Map<String, Object> body = new HashMap<>(changes);
+        body.put("version", editor.path("version").asText());
+        if (body.containsKey("stockCount")) body.put("expectedStock", editor.at("/product/stockCount").asInt());
+        return putJson("/api/admin/rewards/" + id, admin, body);
+    }
+
     private int notifications(TestUser u, String type) {
         Integer c = jdbc.queryForObject("select count(*) from notifications where user_id = ? and type = ?", Integer.class, u.id(), type);
         return c == null ? 0 : c;
@@ -191,18 +199,18 @@ class AdminIntegrationTest extends AbstractIntegrationTest {
         assertThat(auditCount("REWARD_CREATE", id)).isEqualTo(1);
 
         TestUser fan = register();
-        mvc.perform(putJson("/api/admin/rewards/" + id, admin, Map.of("stockCount", 0))).andExpect(status().isOk());
+        mvc.perform(editReward(id, Map.of("stockCount", 0))).andExpect(status().isOk());
         mvc.perform(authed(put("/api/wishlist/" + id), fan)).andExpect(status().isOk());
         adminPost("/api/admin/rewards/" + id + "/stock", Map.of("delta", -1)).andExpect(status().isBadRequest());
         adminPost("/api/admin/rewards/" + id + "/stock", Map.of("delta", 10, "reason", "Lot nou")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.stockCount").value(10));
         assertThat(notifications(fan, "WISHLIST")).isEqualTo(1);
 
-        mvc.perform(putJson("/api/admin/rewards/" + id, admin, Map.of("active", false))).andExpect(status().isOk());
+        mvc.perform(editReward(id, Map.of("active", false))).andExpect(status().isOk());
         mvc.perform(getAs("/api/rewards/" + id, null)).andExpect(status().isNotFound());
         JsonNode all = readJson(mvc.perform(getAs("/api/admin/rewards", admin)).andReturn());
         assertThat(all.toString()).contains(id);
-        mvc.perform(putJson("/api/admin/rewards/rew-badge", admin, Map.of("fulfillment", "DIGITAL"))).andExpect(status().isBadRequest());
+        mvc.perform(editReward("rew-badge", Map.of("fulfillment", "DIGITAL"))).andExpect(status().isBadRequest());
         mvc.perform(putJson("/api/admin/rewards/nu-exista", admin, Map.of("price", 10))).andExpect(status().isNotFound());
     }
 

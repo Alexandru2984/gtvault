@@ -1,5 +1,7 @@
 package gtshop.service.admin;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import gtshop.game.Tiers;
 import gtshop.model.FlashDeal;
 import gtshop.model.PromoCode;
@@ -14,15 +16,19 @@ import gtshop.util.InputSanitizer;
 import gtshop.util.Locks;
 import gtshop.web.ApiException;
 import java.sql.Timestamp;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,9 +51,10 @@ public class AdminCatalogService {
     private final JdbcTemplate jdbc;
     private final Locks locks;
     private final TimeService time;
+    private final ObjectMapper json;
 
     public AdminCatalogService(RewardRepository rewards, FlashDealRepository deals, PromoCodeRepository promos,
-                               WishlistAlerts alerts, AdminAudit audit, JdbcTemplate jdbc, Locks locks, TimeService time) {
+                               WishlistAlerts alerts, AdminAudit audit, JdbcTemplate jdbc, Locks locks, TimeService time, ObjectMapper json) {
         this.rewards = rewards;
         this.deals = deals;
         this.promos = promos;
@@ -56,13 +63,25 @@ public class AdminCatalogService {
         this.jdbc = jdbc;
         this.locks = locks;
         this.time = time;
+        this.json = json;
     }
 
     // ================================================================== produse
 
     public record RewardForm(String name, String description, String fullDescription, Integer price, String image,
                              String category, Integer stockCount, Boolean active, Boolean isNew, String fulfillment,
-                             Integer maxPerOrder, String minTier) {}
+                             Integer maxPerOrder, String minTier, String version, Integer expectedStock) {}
+
+    /** Stocul este separat de metadate: o vânzare nu invalidează editarea descrierii. */
+    private record Metadata(String id, String name, String description, String fullDescription, int price, String image,
+                            String category, boolean active, boolean isNew, String fulfillment, int maxPerOrder, String minTier) {}
+    public record Editor(Reward product, String version) {}
+
+    @Transactional(readOnly = true)
+    public Editor editor(String id) {
+        Reward reward = rewards.findById(id).orElseThrow(() -> ApiException.notFound("Produsul nu a fost găsit."));
+        return new Editor(reward, version(reward));
+    }
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> rewards() {
@@ -94,6 +113,20 @@ public class AdminCatalogService {
     @Transactional
     public Reward updateReward(String id, RewardForm f) {
         Reward r = lockReward(id);
+        if (f.version() == null || !f.version().matches("[0-9a-f]{64}")) {
+            throw ApiException.badRequest("PRODUCT_VERSION_REQUIRED", "Reîncarcă formularul produsului înainte de salvare.");
+        }
+        if (!version(r).equals(f.version())) {
+            throw new ApiException(HttpStatus.CONFLICT, "PRODUCT_CHANGED", "Produsul a fost modificat între timp. Reîncarcă datele și verifică schimbările înainte de salvare.");
+        }
+        if (f.stockCount() != null) {
+            if (f.expectedStock() == null || f.expectedStock() < 0 || f.expectedStock() > MAX_STOCK) {
+                throw ApiException.badRequest("STOCK_VERSION_REQUIRED", "Pentru înlocuirea stocului este necesară și valoarea citită inițial.");
+            }
+            if (f.expectedStock() != r.getStockCount()) {
+                throw new ApiException(HttpStatus.CONFLICT, "STOCK_CHANGED", "Stocul s-a schimbat între timp. Folosește ajustarea de stoc sau reîncarcă datele.");
+            }
+        }
         int stockBefore = r.getStockCount();
         boolean wasActive = r.isActive();
         String before = summary(r);
@@ -108,7 +141,7 @@ public class AdminCatalogService {
 
     @Transactional
     public Reward adjustStock(String id, Integer delta, String reason) {
-        if (delta == null || delta == 0 || Math.abs(delta) > MAX_STOCK) {
+        if (delta == null || delta == 0 || delta < -MAX_STOCK || delta > MAX_STOCK) {
             throw ApiException.badRequest("Modificarea de stoc trebuie să fie un număr nenul.");
         }
         String why = InputSanitizer.cleanOptional(reason, 200, "Motivul");
@@ -209,8 +242,17 @@ public class AdminCatalogService {
         if (base.length() > 40) {
             base = base.substring(0, 40).replaceAll("-$", "");
         }
-        String id = "rew-" + (base.isEmpty() ? "produs" : base);
-        return rewards.existsById(id) ? id + "-" + Ids.code(4).toLowerCase(Locale.ROOT) : id;
+        return Ids.prefixed("rew-" + (base.isEmpty() ? "produs" : base) + "-");
+    }
+
+    private String version(Reward reward) {
+        Metadata metadata = new Metadata(reward.getId(), reward.getName(), reward.getDescription(), reward.getFullDescription(), reward.getPrice(),
+                reward.getImage(), reward.getCategory(), reward.isActive(), reward.isNew(), reward.getFulfillment(), reward.getMaxPerOrder(), reward.getMinTier());
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(json.writeValueAsBytes(metadata)));
+        } catch (NoSuchAlgorithmException | JsonProcessingException e) {
+            throw new IllegalStateException("Versiunea produsului nu poate fi calculată", e);
+        }
     }
 
     private static String summary(Reward r) {

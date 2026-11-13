@@ -123,6 +123,14 @@ Previzualizarea are 60 de cereri/minut per cont. Confirmarea împarte limita de 
 
 Frontendul așteaptă operațiile de coș în curs înainte de previzualizare/confirmare și leagă dialogul de pagina și sesiunea care l-au deschis. La navigare sau schimbarea contului, dialogul se închide și cererile se anulează. Etapa nu adaugă migrări sau dependențe și este locală, încă nepublicată.
 
+## Editarea catalogului — contract local nou
+
+`GET /api/admin/rewards/{id}` returnează `product` și `version`. `PUT /api/admin/rewards/{id}` cere această versiune în corpul cererii. Lipsa unei versiuni valide răspunde cu `PRODUCT_VERSION_REQUIRED` (400), iar o modificare concurentă a metadatelor cu `PRODUCT_CHANGED` (409). Clientul trebuie să reîncarce datele și să verifice formularul înainte de o nouă salvare. Versiunea include ID-ul și metadatele produsului, fără stoc: o vânzare nu blochează editarea descrierii și nu poate fi suprascrisă de formularul de metadate.
+
+La o înlocuire absolută a stocului prin PUT este obligatoriu și `expectedStock`, valoarea citită inițial. Lipsa sa răspunde cu `STOCK_VERSION_REQUIRED` (400), iar o diferență cu stocul curent cu `STOCK_CHANGED` (409). Ajustările obișnuite folosesc în continuare `POST /api/admin/rewards/{id}/stock`, cu `delta` și motiv. Acestea se aplică stocului curent sub blocarea produsului.
+
+Clienții administrativi care folosesc PUT trebuie actualizați înaintea publicării. Nu există migrări noi. Produsele nou create primesc un ID cu prefix lizibil și sufix aleatoriu, pentru a evita coliziunea la creări simultane cu același nume. Căile, ID-urile și datele produselor existente sunt păstrate. Etapa este locală, încă nepublicată.
+
 ## Răspuns la incident
 
 1. Notează momentul constatării, simptomele, versiunea și operațiile cunoscute. Conservă logurile și copiile existente cu acces restrâns.

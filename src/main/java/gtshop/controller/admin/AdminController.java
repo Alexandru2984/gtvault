@@ -129,6 +129,12 @@ public class AdminController {
         return catalog.rewards();
     }
 
+    @GetMapping("/rewards/{id}")
+    @Operation(summary = "Datele produsului și versiunea necesară editării")
+    public AdminCatalogService.Editor reward(@PathVariable String id) {
+        return catalog.editor(id);
+    }
+
     @PostMapping("/rewards")
     @ResponseStatus(HttpStatus.CREATED)
     @RateLimit(name = "admin-write", limit = 300, windowSeconds = 60)
