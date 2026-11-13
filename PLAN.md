@@ -91,7 +91,7 @@ Caietul de quiz păstrează numai răspunsurile trimise după activarea V11. În
 - Editor de oferte și coduri promo, cu previzualizarea prețului rezultat.
 - Cozi de moderare pentru recenzii și propuneri, cu motiv și istoric.
 - Anunțuri către membri, cu previzualizare și confirmare a destinatarilor.
-- Căutare și filtrare în istoricul comenzilor, cu legături către produs.
+- Căutare și filtrare în istoricul comenzilor, cu legături către produs — implementate și verificate local, nepublicate. Căutare după ID și numele istoric al produsului, status, livrare, perioadă și sortare; rezumate fără adrese sau vouchere.
 - Repetarea unei comenzi printr-o cotă nouă de preț și stoc.
 - Rezervări de stoc cu expirare, pentru a limita blocarea inventarului.
 - Instrucțiuni de livrare specifice fiecărui premiu digital.

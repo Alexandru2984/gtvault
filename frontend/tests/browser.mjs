@@ -347,6 +347,98 @@ try {
       await notebook.screenshot({ path: 'test-results/browser/quiz-notebook-mobile.png' });
     }
   }
+  await page.getByRole('button', { name: 'Meniul contului', exact: true }).click();
+  await page.locator('#user-menu a[href="/comenzi"]').click();
+  await page.locator('.order-card').waitFor();
+  const orderId = await page.locator('.order-number').textContent();
+  const createdAt = await page.locator('.order-card time').getAttribute('datetime');
+  const calendarDay = await page.evaluate((instant) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Bucharest', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(instant)), createdAt);
+  const orderResults = page.locator('[data-orders-results]');
+  assert.ok(!(await orderResults.textContent()).includes(voucher.trim()));
+  await page.getByText('Filtre și sortare', { exact: true }).click();
+  const orderSearch = page.getByRole('searchbox', { name: 'Caută în comenzile mele', exact: true });
+  await orderSearch.fill('Template CV');
+  await page.getByLabel('Statusul comenzii', { exact: true }).selectOption('FULFILLED');
+  await page.getByLabel('Tipul de livrare', { exact: true }).selectOption('DIGITAL');
+  await page.getByLabel('Comandate începând cu', { exact: true }).fill(calendarDay);
+  await page.getByLabel('Comandate până la', { exact: true }).fill(calendarDay);
+  await page.getByLabel('Ordinea comenzilor', { exact: true }).selectOption('OLDEST');
+  await page.getByRole('button', { name: 'Aplică filtrele', exact: true }).click();
+  await page.locator('.order-card').waitFor();
+  assert.equal(new URL(page.url()).searchParams.get('q'), 'Template CV');
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 844 });
+    await noOverflow(page, `order filters at ${width}`);
+  }
+  await page.reload();
+  await page.locator('.order-card').waitFor();
+  assert.equal(await orderSearch.inputValue(), 'Template CV');
+  assert.equal(await page.getByLabel('Comandate până la', { exact: true }).inputValue(), calendarDay);
+  await page.locator('.order-product-list').getByRole('link', { name: 'Template CV', exact: true }).click();
+  await page.getByRole('heading', { name: 'Template CV', level: 1, exact: true }).waitFor();
+  await page.goBack();
+  await page.locator('.order-card').waitFor();
+  assert.equal(await orderSearch.inputValue(), 'Template CV');
+  await page.getByLabel('Statusul comenzii', { exact: true }).selectOption('CANCELLED');
+  await page.getByRole('button', { name: 'Aplică filtrele', exact: true }).click();
+  await page.getByRole('heading', { name: 'Nicio comandă nu corespunde filtrelor', exact: true }).waitFor();
+  await page.locator('form [data-orders-reset]').click();
+  await page.locator('.order-card').waitFor();
+  await orderSearch.fill('%');
+  await page.getByRole('button', { name: 'Aplică filtrele', exact: true }).click();
+  await page.getByRole('heading', { name: 'Nicio comandă nu corespunde filtrelor', exact: true }).waitFor();
+  await page.locator('form [data-orders-reset]').click();
+  await page.locator('.order-card').waitFor();
+
+  // Un răspuns vechi nu poate suprascrie o căutare mai recentă sau lista altui cont.
+  async function delayedHistory(search) {
+    let received, release, delivered;
+    let intercepted = false;
+    const ready = new Promise((resolve) => { received = resolve; });
+    const gate = new Promise((resolve) => { release = resolve; });
+    const done = new Promise((resolve) => { delivered = resolve; });
+    const handler = async (route) => {
+      if (intercepted || new URL(route.request().url()).searchParams.get('q') !== search) return route.fallback();
+      intercepted = true;
+      const response = await route.fetch();
+      assert.equal(response.status(), 200);
+      received();
+      await gate;
+      await route.fulfill({ response }).catch(() => {});
+      delivered();
+    };
+    await page.route('**/RewardHub/api/orders?**', handler);
+    await orderSearch.fill(search);
+    await page.getByRole('button', { name: 'Aplică filtrele', exact: true }).click();
+    await ready;
+    return async () => { release(); await done; await page.unroute('**/RewardHub/api/orders?**', handler); };
+  }
+  const releaseOldSearch = await delayedHistory('căutare întârziată fără rezultat');
+  await orderSearch.fill('Template CV');
+  await page.getByRole('button', { name: 'Aplică filtrele', exact: true }).click();
+  await page.locator('.order-card').waitFor();
+  await releaseOldSearch();
+  assert.equal(await page.locator('.order-card').count(), 1);
+  const originalOrderSession = await page.evaluate(() => localStorage.getItem('gt.session'));
+  const releaseOldAccount = await delayedHistory(orderId);
+  const orderActor = await context.newPage();
+  await orderActor.goto(origin + '/offline.html');
+  await orderActor.evaluate((session) => localStorage.setItem('gt.session', session), alternateSession);
+  await page.getByRole('heading', { name: 'Nicio comandă nu corespunde filtrelor', exact: true }).waitFor();
+  await releaseOldAccount();
+  assert.equal(await page.locator('.order-card').count(), 0);
+  assert.ok(!(await orderResults.textContent()).includes(orderId));
+  await orderActor.evaluate((session) => localStorage.setItem('gt.session', session), originalOrderSession);
+  await page.locator('.order-card').waitFor();
+  await orderActor.close();
+  await page.locator('form [data-orders-reset]').click();
+  await page.locator('.order-card').waitFor();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'test-results/browser/orders-mobile.png', fullPage: true });
+  await page.locator('[data-order-details]').click();
+  await page.locator('.voucher code').waitFor();
+  assert.equal(await page.locator('.voucher code').textContent(), voucher);
+
   await page.locator('.site-footer a[href="/activitati"]').click();
   const claim = page.locator('[data-claim]');
   await claim.waitFor();

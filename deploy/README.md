@@ -101,6 +101,14 @@ V11 adaugă `quiz_attempts`, fără modificarea tabelelor existente. Nu reconstr
 
 Formularul trimite `questionVersion`, o amprentă a conținutului vizibil care detectează schimbarea variantelor, inclusiv când identificatorul întrebării rămâne același. Amprenta nu conține răspunsul sau explicația ascunsă și nu este un control de autorizare. Câmpul rămâne opțional pentru compatibilitatea cu clienții anteriori. Această etapă este locală și nu a fost publicată.
 
+## Istoricul comenzilor — modificări locale
+
+`GET /api/orders` returnează rezumate private, fără adresa de livrare, coduri de voucher, note, cod promo sau alte câmpuri interne. Acestea rămân disponibile în detaliul autorizat `GET /api/orders/{id}`. Lista păstrează ID-ul, statusul, data, totalul, tipul de livrare și produsele istorice. Disponibilitatea produsului în catalog controlează afișarea legăturii; produsele retrase păstrează numele din comandă.
+
+Parametrii sunt `q` (maximum 80 de caractere, ID sau numele istoric al produsului), `status=ALL|PLACED|PROCESSING|SHIPPED|DELIVERED|FULFILLED|CANCELLED`, `delivery=ALL|PHYSICAL|DIGITAL`, `from`, `to` (AAAA-LL-ZZ), `sort=NEWEST|OLDEST`, `page` și `size` (maximum 50). Comenzile mixte intră la `PHYSICAL`. Perioada include ambele zile în fusul orar configurat al aplicației, implicit Europe/Bucharest, inclusiv schimbările de oră. Căutarea tratează `%`, `_` și `!` literal. Paginile peste ultima pagină sunt aduse la ultima pagină validă, fără conversii de offset la `int`.
+
+Citirea este limitată la 60 de cereri/minut per cont. Produsele sunt încărcate într-un singur lot pentru comenzile paginii. Modificarea nu adaugă tabele sau migrări și nu schimbă operațiile de plată, livrare sau anulare. Frontendul și backendul se livrează coordonat. Etapa este locală, încă nepublicată.
+
 ## Răspuns la incident
 
 1. Notează momentul constatării, simptomele, versiunea și operațiile cunoscute. Conservă logurile și copiile existente cu acces restrâns.

@@ -3,6 +3,7 @@ package gtshop.controller;
 import gtshop.security.CurrentUser;
 import gtshop.security.RateLimit;
 import gtshop.service.OrderService;
+import gtshop.service.OrderHistoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -23,18 +24,28 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrderController {
     private final OrderService orders;
     private final CurrentUser currentUser;
+    private final OrderHistoryService history;
 
-    public OrderController(OrderService orders, CurrentUser currentUser) {
+    public OrderController(OrderService orders, CurrentUser currentUser, OrderHistoryService history) {
         this.orders = orders;
         this.currentUser = currentUser;
+        this.history = history;
     }
 
     public record VoucherVerification(@NotBlank @Size(max = 40) String code) {}
 
     @GetMapping("/orders")
-    @Operation(summary = "Istoricul comenzilor (paginat)")
-    public Map<String, Object> list(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-        return orders.list(currentUser.requireId(), page, size);
+    @RateLimit(name = "order-history", limit = 60, windowSeconds = 60)
+    @Operation(summary = "Rezumatele comenzilor mele, cu căutare, filtre și paginare")
+    public OrderHistoryService.HistoryPage list(@RequestParam(defaultValue = "0") int page,
+                                               @RequestParam(defaultValue = "10") int size,
+                                               @RequestParam(defaultValue = "") String q,
+                                               @RequestParam(defaultValue = "ALL") String status,
+                                               @RequestParam(defaultValue = "ALL") String delivery,
+                                               @RequestParam(defaultValue = "") String from,
+                                               @RequestParam(defaultValue = "") String to,
+                                               @RequestParam(defaultValue = "NEWEST") String sort) {
+        return history.list(currentUser.requireId(), page, size, q, status, delivery, from, to, sort);
     }
 
     @GetMapping("/orders/last-shipping")

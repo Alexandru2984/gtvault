@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeSet;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -82,20 +81,6 @@ public class OrderService {
                             boolean canCancel) {}
 
     // ------------------------------------------------------------------ citire
-
-    @Transactional(readOnly = true)
-    public Map<String, Object> list(String userId, int page, int size) {
-        int p = Math.max(0, page);
-        int s = Math.min(50, Math.max(1, size));
-        Page<ShopOrder> result = orders.findForUser(userId, PageRequest.of(p, s));
-        Map<String, Object> res = new LinkedHashMap<>();
-        res.put("items", result.getContent().stream().map(OrderService::view).toList());
-        res.put("page", p);
-        res.put("size", s);
-        res.put("totalItems", result.getTotalElements());
-        res.put("totalPages", result.getTotalPages());
-        return res;
-    }
 
     @Transactional(readOnly = true)
     public OrderView get(String userId, String orderId) {
