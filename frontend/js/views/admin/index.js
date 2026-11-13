@@ -1,14 +1,16 @@
 import { get, post, enc, query as searchParams } from '../../api.js';
 import { apAmount, emptyState, orderStatusTag, ORDER_STATUS, skeletonPage } from '../../components.js';
-import { formData, html, join, mount, on } from '../../dom.js';
+import { formData, html, join, mount, on, qs } from '../../dom.js';
 import { dateTime, num } from '../../format.js';
 import { icon } from '../../icons.js';
 import { navigate, reload } from '../../router.js';
 import { setMeta } from '../../seo.js';
-import { busy, confirmDialog, handleError, toastOk } from '../../ui.js';
+import { busy, modal, handleError, toastOk } from '../../ui.js';
+import { state, isAdmin } from '../../store.js';
+import { adminCatalog } from './catalog.js';
 
 const SECTIONS = {
-  stats: ['Prezentare', 'grid'], orders: ['Comenzi', 'package'], rewards: ['Stoc', 'bag'],
+  stats: ['Prezentare', 'grid'], orders: ['Comenzi', 'package'], rewards: ['Catalog', 'bag'],
   users: ['Membri', 'users'], audit: ['Jurnal', 'history'],
 };
 
@@ -16,6 +18,17 @@ const adminPath = (section, params) => `/admin${section === 'stats' ? '' : `/${s
 const adminApi = (section, id) => `/admin/${section}${id ? `/${enc(id)}` : ''}`;
 
 export default async function admin({ root, params, query, signal, alive }) {
+  const token = state.token;
+  let disposed = false;
+  const active = () => !disposed && alive() && state.token === token && isAdmin();
+  const dialogs = new Set();
+  function openDialog(options) {
+    return modal({ ...options, onMount: (dlg, close) => {
+      dialogs.add(close);
+      dlg.addEventListener('close', () => dialogs.delete(close), { once: true });
+      options.onMount?.(dlg, close);
+    } });
+  }
   const section = params.section || 'stats';
   if (!Object.hasOwn(SECTIONS, section)) throw new Error('Secțiunea de administrare nu există.');
   const id = ['orders', 'users'].includes(section) ? query.id : undefined;
@@ -23,10 +36,10 @@ export default async function admin({ root, params, query, signal, alive }) {
   const title = SECTIONS[section][0];
   setMeta({ title: `Administrare · ${title}`, noindex: true });
   mount(root, skeletonPage());
-  const data = await get(`${adminApi(section, id)}${searchParams(id ? null : { q: query.q, status: query.status, page })}`, { signal });
-  if (!alive()) return;
+  const data = section === 'rewards' ? null : await get(`${adminApi(section, id)}${searchParams(id ? null : { q: query.q, status: query.status, page })}`, { signal });
+  if (!active()) return;
 
-  const content = section === 'stats' ? stats(data)
+  const content = section === 'rewards' ? html`<div data-admin-catalog></div>` : section === 'stats' ? stats(data)
     : id ? (section === 'orders' ? order(data) : user(data))
     : listing(section, data, query, page);
 
@@ -35,31 +48,45 @@ export default async function admin({ root, params, query, signal, alive }) {
       <a href="${adminPath(key)}" ${key === section ? html`aria-current="page"` : ''}>${icon(ico)} ${label}</a>`)}</nav>
     <section class="admin-main"><h1>${title}</h1>${content}</section>
   </div>`);
+  const pageNode = qs('.admin', root);
 
   const unbindFilter = on(root, 'submit', '[data-filter]', (event, form) => {
     event.preventDefault();
+    if (!active()) return;
     navigate(adminPath(section, formData(form)));
   });
   const unbindAction = on(root, 'submit', '[data-mutation]', (event, form) => {
     event.preventDefault();
+    if (!active()) return;
     const button = event.submitter || form.querySelector('[type="submit"]');
     busy(button, async () => {
       try {
         const body = formData(form);
         for (const key of ['amount', 'delta']) if (key in body) body[key] = Number(body[key]);
         if ('banned' in body) body.banned = body.banned === 'true';
-        if (form.dataset.confirm && !await confirmDialog({ title: form.dataset.confirm, body: 'Acțiunea va fi consemnată în jurnal.' })) return;
-        if (!alive()) return;
-        const result = await post(form.dataset.mutation, body);
-        if (!alive()) return;
+        if (form.dataset.confirm && await openDialog({ title: form.dataset.confirm,
+          content: html`<p>Acțiunea va fi consemnată în jurnal.</p>`,
+          footer: html`<button class="btn btn-ghost" type="button" data-close>Renunță</button><button class="btn btn-primary" type="button" data-confirm-admin>Confirmă</button>`,
+          onMount: (dlg, close) => qs('[data-confirm-admin]', dlg).addEventListener('click', () => close(true)),
+        }) !== true) return;
+        if (!active()) return;
+        const result = await post(form.dataset.mutation, body, { signal });
+        if (!active()) return;
         toastOk(result.message || 'Modificarea a fost salvată.');
         reload();
       } catch (error) {
-        if (alive()) handleError(error);
+        if (active()) handleError(error);
       }
     });
   });
-  return () => { unbindFilter(); unbindAction(); };
+  const cleanupCatalog = section === 'rewards' ? await adminCatalog(qs('[data-admin-catalog]', root), { query, signal, active, openDialog }) : null;
+  return () => {
+    disposed = true;
+    for (const close of [...dialogs]) close();
+    cleanupCatalog?.();
+    unbindFilter(); unbindAction();
+    pageNode.remove();
+  };
 }
 
 function stats(data) {
@@ -99,11 +126,6 @@ function item(section, row) {
     <div class="kv">${row.user_name} · ${dateTime(row.created_at)} · ${apAmount(row.total)}</div></article>`;
   if (section === 'users') return html`<article class="card admin-item"><a class="strong" href="${adminPath(section, { id: row.id })}">${row.name}</a>
     <div class="kv">${row.email} · ${row.role} · ${row.banned ? 'Suspendat' : 'Activ'} · ${apAmount(row.activity_points)}</div></article>`;
-  if (section === 'rewards') return html`<article class="card admin-item"><h2 class="h4">${row.name}</h2><p class="muted">Stoc ${num(row.stock_count)} · ${row.active ? 'Activ' : 'Inactiv'}</p>
-    <form class="form-grid" data-mutation="${adminApi(section, row.id)}/stock">
-      <label class="field">Diferență stoc <input class="input" type="number" name="delta" required step="1"></label>${reason()}
-      <div class="span-2"><button class="btn btn-secondary" type="submit">Actualizează stocul</button></div>
-    </form></article>`;
   return html`<article class="card admin-item"><strong>${row.action}</strong><div class="kv">${row.admin_name || row.admin_id} · ${dateTime(row.created_at)} · ${row.target_type} ${row.target_id}</div><p>${row.details}</p></article>`;
 }
 

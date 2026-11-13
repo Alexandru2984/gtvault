@@ -87,7 +87,7 @@ Caietul de quiz păstrează numai răspunsurile trimise după activarea V11. În
 
 ## Etapa 5 · Magazin și comunitate
 
-- Editor de produse în interfața de administrare, inclusiv imagini, activare și limite de comandă.
+- Editor de produse — implementat și verificat local, nepublicat. Creare și editare cu previzualizare live, imagini din biblioteca locală, activare, marcaj „nou”, tip de livrare, nivel minim și limite. Stocul se ajustează separat; versiunile vechi nu pot suprascrie modificările concurente.
 - Editor de oferte și coduri promo, cu previzualizarea prețului rezultat.
 - Cozi de moderare pentru recenzii și propuneri, cu motiv și istoric.
 - Anunțuri către membri, cu previzualizare și confirmare a destinatarilor.

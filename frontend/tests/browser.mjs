@@ -655,6 +655,122 @@ try {
     await noOverflow(admin, `admin ${section}`);
   }
 
+  await admin.locator('.admin-nav a[href="/admin/rewards"]').click();
+  await admin.getByRole('link', { name: 'Produs nou', exact: true }).click();
+  const catalogForm = admin.locator('[data-product-editor]');
+  await catalogForm.getByLabel('Nume produs', { exact: true }).fill('Produs Browser Catalog');
+  await catalogForm.getByLabel('Descriere scurtă', { exact: true }).fill('Descriere pentru produsul de browser.');
+  await catalogForm.getByLabel('Descriere completă', { exact: true }).fill('Detalii complete pentru produsul sintetic de browser.');
+  await catalogForm.getByLabel('Preț în AP', { exact: true }).fill('333');
+  await catalogForm.getByLabel('Categoria', { exact: true }).fill('Digital');
+  await catalogForm.getByLabel('Stoc inițial', { exact: true }).fill('3');
+  await catalogForm.getByLabel('Limită per comandă', { exact: true }).fill('2');
+  await catalogForm.getByLabel('Nivel minim', { exact: true }).selectOption('GOLD');
+  await catalogForm.getByLabel('Imagine din bibliotecă', { exact: true }).selectOption('images/products/cv.svg');
+  await catalogForm.getByRole('checkbox', { name: 'Marchează ca nou', exact: true }).check();
+  assert.equal(await catalogForm.getByRole('checkbox', { name: 'Produs activ în magazin', exact: true }).isChecked(), false);
+  await admin.locator('[data-product-preview]').getByRole('heading', { name: 'Produs Browser Catalog', exact: true }).waitFor();
+  for (const width of [320, 390, 768, 1440]) {
+    await admin.setViewportSize({ width, height: 844 });
+    await noOverflow(admin, `catalog creator at ${width}`);
+  }
+  await admin.setViewportSize({ width: 390, height: 844 });
+  await admin.screenshot({ path: 'test-results/browser/catalog-editor-mobile.png', fullPage: true });
+  const createdProduct = admin.waitForResponse((response) => new URL(response.url()).pathname.endsWith('/admin/rewards') && response.request().method() === 'POST');
+  await catalogForm.getByRole('button', { name: 'Creează produsul', exact: true }).click();
+  const createdProductResponse = await createdProduct;
+  assert.equal(createdProductResponse.status(), 201);
+  const catalogProduct = await createdProductResponse.json();
+  const catalogId = catalogProduct.id;
+  await admin.locator('[data-catalog-stock]').waitFor();
+  const catalogSession = await admin.evaluate(() => localStorage.getItem('gt.session'));
+  const catalogHeaders = { Authorization: `Bearer ${JSON.parse(catalogSession).token}` };
+  assert.equal((await context.request.get(origin + `/RewardHub/api/rewards/${catalogId}`)).status(), 404);
+  async function saveCatalogProduct() {
+    const written = admin.waitForResponse((response) => response.url().endsWith('/admin/rewards/' + catalogId) && response.request().method() === 'PUT');
+    const reread = admin.waitForResponse((response) => response.url().endsWith('/admin/rewards/' + catalogId) && response.request().method() === 'GET');
+    await catalogForm.getByRole('button', { name: 'Salvează produsul', exact: true }).click();
+    const response = await written;
+    assert.equal(response.status(), 200);
+    assert.ok(!Object.hasOwn(response.request().postDataJSON(), 'stockCount'), 'metadata edits never overwrite live stock');
+    await reread;
+    await admin.locator('[data-catalog-stock]').waitFor();
+    return response.json();
+  }
+  await catalogForm.getByLabel('Preț în AP', { exact: true }).fill('444');
+  await catalogForm.getByRole('checkbox', { name: 'Produs activ în magazin', exact: true }).check();
+  await catalogForm.getByRole('checkbox', { name: 'Marchează ca nou', exact: true }).uncheck();
+  await catalogForm.getByLabel('Nivel minim', { exact: true }).selectOption('');
+  await catalogForm.getByLabel('Imagine din bibliotecă', { exact: true }).selectOption('images/products/agenda.svg');
+  await saveCatalogProduct();
+  const publicCatalogProduct = await (await context.request.get(origin + `/RewardHub/api/rewards/${catalogId}`)).json();
+  assert.equal(publicCatalogProduct.reward.price, 444);
+  assert.equal(publicCatalogProduct.reward.image, 'images/products/agenda.svg');
+
+  // O cumpărare reală în timpul editării nu trebuie să fie anulată de salvarea metadatelor.
+  await catalogForm.getByLabel('Descriere scurtă', { exact: true }).fill('Descriere salvată după o cumpărare concurentă.');
+  const catalogBuyerResponse = await context.request.post(origin + '/RewardHub/api/auth/register', {
+    data: { email: `catalog-${Date.now()}@rewardhub.test`, name: 'Client Catalog', password: 'Parola-Release-123' },
+  });
+  assert.equal(catalogBuyerResponse.status(), 200);
+  const catalogBuyer = await catalogBuyerResponse.json();
+  const buyerHeaders = { Authorization: `Bearer ${catalogBuyer.token}` };
+  assert.equal((await context.request.post(origin + '/RewardHub/api/cart/items', { headers: buyerHeaders, data: { rewardId: catalogId, quantity: 1 } })).status(), 200);
+  assert.equal((await context.request.post(origin + '/RewardHub/api/checkout', { headers: { ...buyerHeaders, 'Idempotency-Key': `catalog-purchase-${Date.now()}` }, data: {} })).status(), 200);
+  assert.equal((await saveCatalogProduct()).stockCount, 2);
+  await admin.locator('[data-stock-current]').filter({ hasText: '2' }).waitFor();
+
+  await catalogForm.getByLabel('Preț în AP', { exact: true }).fill('600');
+  const currentCatalogEditor = await (await adminContext.request.get(origin + `/RewardHub/api/admin/rewards/${catalogId}`, { headers: catalogHeaders })).json();
+  assert.equal((await adminContext.request.put(origin + `/RewardHub/api/admin/rewards/${catalogId}`, {
+    headers: catalogHeaders, data: { version: currentCatalogEditor.version, price: 555 },
+  })).status(), 200);
+  const conflictedSave = admin.waitForResponse((response) => response.url().endsWith('/admin/rewards/' + catalogId) && response.request().method() === 'PUT');
+  await catalogForm.getByRole('button', { name: 'Salvează produsul', exact: true }).click();
+  assert.equal((await conflictedSave).status(), 409);
+  await admin.locator('[data-editor-error]').getByRole('alert').waitFor();
+  assert.equal(await catalogForm.getByLabel('Preț în AP', { exact: true }).inputValue(), '600');
+  assert.equal(await catalogForm.getByRole('button', { name: 'Salvează produsul', exact: true }).isDisabled(), true);
+  await catalogForm.getByRole('button', { name: 'Încarcă produsul actual', exact: true }).click();
+  await admin.getByRole('dialog').getByRole('button', { name: 'Renunță la modificări', exact: true }).click();
+  await admin.waitForFunction(() => document.querySelector('[data-product-editor] [name="price"]')?.value === '555');
+
+  await catalogForm.getByLabel('Descriere scurtă', { exact: true }).fill('Modificare nesalvată păstrată la ajustarea stocului.');
+  const catalogStock = admin.locator('[data-catalog-stock]');
+  await catalogStock.getByLabel('Diferență stoc', { exact: true }).fill('2');
+  await catalogStock.getByLabel('Motiv ajustare', { exact: true }).fill('Lot sintetic pentru catalog');
+  await catalogStock.getByRole('button', { name: 'Ajustează stocul', exact: true }).click();
+  await admin.getByRole('dialog').getByRole('button', { name: 'Confirmă ajustarea', exact: true }).click();
+  await admin.waitForFunction(() => document.querySelector('[data-stock-current]')?.textContent === '4');
+  assert.equal(await catalogForm.getByLabel('Descriere scurtă', { exact: true }).inputValue(), 'Modificare nesalvată păstrată la ajustarea stocului.');
+  await saveCatalogProduct();
+  await catalogForm.getByRole('checkbox', { name: 'Produs activ în magazin', exact: true }).uncheck();
+  await saveCatalogProduct();
+  assert.equal((await context.request.get(origin + `/RewardHub/api/rewards/${catalogId}`)).status(), 404);
+
+  // Schimbarea contului elimină și formularul administrativ, și confirmarea veche.
+  await catalogForm.getByLabel('Nume produs', { exact: true }).fill('Ciornă administrativă nesalvată');
+  await catalogStock.getByLabel('Diferență stoc', { exact: true }).fill('1');
+  await catalogStock.getByLabel('Motiv ajustare', { exact: true }).fill('Cerere care nu trebuie trimisă');
+  await catalogStock.getByRole('button', { name: 'Ajustează stocul', exact: true }).click();
+  await admin.getByRole('dialog').getByRole('heading', { name: 'Confirmi ajustarea stocului?', exact: true }).waitFor();
+  const ordinaryCatalogSession = await page.evaluate(() => localStorage.getItem('gt.session'));
+  const catalogActor = await adminContext.newPage();
+  await catalogActor.goto(origin + '/offline.html');
+  await catalogActor.evaluate((session) => localStorage.setItem('gt.session', session), ordinaryCatalogSession);
+  await admin.waitForURL(origin + '/profil');
+  assert.equal(await admin.getByRole('dialog').count(), 0);
+  assert.ok(!(await admin.locator('#main').textContent()).includes('Ciornă administrativă nesalvată'));
+  assert.equal((await (await adminContext.request.get(origin + `/RewardHub/api/admin/rewards/${catalogId}`, { headers: catalogHeaders })).json()).product.stockCount, 4);
+  await catalogActor.evaluate((session) => localStorage.setItem('gt.session', session), catalogSession);
+  await catalogActor.close();
+  await admin.goto(origin + '/admin/rewards');
+  await admin.getByRole('searchbox', { name: 'Caută produse', exact: true }).fill('Produs Browser Catalog');
+  await admin.getByLabel('Vizibilitate', { exact: true }).selectOption('INACTIVE');
+  await admin.getByRole('button', { name: 'Filtrează', exact: true }).click();
+  assert.equal(await admin.locator('.admin-catalog-item').count(), 1);
+  await noOverflow(admin, 'catalog filters');
+
   await page.goto(origin + '/magazin');
   await page.locator('.pcard').last().waitFor();
   await page.screenshot({ path: 'test-results/browser/mobile.png', fullPage: true });

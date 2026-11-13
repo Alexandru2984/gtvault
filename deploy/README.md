@@ -131,6 +131,12 @@ La o înlocuire absolută a stocului prin PUT este obligatoriu și `expectedStoc
 
 Clienții administrativi care folosesc PUT trebuie actualizați înaintea publicării. Nu există migrări noi. Produsele nou create primesc un ID cu prefix lizibil și sufix aleatoriu, pentru a evita coliziunea la creări simultane cu același nume. Căile, ID-urile și datele produselor existente sunt păstrate. Etapa este locală, încă nepublicată.
 
+Interfața `/admin/rewards` oferă căutare, filtre de vizibilitate, sortare și paginare locală. „Produs nou” pornește cu vizibilitate inactivă și permite selectarea unei imagini din biblioteca existentă. Editorul include nume, descrieri, preț, categorie, imagine, livrare, limită de cantitate, nivel, activare și marcaj „nou”, cu previzualizare live. Încărcarea fișierelor noi nu face parte din această etapă. Datele speciale ale insignei Hero rămân protejate.
+
+Formularul de metadate nu trimite `stockCount` la editare. Ajustarea de stoc are formular și confirmare separate, cere motiv în interfață și păstrează ciorna metadatelor. Un conflict păstrează valorile introduse, blochează salvarea și cere reîncărcare explicită. Ieșirea printr-o legătură internă sau reîncărcarea browserului avertizează asupra metadatelor nesalvate. Ciornele nu se persistă în browser. Schimbarea contului elimină formularul și confirmările vechi, iar răspunsurile întârziate nu pot actualiza pagina altui cont.
+
+Modificările catalogului actualizează API-ul folosit de aplicație. Fișierele HTML pentru SEO și sitemap-ul rămân cele generate la build și trebuie reconstruite conform procedurii existente când se schimbă catalogul.
+
 ## Răspuns la incident
 
 1. Notează momentul constatării, simptomele, versiunea și operațiile cunoscute. Conservă logurile și copiile existente cu acces restrâns.
