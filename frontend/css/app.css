@@ -993,6 +993,7 @@ a.feed-item:hover .feed-title { color: var(--brand); }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--muted); }
 .admin-card-list { display: grid; gap: 10px; }
 .admin-item { display: grid; gap: 6px; padding: 14px; }
+.promotion-item { overflow-wrap: anywhere; min-width: 0; }
 .admin-item-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
 .catalog-filter-grid, .catalog-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .catalog-filter-grid { align-items: end; }

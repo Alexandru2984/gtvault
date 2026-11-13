@@ -87,10 +87,11 @@ Caietul de quiz păstrează numai răspunsurile trimise după activarea V11. În
 
 ## Etapa 5 · Magazin și comunitate
 
-Contractul administrativ pentru promoții este întărit local: editări condiționate de versiune, contoare păstrate la cumpărare, eliminarea explicită a expirării și coduri duplicate respinse controlat. Generatorul zilnic evită ofertele programate suprapuse, iar notificările wishlist rulează după commit. Interfața de administrare a promoțiilor este etapa următoare.
+Contractul administrativ pentru promoții este întărit local: editări condiționate de versiune, contoare păstrate la cumpărare, eliminarea explicită a expirării și coduri duplicate respinse controlat. Generatorul zilnic evită ofertele programate suprapuse, iar notificările wishlist rulează după commit. Interfața de administrare a promoțiilor este implementată și verificată local, nepublicată.
 
 - Editor de produse — implementat și verificat local, nepublicat. Creare și editare cu previzualizare live, imagini din biblioteca locală, activare, marcaj „nou”, tip de livrare, nivel minim și limite. Stocul se ajustează separat; versiunile vechi nu pot suprascrie modificările concurente.
-- Editor de oferte și coduri promo, cu previzualizarea prețului rezultat.
+- Editor de oferte și coduri promo — implementat și verificat local, nepublicat. Oferte imediate/programate, încheiere și anulare confirmate, coduri procentuale sau fixe, plafon, minim, expirare, utilizări, activare și simularea reducerii. Filtrele și paginarea se păstrează în URL; conflictele păstrează ciorna, iar schimbarea contului elimină pagina și confirmările.
+- Notificări deduplicate la începutul ofertelor programate, cu livrare persistentă și reîncercări. Notificările actuale pentru ofertele manuale sunt declanșate la crearea cu început imediat.
 - Cozi de moderare pentru recenzii și propuneri, cu motiv și istoric.
 - Anunțuri către membri, cu previzualizare și confirmare a destinatarilor.
 - Căutare și filtrare în istoricul comenzilor, cu legături către produs — implementate și verificate local, nepublicate. Căutare după ID și numele istoric al produsului, status, livrare, perioadă și sortare; rezumate fără adrese sau vouchere.

@@ -1,6 +1,6 @@
 # Audit RewardHub
 
-Evaluare din 11 noiembrie 2026. Operator confirmat de proprietar — Dragne Alexandru Mihai, 984.alexmihai@proton.me.
+Evaluare începută la 11 noiembrie 2026, cu verificări locale până la 14 noiembrie 2026. Operator confirmat de proprietar — Dragne Alexandru Mihai, 984.alexmihai@proton.me.
 
 ## Domeniu și dovezi
 
@@ -130,5 +130,7 @@ Furnizorii observați sunt Cloudflare, găzduirea VPS și GitHub pentru surse/CI
 - Editorul de catalog a trecut suita completă de 215 teste backend și verificările JavaScript locale. Browserul verifică formularul cu previzualizare la 320, 390, 768 și 1440 px, crearea inactivă, activarea, modificarea imaginii și regulilor, o cumpărare în timpul editării, conflictul care păstrează ciorna, ajustarea stocului fără pierderea textului nesalvat și dezactivarea. Schimbarea către un cont obișnuit închide confirmarea fără modificarea stocului și elimină imediat datele administrative. Etapa nu a fost publicată.
 
 Etapa contractului promoțiilor a trecut local 223 de teste backend. Cele opt teste noi verifică autorizarea, versiunile, utilizarea reală fără resetarea contorului, expirarea explicită, concurența între editări/creări/oferte, programările incompatibile cu generatorul și notificările numai după commit. PostgreSQL a fost izolat și toate datele au fost sintetice.
+
+Interfața promoțiilor a trecut verificarea completă de browser prin nginx și PostgreSQL izolat. Sunt acoperite ofertele imediate și programate, încheierea/anularea, codurile create inactive și activate explicit, cumpărarea reală cu plafon, editarea fără pierderea utilizării, conflictul cu păstrarea ciornei, eliminarea plafonului/expirării, trecerea la reducere fixă și dezactivarea. Filtrele se păstrează după reîncărcare. Schimbarea contului închide confirmarea fără cerere și elimină ciorna promo. Formularele au trecut la 320, 390, 768 și 1440 px, iar browserul administrativ a folosit America/New_York pentru a verifica programările în Europe/Bucharest. Cele 10 teste JavaScript și verificarea celor 49 de module au trecut. Gitleaks nu a găsit secrete în frontendul complet. Nu au fost adăugate migrări sau dependențe și etapa rămâne locală.
 
 Testele de încărcare și extinderea auditului la celelalte aplicații de pe VPS rămân de planificat. Prioritățile restante sunt protecția identității, backupurile periodice și alertarea.

@@ -160,3 +160,12 @@ Exercițiul de migrare executat în această etapă a folosit schema live și da
 Crearea aceluiași cod normalizat este serializată prin advisory lock tranzacțional PostgreSQL, inclusiv între administratori diferiți. Oferta automată și cea manuală blochează produsele în aceeași ordine ca checkout-ul și verifică suprapunerile sub blocare. O programare manuală pentru mai târziu în aceeași zi împiedică generarea unei oferte automate suprapuse pentru acel produs.
 
 Notificările wishlist pentru modificările catalogului, ofertele automate/manuale și revenirea stocului după anulare rulează numai după commit, într-o tranzacție separată. Nu mențin blocate produsele în timpul inserării notificărilor. Eșecul este logat fără date despre destinatari și nu schimbă rezultatul operației deja confirmate; nu există încă outbox persistent sau relivrare automată. Auditul catalogului rămâne atomic, iar contul actorului este blocat înaintea produselor/codurilor.
+
+
+Interfața locală adaugă `/admin/deals` și `/admin/promos` în navigarea administrativă. Ofertele pot fi create imediat, programate, încheiate sau anulate înaintea începerii. Condițiile unei oferte existente rămân fixe; pentru alte condiții se creează o ofertă nouă. Lista afișează maximum cele 200 de oferte întoarse de backend, inclusiv cele încheiate în ultimele 30 de zile. Codurile pot fi create inactive, editate, dezactivate, căutate și copiate. Filtrele și paginarea se aplică datelor încărcate și sunt păstrate în URL.
+
+Formularele au previzualizare live și avertizare pentru modificări nesalvate. Conflictul unui cod păstrează ciorna, blochează salvarea și cere încărcarea explicită a versiunii curente. Simularea reducerii promo folosește suma de după ofertele flash și nivel, aplică rotunjirea/plafonul/minimul, dar nu promite eligibilitatea unui anumit cont și nu consumă codul. Checkout-ul rămâne autoritar. Ciornele nu sunt stocate în browser, iar schimbarea contului închide confirmările și elimină pagina privată.
+
+Câmpurile de programare și expirare folosesc explicit `Europe/Bucharest`. Orele inexistente sau ambigue la schimbarea orei sunt respinse, independent de fusul browserului. La editarea unui cod, o dată existentă neschimbată își păstrează precizia. Nu se adaugă dependențe sau migrări.
+
+Notificarea wishlist pentru o ofertă manuală se declanșează la creare dacă oferta începe imediat și produsul are stoc. Pornirea ulterioară a unei oferte programate nu are încă un mecanism persistent de notificare; acesta rămâne în plan împreună cu deduplicarea și reîncercările.

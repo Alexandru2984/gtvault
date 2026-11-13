@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { chromium } from 'playwright';
+import { promotionLocalTime, promotionInstant } from '../js/promotion-math.js';
 
 const base = new URL(process.env.REWARDHUB_TEST_URL || 'http://127.0.0.1:0');
 assert.equal(base.hostname, '127.0.0.1', 'Browser checks require an isolated loopback preview.');
@@ -634,7 +635,7 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: 'test-results/browser/notifications-mobile.png', fullPage: true });
 
-  const adminContext = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+  const adminContext = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce', timezoneId: 'America/New_York' });
   await paceApi(adminContext);
   const admin = await adminContext.newPage();
   observe(admin);
@@ -771,6 +772,153 @@ try {
   assert.equal(await admin.locator('.admin-catalog-item').count(), 1);
   await noOverflow(admin, 'catalog filters');
 
+  // Promoțiile folosesc catalog sintetic, cumpărări reale și confirmări legate de sesiunea admin.
+  const promotionProduct = await (await adminContext.request.get(origin + `/RewardHub/api/admin/rewards/${catalogId}`, { headers: catalogHeaders })).json();
+  assert.equal((await adminContext.request.put(origin + `/RewardHub/api/admin/rewards/${catalogId}`, { headers: catalogHeaders, data: { version: promotionProduct.version, active: true } })).status(), 200);
+  await admin.goto(origin + '/admin/deals');
+  await admin.getByRole('link', { name: 'Ofertă nouă', exact: true }).click();
+  let promotionForm = admin.locator('[data-promotion-editor]');
+  await promotionForm.getByLabel('Produs', { exact: true }).selectOption(catalogId);
+  await promotionForm.getByLabel('Reducere procentuală', { exact: true }).fill('20');
+  await promotionForm.getByLabel('Cantitate în ofertă', { exact: true }).fill('3');
+  await promotionForm.getByLabel('Limită per membru', { exact: true }).fill('1');
+  const offerEnd = promotionLocalTime(new Date(Date.now() + 2 * 3600000).toISOString());
+  await promotionForm.getByLabel('Se încheie la', { exact: true }).fill(offerEnd);
+  await admin.locator('[data-promotion-preview] .ap').filter({ hasText: '444' }).waitFor();
+  for (const width of [320, 390, 768, 1440]) { await admin.setViewportSize({ width, height: 844 }); await noOverflow(admin, `offer editor at ${width}`); }
+  const offerCreated = admin.waitForResponse((response) => response.url().endsWith('/admin/flash-deals') && response.request().method() === 'POST');
+  await promotionForm.getByRole('button', { name: 'Creează oferta', exact: true }).click();
+  const offerResponse = await offerCreated;
+  assert.equal(offerResponse.status(), 201);
+  const offer = await offerResponse.json();
+  assert.equal(Date.parse(offer.endsAt), Date.parse(promotionInstant(offerEnd)));
+  await admin.locator(`[data-end-deal="${offer.id}"]`).click();
+  await admin.getByRole('dialog').getByRole('button', { name: 'Confirmă', exact: true }).click();
+  await admin.getByRole('link', { name: 'Ofertă nouă', exact: true }).waitFor();
+  await admin.locator('.promotion-item').filter({ hasText: 'Produs Browser Catalog' }).getByText('Încheiate', { exact: true }).waitFor();
+
+  // Programare în viitor și anulare fără cerere rămasă după schimbarea contului.
+  await admin.getByRole('link', { name: 'Ofertă nouă', exact: true }).click();
+  await promotionForm.getByLabel('Produs', { exact: true }).selectOption(catalogId);
+  await promotionForm.getByRole('checkbox', { name: 'Începe imediat', exact: true }).uncheck();
+  await promotionForm.getByLabel('Începe la', { exact: true }).fill(promotionLocalTime(new Date(Date.now() + 86400000).toISOString()));
+  await promotionForm.getByLabel('Se încheie la', { exact: true }).fill(promotionLocalTime(new Date(Date.now() + 90000000).toISOString()));
+  const scheduleCreated = admin.waitForResponse((response) => response.url().endsWith('/admin/flash-deals') && response.request().method() === 'POST');
+  await promotionForm.getByRole('button', { name: 'Creează oferta', exact: true }).click();
+  const scheduledResponse = await scheduleCreated;
+  assert.equal(scheduledResponse.status(), 201);
+  const scheduledOffer = await scheduledResponse.json();
+  await admin.locator(`[data-end-deal="${scheduledOffer.id}"]`).click();
+  await admin.getByRole('dialog').getByRole('heading', { name: 'Anulezi oferta programată?', exact: true }).waitFor();
+  const promotionActor = await adminContext.newPage();
+  await promotionActor.goto(origin + '/offline.html');
+  await promotionActor.evaluate((session) => localStorage.setItem('gt.session', session), ordinaryCatalogSession);
+  await admin.waitForURL(origin + '/profil');
+  assert.equal(await admin.getByRole('dialog').count(), 0);
+  assert.equal(await admin.locator('.admin').count(), 0);
+  const retainedOffers = await (await adminContext.request.get(origin + '/RewardHub/api/admin/flash-deals', { headers: catalogHeaders })).json();
+  assert.ok(retainedOffers.some((row) => row.id === scheduledOffer.id));
+  await promotionActor.evaluate((session) => localStorage.setItem('gt.session', session), catalogSession);
+  await promotionActor.close();
+  await admin.goto(origin + '/admin/deals');
+  await admin.locator(`[data-end-deal="${scheduledOffer.id}"]`).click();
+  const cancelledOffer = admin.waitForResponse((response) => response.url().endsWith(`/admin/flash-deals/${scheduledOffer.id}/end`));
+  await admin.getByRole('dialog').getByRole('button', { name: 'Confirmă', exact: true }).click();
+  assert.equal((await cancelledOffer).status(), 200);
+  await admin.waitForFunction((id) => !document.querySelector(`[data-end-deal="${id}"]`), scheduledOffer.id);
+
+  await admin.getByRole('link', { name: 'Coduri promo', exact: true }).click();
+  await admin.getByRole('link', { name: 'Cod promo nou', exact: true }).click();
+  const browserCode = `BROWSER${Date.now()}`;
+  await promotionForm.getByLabel('Cod promo', { exact: true }).fill(browserCode.toLowerCase());
+  await promotionForm.getByLabel('Descriere internă', { exact: true }).fill('Campanie sintetică în browser');
+  await promotionForm.getByLabel('Valoarea reducerii', { exact: true }).fill('25');
+  await promotionForm.getByLabel('Plafon reducere în AP (0 = fără)', { exact: true }).fill('120');
+  await promotionForm.getByLabel('Comandă minimă în AP', { exact: true }).fill('300');
+  await promotionForm.getByLabel('Număr maxim de utilizări', { exact: true }).fill('3');
+  await promotionForm.getByRole('checkbox', { name: 'Are dată de expirare', exact: true }).check();
+  await promotionForm.getByLabel('Expiră la', { exact: true }).fill(promotionLocalTime(new Date(Date.now() + 86400000).toISOString()));
+  assert.equal(await promotionForm.getByRole('checkbox', { name: 'Cod activ', exact: true }).isChecked(), false);
+  await promotionForm.getByRole('checkbox', { name: 'Cod activ', exact: true }).check();
+  const promoPreviewBox = admin.locator('[data-promotion-preview]');
+  await promoPreviewBox.getByText('120 AP', { exact: true }).waitFor();
+  await admin.getByLabel('Sumă de test în AP', { exact: true }).fill('200');
+  await promoPreviewBox.getByText('Comanda minimă este 300 AP.', { exact: true }).waitFor();
+  await admin.getByLabel('Sumă de test în AP', { exact: true }).fill('1000');
+  for (const width of [320, 390, 768, 1440]) { await admin.setViewportSize({ width, height: 844 }); await noOverflow(admin, `promo editor at ${width}`); }
+  await admin.setViewportSize({ width: 390, height: 844 });
+  await admin.screenshot({ path: 'test-results/browser/promo-editor-mobile.png', fullPage: true });
+  const promoCreated = admin.waitForResponse((response) => response.url().endsWith('/admin/promo-codes') && response.request().method() === 'POST');
+  await promotionForm.getByRole('button', { name: 'Creează codul', exact: true }).click();
+  const promoCreatedResponse = await promoCreated;
+  assert.equal(promoCreatedResponse.status(), 201);
+  const browserPromo = await promoCreatedResponse.json();
+  assert.equal(browserPromo.code, browserCode);
+  await promotionForm.getByRole('button', { name: 'Salvează codul', exact: true }).waitFor();
+  assert.equal(await promotionForm.getByLabel('Cod promo', { exact: true }).getAttribute('readonly'), '');
+  await promotionForm.getByLabel('Descriere internă', { exact: true }).fill('Ciornă păstrată după cumpărare');
+  assert.equal((await context.request.post(origin + '/RewardHub/api/cart/items', { headers: buyerHeaders, data: { rewardId: catalogId, quantity: 1 } })).status(), 200);
+  const discountedPurchase = await context.request.post(origin + '/RewardHub/api/checkout', { headers: { ...buyerHeaders, 'Idempotency-Key': `promo-purchase-${Date.now()}` }, data: { promoCode: browserCode } });
+  assert.equal(discountedPurchase.status(), 200);
+  assert.equal((await discountedPurchase.json()).order.promoDiscount, 120);
+  async function saveBrowserPromo() {
+    const written = admin.waitForResponse((response) => response.url().endsWith('/admin/promo-codes/' + browserPromo.id) && response.request().method() === 'PUT');
+    const reread = admin.waitForResponse((response) => response.url().endsWith('/admin/promo-codes/' + browserPromo.id) && response.request().method() === 'GET');
+    await promotionForm.getByRole('button', { name: 'Salvează codul', exact: true }).click();
+    const response = await written;
+    assert.equal(response.status(), 200);
+    await reread;
+    await promotionForm.getByRole('button', { name: 'Salvează codul', exact: true }).waitFor();
+    return response.json();
+  }
+  assert.equal((await saveBrowserPromo()).currentUses, 1);
+  await promotionForm.getByLabel('Valoarea reducerii', { exact: true }).fill('30');
+  const currentPromo = await (await adminContext.request.get(origin + `/RewardHub/api/admin/promo-codes/${browserPromo.id}`, { headers: catalogHeaders })).json();
+  assert.equal((await adminContext.request.put(origin + `/RewardHub/api/admin/promo-codes/${browserPromo.id}`, { headers: catalogHeaders, data: { version: currentPromo.version, description: 'Modificare concurentă externă' } })).status(), 200);
+  const promoConflict = admin.waitForResponse((response) => response.url().endsWith('/admin/promo-codes/' + browserPromo.id) && response.request().method() === 'PUT');
+  await promotionForm.getByRole('button', { name: 'Salvează codul', exact: true }).click();
+  assert.equal((await promoConflict).status(), 409);
+  await admin.locator('[data-promotion-error]').getByRole('alert').waitFor();
+  assert.equal(await promotionForm.getByLabel('Valoarea reducerii', { exact: true }).inputValue(), '30');
+  assert.equal(await promotionForm.getByRole('button', { name: 'Salvează codul', exact: true }).isDisabled(), true);
+  await promotionForm.getByRole('button', { name: 'Încarcă codul actual', exact: true }).click();
+  await admin.getByRole('dialog').getByRole('button', { name: 'Renunță la modificări', exact: true }).click();
+  await admin.waitForFunction(() => document.querySelector('[data-promotion-editor] [name="description"]')?.value === 'Modificare concurentă externă');
+  await promotionForm.getByLabel('Plafon reducere în AP (0 = fără)', { exact: true }).fill('0');
+  await promotionForm.getByRole('checkbox', { name: 'Are dată de expirare', exact: true }).uncheck();
+  const clearedPromo = await saveBrowserPromo();
+  assert.equal(clearedPromo.expiresAt, null);
+  assert.equal(clearedPromo.maxDiscount, null);
+  assert.equal(clearedPromo.currentUses, 1);
+  await promotionForm.getByLabel('Tip reducere', { exact: true }).selectOption('points');
+  await promotionForm.getByLabel('Valoarea reducerii', { exact: true }).fill('50');
+  await promotionForm.getByRole('checkbox', { name: 'Cod activ', exact: true }).uncheck();
+  assert.equal((await saveBrowserPromo()).discountPoints, 50);
+  await admin.getByRole('link', { name: 'Înapoi la coduri promo', exact: true }).click();
+  await admin.getByRole('searchbox', { name: 'Caută coduri', exact: true }).fill(browserCode);
+  await admin.getByLabel('Stare promoție', { exact: true }).selectOption('INACTIVE');
+  await admin.getByRole('button', { name: 'Filtrează', exact: true }).click();
+  assert.equal(await admin.locator('.promotion-item').count(), 1);
+  await noOverflow(admin, 'promotion listing');
+  await admin.reload();
+  await admin.getByRole('searchbox', { name: 'Caută coduri', exact: true }).waitFor();
+  assert.equal(await admin.getByRole('searchbox', { name: 'Caută coduri', exact: true }).inputValue(), browserCode);
+  assert.equal(await admin.getByLabel('Stare promoție', { exact: true }).inputValue(), 'INACTIVE');
+  assert.equal(await admin.locator('.promotion-item').count(), 1);
+  await admin.getByRole('link', { name: `Editează ${browserCode}`, exact: true }).click();
+  await promotionForm.getByLabel('Descriere internă', { exact: true }).fill('Ciornă promo privată care trebuie eliminată');
+  await admin.getByRole('link', { name: 'Înapoi la coduri promo', exact: true }).click();
+  await admin.getByRole('dialog').getByRole('button', { name: 'Continuă editarea', exact: true }).click();
+  assert.equal(await promotionForm.getByLabel('Descriere internă', { exact: true }).inputValue(), 'Ciornă promo privată care trebuie eliminată');
+  const promoActor = await adminContext.newPage();
+  await promoActor.goto(origin + '/offline.html');
+  await promoActor.evaluate((session) => localStorage.setItem('gt.session', session), ordinaryCatalogSession);
+  await admin.waitForURL(origin + '/profil');
+  assert.equal(await admin.locator('.admin').count(), 0);
+  assert.ok(!(await admin.locator('#main').textContent()).includes('Ciornă promo privată care trebuie eliminată'));
+  await promoActor.evaluate((session) => localStorage.setItem('gt.session', session), catalogSession);
+  await promoActor.close();
+
   await page.goto(origin + '/magazin');
   await page.locator('.pcard').last().waitFor();
   await page.screenshot({ path: 'test-results/browser/mobile.png', fullPage: true });
@@ -809,7 +957,7 @@ try {
     headers: { Authorization: `Bearer ${rotatedToken}` },
   })).status(), 401);
   assert.deepEqual(errors, []);
-  console.log('Browser checks passed for responsive navigation, valid control states, registration, comparison, wishlist, saving goals, checkout, order search/filters/cancellation/repeat/account isolation, vouchers, CSV, daily rewards, quiz notebook/practice/account isolation, Wordle history/replay/sharing/account isolation, sessions, notification preferences, admin and offline recovery.');
+  console.log('Browser checks passed for responsive navigation, valid control states, registration, comparison, wishlist, saving goals, checkout, order search/filters/cancellation/repeat/account isolation, vouchers, CSV, daily rewards, quiz notebook/practice/account isolation, Wordle history/replay/sharing/account isolation, sessions, notification preferences, admin catalog/offers/promo codes and offline recovery.');
 } catch (error) {
   if (errors.length) console.error('Browser HTTP or script errors', errors);
   throw error;

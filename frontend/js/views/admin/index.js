@@ -8,10 +8,11 @@ import { setMeta } from '../../seo.js';
 import { busy, modal, handleError, toastOk } from '../../ui.js';
 import { state, isAdmin } from '../../store.js';
 import { adminCatalog } from './catalog.js';
+import { adminPromotions } from './promotions.js';
 
 const SECTIONS = {
   stats: ['Prezentare', 'grid'], orders: ['Comenzi', 'package'], rewards: ['Catalog', 'bag'],
-  users: ['Membri', 'users'], audit: ['Jurnal', 'history'],
+  deals: ['Oferte', 'zap'], promos: ['Coduri promo', 'tag'], users: ['Membri', 'users'], audit: ['Jurnal', 'history'],
 };
 
 const adminPath = (section, params) => `/admin${section === 'stats' ? '' : `/${section}`}${searchParams(params)}`;
@@ -36,10 +37,11 @@ export default async function admin({ root, params, query, signal, alive }) {
   const title = SECTIONS[section][0];
   setMeta({ title: `Administrare · ${title}`, noindex: true });
   mount(root, skeletonPage());
-  const data = section === 'rewards' ? null : await get(`${adminApi(section, id)}${searchParams(id ? null : { q: query.q, status: query.status, page })}`, { signal });
+  const embedded = ['rewards', 'deals', 'promos'].includes(section);
+  const data = embedded ? null : await get(`${adminApi(section, id)}${searchParams(id ? null : { q: query.q, status: query.status, page })}`, { signal });
   if (!active()) return;
 
-  const content = section === 'rewards' ? html`<div data-admin-catalog></div>` : section === 'stats' ? stats(data)
+  const content = embedded ? html`<div data-admin-catalog></div>` : section === 'stats' ? stats(data)
     : id ? (section === 'orders' ? order(data) : user(data))
     : listing(section, data, query, page);
 
@@ -79,7 +81,9 @@ export default async function admin({ root, params, query, signal, alive }) {
       }
     });
   });
-  const cleanupCatalog = section === 'rewards' ? await adminCatalog(qs('[data-admin-catalog]', root), { query, signal, active, openDialog }) : null;
+  const editorContext = { section, query, signal, active, openDialog };
+  const cleanupCatalog = section === 'rewards' ? await adminCatalog(qs('[data-admin-catalog]', root), editorContext)
+    : embedded ? await adminPromotions(qs('[data-admin-catalog]', root), editorContext) : null;
   return () => {
     disposed = true;
     for (const close of [...dialogs]) close();
