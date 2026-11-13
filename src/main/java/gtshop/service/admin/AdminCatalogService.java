@@ -10,7 +10,7 @@ import gtshop.repository.FlashDealRepository;
 import gtshop.repository.PromoCodeRepository;
 import gtshop.repository.RewardRepository;
 import gtshop.service.TimeService;
-import gtshop.service.WishlistAlerts;
+import gtshop.service.CatalogAlerts;
 import gtshop.util.Ids;
 import gtshop.util.InputSanitizer;
 import gtshop.util.Locks;
@@ -46,7 +46,7 @@ public class AdminCatalogService {
     private final RewardRepository rewards;
     private final FlashDealRepository deals;
     private final PromoCodeRepository promos;
-    private final WishlistAlerts alerts;
+    private final CatalogAlerts alerts;
     private final AdminAudit audit;
     private final JdbcTemplate jdbc;
     private final Locks locks;
@@ -54,7 +54,7 @@ public class AdminCatalogService {
     private final ObjectMapper json;
 
     public AdminCatalogService(RewardRepository rewards, FlashDealRepository deals, PromoCodeRepository promos,
-                               WishlistAlerts alerts, AdminAudit audit, JdbcTemplate jdbc, Locks locks, TimeService time, ObjectMapper json) {
+                               CatalogAlerts alerts, AdminAudit audit, JdbcTemplate jdbc, Locks locks, TimeService time, ObjectMapper json) {
         this.rewards = rewards;
         this.deals = deals;
         this.promos = promos;
@@ -98,6 +98,7 @@ public class AdminCatalogService {
 
     @Transactional
     public Reward createReward(RewardForm f) {
+        audit.lockActor();
         Reward r = new Reward();
         r.setId(newRewardId(f.name()));
         r.setCreatedAt(time.now());
@@ -112,6 +113,7 @@ public class AdminCatalogService {
 
     @Transactional
     public Reward updateReward(String id, RewardForm f) {
+        audit.lockActor();
         Reward r = lockReward(id);
         if (f.version() == null || !f.version().matches("[0-9a-f]{64}")) {
             throw ApiException.badRequest("PRODUCT_VERSION_REQUIRED", "Reîncarcă formularul produsului înainte de salvare.");
@@ -141,6 +143,7 @@ public class AdminCatalogService {
 
     @Transactional
     public Reward adjustStock(String id, Integer delta, String reason) {
+        audit.lockActor();
         if (delta == null || delta == 0 || delta < -MAX_STOCK || delta > MAX_STOCK) {
             throw ApiException.badRequest("Modificarea de stoc trebuie să fie un număr nenul.");
         }
@@ -278,8 +281,9 @@ public class AdminCatalogService {
 
     @Transactional
     public FlashDeal createDeal(DealForm f) {
-        Reward r = rewards.findById(f.rewardId() == null ? "" : f.rewardId()).filter(Reward::isActive)
-                .orElseThrow(() -> ApiException.notFound("Produsul nu a fost găsit."));
+        audit.lockActor();
+        Reward r = lockReward(f.rewardId() == null ? "" : f.rewardId());
+        if (!r.isActive()) throw ApiException.notFound("Produsul nu a fost găsit.");
         if (Reward.FULFILLMENT_BADGE.equals(r.getFulfillment())) {
             throw ApiException.badRequest("Insignele nu pot intra în oferte flash.");
         }
@@ -304,8 +308,7 @@ public class AdminCatalogService {
         if (perUser < 1 || perUser > 99) {
             throw ApiException.badRequest("Limita per utilizator trebuie să fie între 1 și 99.");
         }
-        // Blocam produsul ca doua oferte create simultan sa nu se suprapuna
-        lockReward(r.getId());
+        // Produsul este blocat și recitit înaintea validării și a verificării suprapunerilor.
         Integer overlapping = jdbc.queryForObject(
                 "SELECT count(*) FROM flash_deals WHERE reward_id = ? AND starts_at < ? AND ends_at > ?",
                 Integer.class, r.getId(), Timestamp.from(end), Timestamp.from(start));
@@ -333,6 +336,7 @@ public class AdminCatalogService {
 
     @Transactional
     public Map<String, Object> endDeal(String id) {
+        audit.lockActor();
         FlashDeal d = deals.findByIdForUpdate(id).map(locks::refresh)
                 .orElseThrow(() -> ApiException.notFound("Oferta nu a fost găsită."));
         Instant now = time.now();
@@ -353,7 +357,28 @@ public class AdminCatalogService {
     // ================================================================== coduri promo
 
     public record PromoForm(String code, String description, Integer discountPercent, Integer discountPoints,
-                            Integer maxDiscount, Integer minOrderPoints, Integer maxUses, Instant expiresAt, Boolean active) {}
+                            Integer maxDiscount, Integer minOrderPoints, Integer maxUses, Instant expiresAt, Boolean active,
+                            String version, Boolean clearExpiry) {}
+
+    private record PromoMetadata(String id, String code, String description, int percent, int points, Integer cap,
+                                 int minimum, int maxUses, Instant expiry, boolean active) {}
+    public record PromoEditor(PromoCode promo, String version) {}
+
+    @Transactional(readOnly = true)
+    public PromoEditor promoEditor(String id) {
+        PromoCode p = promos.findById(id).orElseThrow(() -> ApiException.notFound("Codul promoțional nu a fost găsit."));
+        return new PromoEditor(p, version(p));
+    }
+
+    private String version(PromoCode p) {
+        var metadata = new PromoMetadata(p.getId(), p.getCode(), p.getDescription(), p.getDiscountPercent(), p.getDiscountPoints(),
+                p.getMaxDiscount(), p.getMinOrderPoints(), p.getMaxUses(), p.getExpiresAt(), p.isActive());
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(json.writeValueAsBytes(metadata)));
+        } catch (NoSuchAlgorithmException | JsonProcessingException e) {
+            throw new IllegalStateException("Versiunea codului promo nu poate fi calculată", e);
+        }
+    }
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> promos() {
@@ -366,10 +391,13 @@ public class AdminCatalogService {
 
     @Transactional
     public PromoCode createPromo(PromoForm f) {
+        audit.lockActor();
         String code = f.code() == null ? "" : f.code().trim().toUpperCase(Locale.ROOT);
         if (!PROMO.matcher(code).matches()) {
             throw ApiException.badRequest("Codul poate avea 3-32 de caractere: litere, cifre, - și _.");
         }
+        // Același cod normalizat este serializat inclusiv între administratori diferiți.
+        jdbc.queryForList("SELECT pg_advisory_xact_lock(1701998445, hashtext(?))", code);
         if (promos.findByCodeIgnoreCase(code).isPresent()) {
             throw ApiException.conflict("PROMO_EXISTS", "Există deja un cod promoțional „" + code + "”.");
         }
@@ -383,8 +411,15 @@ public class AdminCatalogService {
 
     @Transactional
     public PromoCode updatePromo(String id, PromoForm f) {
+        audit.lockActor();
         PromoCode p = promos.findByIdForUpdate(id).map(locks::refresh)
                 .orElseThrow(() -> ApiException.notFound("Codul promoțional nu a fost găsit."));
+        if (f.version() == null || !f.version().matches("[0-9a-f]{64}")) {
+            throw ApiException.badRequest("PROMO_VERSION_REQUIRED", "Reîncarcă formularul codului promo înainte de salvare.");
+        }
+        if (!version(p).equals(f.version())) {
+            throw ApiException.conflict("PROMO_CHANGED", "Codul promo a fost modificat între timp. Reîncarcă datele și verifică schimbările.");
+        }
         if (f.code() != null && !f.code().trim().equalsIgnoreCase(p.getCode())) {
             throw ApiException.badRequest("Codul nu poate fi redenumit (a fost deja distribuit). Creează un cod nou.");
         }
@@ -435,8 +470,14 @@ public class AdminCatalogService {
             }
             p.setMaxUses(uses);
         }
-        if (creating || f.expiresAt() != null) {
-            if (f.expiresAt() != null && !f.expiresAt().isAfter(time.now())) {
+        if (Boolean.TRUE.equals(f.clearExpiry()) && f.expiresAt() != null) {
+            throw ApiException.badRequest("Alege fie data de expirare, fie eliminarea ei.");
+        }
+        if (Boolean.TRUE.equals(f.clearExpiry())) {
+            p.setExpiresAt(null);
+        } else if (creating || f.expiresAt() != null) {
+            if (f.expiresAt() != null && !f.expiresAt().isAfter(time.now())
+                    && (creating || !f.expiresAt().equals(p.getExpiresAt()))) {
                 throw ApiException.badRequest("Data de expirare trebuie să fie în viitor.");
             }
             p.setExpiresAt(f.expiresAt());

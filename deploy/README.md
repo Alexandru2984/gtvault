@@ -149,3 +149,14 @@ Modificările catalogului actualizează API-ul folosit de aplicație. Fișierele
 Pentru pregătirea unei comunicări, adună perioada incidentului, categoriile de date, numărul estimat de persoane, consecințele probabile, măsurile luate și adresa de contact `984.alexmihai@proton.me`. Transmiterea comunicărilor este o acțiune distinctă a operatorului.
 
 Exercițiul de migrare executat în această etapă a folosit schema live și date sintetice. Separat, dumpul complet din `/var/backups/gtshop/gtshop-predeploy.dump` a fost restaurat și verificat într-un container izolat, cu aceleași 3 conturi, 16 achiziții și 12 premii. Directorul este protejat pentru root. Copia externă, programul periodic și exercițiul de răspuns la compromitere rămân în plan.
+
+
+## Contract local pentru administrarea promoțiilor
+
+`GET /api/admin/promo-codes/{id}` întoarce `{promo, version}`. `PUT` cere versiunea de 64 de caractere hexazecimale; absența ei produce `PROMO_VERSION_REQUIRED` (400), iar o editare concurentă produce `PROMO_CHANGED` (409). Versiunea include condițiile codului și exclude utilizările curente. Cumpărarea nu invalidează editarea descrierii, iar utilizările nu pot fi resetate prin formular. Limita nouă trebuie să acopere utilizările deja confirmate. Codul distribuit nu poate fi redenumit.
+
+`clearExpiry: true` elimină explicit expirarea și nu poate fi trimis împreună cu o dată. `maxDiscount: 0` elimină plafonul procentual. Data expirată existentă poate fi păstrată când se dezactivează sau se editează descrierea; o dată nouă trebuie să fie în viitor. Clienții vechi care folosesc PUT trebuie adaptați înainte de publicare. Nu există migrare nouă în această etapă.
+
+Crearea aceluiași cod normalizat este serializată prin advisory lock tranzacțional PostgreSQL, inclusiv între administratori diferiți. Oferta automată și cea manuală blochează produsele în aceeași ordine ca checkout-ul și verifică suprapunerile sub blocare. O programare manuală pentru mai târziu în aceeași zi împiedică generarea unei oferte automate suprapuse pentru acel produs.
+
+Notificările wishlist pentru modificările catalogului, ofertele automate/manuale și revenirea stocului după anulare rulează numai după commit, într-o tranzacție separată. Nu mențin blocate produsele în timpul inserării notificărilor. Eșecul este logat fără date despre destinatari și nu schimbă rezultatul operației deja confirmate; nu există încă outbox persistent sau relivrare automată. Auditul catalogului rămâne atomic, iar contul actorului este blocat înaintea produselor/codurilor.

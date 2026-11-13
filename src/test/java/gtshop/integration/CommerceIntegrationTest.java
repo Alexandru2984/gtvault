@@ -100,6 +100,27 @@ class CommerceIntegrationTest extends AbstractIntegrationTest {
         }
     }
 
+    @Test
+    void automaticDealsCannotOverlapManualDealsScheduledLaterToday() throws Exception {
+        jdbc.update("delete from flash_deals where id = ?", MANUAL_DEAL);
+        List<String> scheduled = new ArrayList<>();
+        try {
+            for (String id : jdbc.queryForList("SELECT id FROM rewards WHERE active AND stock_count >= 5 AND fulfillment <> 'BADGE'", String.class)) {
+                String deal = "scheduled-" + UUID.randomUUID().toString().substring(0, 12);
+                scheduled.add(deal);
+                jdbc.update("""
+                        INSERT INTO flash_deals (id, reward_id, discount_percent, starts_at, ends_at, max_quantity,
+                                                 sold_quantity, per_user_limit, auto_generated, created_at)
+                        VALUES (?, ?, 20, ?, ?, 10, 0, 1, false, ?)""", deal, id,
+                        Timestamp.from(START.plusSeconds(3600)), Timestamp.from(START.plusSeconds(7200)), Timestamp.from(START));
+            }
+            mvc.perform(getAs("/api/flash-deals", null)).andExpect(status().isOk());
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM flash_deals WHERE auto_generated = true", Integer.class)).isZero();
+        } finally {
+            for (String id : scheduled) jdbc.update("DELETE FROM flash_deals WHERE id = ?", id);
+        }
+    }
+
     // ------------------------------------------------------------------ cos
 
     @Test

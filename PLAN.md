@@ -87,6 +87,8 @@ Caietul de quiz păstrează numai răspunsurile trimise după activarea V11. În
 
 ## Etapa 5 · Magazin și comunitate
 
+Contractul administrativ pentru promoții este întărit local: editări condiționate de versiune, contoare păstrate la cumpărare, eliminarea explicită a expirării și coduri duplicate respinse controlat. Generatorul zilnic evită ofertele programate suprapuse, iar notificările wishlist rulează după commit. Interfața de administrare a promoțiilor este etapa următoare.
+
 - Editor de produse — implementat și verificat local, nepublicat. Creare și editare cu previzualizare live, imagini din biblioteca locală, activare, marcaj „nou”, tip de livrare, nivel minim și limite. Stocul se ajustează separat; versiunile vechi nu pot suprascrie modificările concurente.
 - Editor de oferte și coduri promo, cu previzualizarea prețului rezultat.
 - Cozi de moderare pentru recenzii și propuneri, cu motiv și istoric.

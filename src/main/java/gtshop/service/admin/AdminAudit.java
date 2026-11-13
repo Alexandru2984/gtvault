@@ -30,6 +30,12 @@ public class AdminAudit {
         this.time = time;
     }
 
+    /** Același ordin ca la checkout: actorul înaintea produselor/codurilor. FK-ul jurnalului nu inversează blocările. */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void lockActor() {
+        jdbc.queryForList("SELECT id FROM users WHERE id = ? FOR NO KEY UPDATE", currentUser.requireId());
+    }
+
     /** Se scrie in aceeasi tranzactie cu modificarea: daca modificarea esueaza, nici intrarea din jurnal nu ramane. */
     @Transactional(propagation = Propagation.MANDATORY)
     public void record(String action, String targetType, String targetId, String details) {

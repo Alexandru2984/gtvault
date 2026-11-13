@@ -50,12 +50,12 @@ public class OrderService {
     private final NotificationService notifications;
     private final TimeService time;
     private final gtshop.util.Locks locks;
-    private final WishlistAlerts wishlistAlerts;
+    private final CatalogAlerts wishlistAlerts;
 
     public OrderService(ShopOrderRepository orders, PurchaseRecordRepository purchases, RewardRepository rewards,
                         FlashDealRepository deals, PromoCodeRepository promos, PromoRedemptionRepository redemptions,
                         WalletService wallet, NotificationService notifications, TimeService time,
-                        gtshop.util.Locks locks, WishlistAlerts wishlistAlerts) {
+                        gtshop.util.Locks locks, CatalogAlerts wishlistAlerts) {
         this.wishlistAlerts = wishlistAlerts;
         this.orders = orders;
         this.purchases = purchases;

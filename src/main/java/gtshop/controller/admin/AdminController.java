@@ -184,6 +184,12 @@ public class AdminController {
         return catalog.promos();
     }
 
+    @GetMapping("/promo-codes/{id}")
+    @Operation(summary = "Datele de editare și versiunea codului promo, fără includerea utilizărilor în versiune")
+    public AdminCatalogService.PromoEditor promoEditor(@PathVariable String id) {
+        return catalog.promoEditor(id);
+    }
+
     @PostMapping("/promo-codes")
     @ResponseStatus(HttpStatus.CREATED)
     @RateLimit(name = "admin-write", limit = 300, windowSeconds = 60)

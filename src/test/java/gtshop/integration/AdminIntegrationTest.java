@@ -46,6 +46,13 @@ class AdminIntegrationTest extends AbstractIntegrationTest {
         return putJson("/api/admin/rewards/" + id, admin, body);
     }
 
+    private MockHttpServletRequestBuilder editPromo(String id, Map<String, Object> changes) throws Exception {
+        JsonNode editor = readJson(mvc.perform(getAs("/api/admin/promo-codes/" + id, admin)).andExpect(status().isOk()).andReturn());
+        Map<String, Object> body = new HashMap<>(changes);
+        body.put("version", editor.path("version").asText());
+        return putJson("/api/admin/promo-codes/" + id, admin, body);
+    }
+
     private int notifications(TestUser u, String type) {
         Integer c = jdbc.queryForObject("select count(*) from notifications where user_id = ? and type = ?", Integer.class, u.id(), type);
         return c == null ? 0 : c;
@@ -265,11 +272,11 @@ class AdminIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.promo.valid").value(true));
 
         String pid = promo.path("id").asText();
-        mvc.perform(putJson("/api/admin/promo-codes/" + pid, admin, Map.of("code", "ALTCOD"))).andExpect(status().isBadRequest());
-        mvc.perform(putJson("/api/admin/promo-codes/" + pid, admin, Map.of("active", false))).andExpect(status().isOk());
+        mvc.perform(editPromo(pid, Map.of("code", "ALTCOD"))).andExpect(status().isBadRequest());
+        mvc.perform(editPromo(pid, Map.of("active", false))).andExpect(status().isOk());
         mvc.perform(postJson("/api/promo/validate", u, Map.of("code", code))).andExpect(jsonPath("$.promo.valid").value(false));
         jdbc.update("update promo_codes set current_uses = 2 where id = ?", pid);
-        mvc.perform(putJson("/api/admin/promo-codes/" + pid, admin, Map.of("maxUses", 1))).andExpect(status().isBadRequest());
+        mvc.perform(editPromo(pid, Map.of("maxUses", 1))).andExpect(status().isBadRequest());
         assertThat(auditCount("PROMO_UPDATE", pid)).isEqualTo(1);
     }
 

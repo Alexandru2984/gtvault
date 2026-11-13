@@ -36,10 +36,12 @@ public class FlashDealService {
     private final RewardRepository rewards;
     private final JdbcTemplate jdbc;
     private final TimeService time;
-    private final WishlistAlerts alerts;
+    private final CatalogAlerts alerts;
+    private final gtshop.util.Locks locks;
 
-    public FlashDealService(FlashDealRepository deals, RewardRepository rewards, JdbcTemplate jdbc, WishlistAlerts alerts,
-                            TimeService time) {
+    public FlashDealService(FlashDealRepository deals, RewardRepository rewards, JdbcTemplate jdbc, CatalogAlerts alerts,
+                            TimeService time, gtshop.util.Locks locks) {
+        this.locks = locks;
         this.alerts = alerts;
         this.deals = deals;
         this.rewards = rewards;
@@ -78,22 +80,28 @@ public class FlashDealService {
             Collections.shuffle(candidates, seeded);
             Instant start = time.startOfToday();
             Instant end = time.startOfTomorrow();
-            for (Reward r : candidates.subList(0, Math.min(AUTO_DEALS, candidates.size()))) {
+            // Același protocol ca oferta manuală și checkout: toate produsele în ordine stabilă.
+            List<String> chosen = candidates.subList(0, Math.min(AUTO_DEALS, candidates.size())).stream().map(Reward::getId).toList();
+            for (Reward cached : rewards.findAllByIdForUpdate(chosen)) {
+                Reward r = locks.refresh(cached);
+                if (!r.isActive() || r.getStockCount() < 5 || Reward.FULFILLMENT_BADGE.equals(r.getFulfillment())) continue;
                 int percent = AUTO_PERCENTS[seeded.nextInt(AUTO_PERCENTS.length)];
                 int created = jdbc.update("""
                         INSERT INTO flash_deals (id, reward_id, discount_percent, starts_at, ends_at, max_quantity,
                                                  sold_quantity, per_user_limit, auto_generated, created_at)
-                        VALUES (?, ?, ?, ?, ?, ?, 0, 2, true, ?)
+                        SELECT ?, ?, ?, ?, ?, ?, 0, 2, true, ?
+                        WHERE NOT EXISTS (SELECT 1 FROM flash_deals WHERE reward_id = ? AND starts_at < ? AND ends_at > ?)
                         ON CONFLICT (reward_id, starts_at) DO NOTHING""",
                         Ids.prefixed("deal-"), r.getId(), percent, java.sql.Timestamp.from(start), java.sql.Timestamp.from(end),
-                        Math.min(AUTO_MAX_QUANTITY, r.getStockCount()), java.sql.Timestamp.from(now));
+                        Math.min(AUTO_MAX_QUANTITY, r.getStockCount()), java.sql.Timestamp.from(now),
+                        r.getId(), java.sql.Timestamp.from(end), java.sql.Timestamp.from(start));
                 if (created == 1) {
                     alerts.dealStarted(r.getId(), r.getName(), percent);
                 }
             }
         } catch (RuntimeException e) {
             // Ofertele zilei sunt un bonus: o eroare aici nu trebuie sa blocheze catalogul
-            log.warn("Nu am putut genera ofertele zilei: {}", e.getMessage());
+            log.warn("Nu am putut genera ofertele zilei ({})", e.getClass().getSimpleName());
         }
     }
 
